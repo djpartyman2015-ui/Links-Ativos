@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bolão — Brasil × Marrocos</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --verde: #009C3B; --verde-d: #007A2F;
+  --amarelo: #FFDF00; --azul: #002776;
+  --vermelho: #C1121F;
+  --bg: #080d18; --card: #0f1826; --card2: #131f30;
+  --border: #1c2d44; --text: #e8ecf4; --muted: #6b7f96;
+  --inp-bg: rgba(255,255,255,0.07);
+}
+body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; padding-bottom:80px; }
+
+/* HEADER */
+.header { position:relative; overflow:hidden; background:linear-gradient(160deg,#001a55 0%,#060e22 45%,#3d0810 100%); padding:48px 20px 36px; text-align:center; }
+.header::after { content:''; position:absolute; inset:0; background:radial-gradient(ellipse at 20% 50%,rgba(0,39,118,.4) 0%,transparent 60%),radial-gradient(ellipse at 80% 50%,rgba(193,18,31,.3) 0%,transparent 60%); pointer-events:none; }
+.header-inner { position:relative; z-index:1; }
+.eyebrow { font-family:'Bebas Neue',sans-serif; font-size:13px; letter-spacing:5px; color:var(--amarelo); opacity:.8; margin-bottom:28px; }
+.matchup { display:flex; align-items:center; justify-content:center; gap:20px; }
+.team { display:flex; flex-direction:column; align-items:center; gap:10px; flex:1; max-width:140px; }
+.team-flag { font-size:80px; line-height:1; filter:drop-shadow(0 6px 20px rgba(0,0,0,.6)); }
+.team-name { font-family:'Bebas Neue',sans-serif; font-size:26px; letter-spacing:3px; color:#fff; }
+.vs-col { display:flex; flex-direction:column; align-items:center; gap:2px; padding-bottom:8px; }
+.vs-text { font-family:'Bebas Neue',sans-serif; font-size:52px; line-height:1; color:var(--amarelo); text-shadow:0 0 40px rgba(255,223,0,.45); }
+.vs-sub { font-size:10px; letter-spacing:2px; color:rgba(255,255,255,.4); text-transform:uppercase; }
+.header-badge { margin-top:24px; display:inline-block; padding:6px 20px; border-radius:30px; border:1px solid rgba(255,223,0,.3); background:rgba(255,223,0,.08); font-family:'Bebas Neue',sans-serif; font-size:14px; letter-spacing:4px; color:var(--amarelo); }
+
+/* MAIN */
+.main { max-width:640px; margin:0 auto; padding:28px 16px; }
+
+/* TABS */
+.tabs { display:flex; gap:0; margin-bottom:24px; background:var(--card); border:1px solid var(--border); border-radius:14px; overflow:hidden; }
+.tab { flex:1; padding:13px; text-align:center; font-size:13px; font-weight:700; color:var(--muted); cursor:pointer; transition:all .15s; border:none; background:transparent; font-family:'Inter',sans-serif; -webkit-tap-highlight-color:transparent; }
+.tab.active { background:var(--azul); color:#fff; }
+
+/* BUTTONS */
+.btn { display:flex; align-items:center; justify-content:center; gap:8px; padding:14px 18px; border-radius:12px; border:none; cursor:pointer; font-family:'Inter',sans-serif; font-size:14px; font-weight:700; transition:all .15s; -webkit-tap-highlight-color:transparent; width:100%; margin-bottom:10px; }
+.btn-add  { background:var(--verde); color:#fff; }
+.btn-share { background:var(--amarelo); color:var(--azul); }
+.btn-ghost { background:var(--card2); color:var(--muted); border:1px solid var(--border); }
+.btn-calcular { background:linear-gradient(135deg,var(--verde),var(--verde-d)); color:#fff; }
+.btn-salvar { background:linear-gradient(135deg,#002776,#003ea0); color:#fff; font-size:15px; font-weight:800; padding:16px; }
+.btn-sm { padding:10px 14px; font-size:13px; width:auto; margin:0; }
+
+/* PALPITE FORM (aba enviar) */
+.form-card { background:var(--card); border:1px solid var(--border); border-radius:20px; overflow:hidden; margin-bottom:16px; }
+.form-header { background:linear-gradient(90deg,#001a55,#060e22); padding:16px 20px; }
+.form-header h3 { font-family:'Bebas Neue',sans-serif; font-size:18px; letter-spacing:3px; color:var(--amarelo); }
+.form-body { padding:20px; display:flex; flex-direction:column; gap:14px; }
+
+.inp { width:100%; background:var(--inp-bg); border:1px solid var(--border); border-radius:10px; color:var(--text); font-family:'Inter',sans-serif; font-size:15px; font-weight:600; padding:13px 14px; outline:none; transition:border-color .15s; }
+.inp::placeholder { color:var(--muted); font-weight:400; }
+.inp:focus { border-color:var(--amarelo); background:rgba(255,223,0,.05); }
+
+.score-section label { display:block; font-size:11px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--muted); margin-bottom:10px; }
+.score-inputs { display:flex; align-items:center; gap:12px; }
+.score-team { display:flex; flex-direction:column; align-items:center; gap:6px; flex:1; }
+.score-flag { font-size:36px; }
+.score-label { font-size:10px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--muted); }
+.inp-score { width:100%; background:var(--inp-bg); border:1px solid var(--border); border-radius:12px; color:var(--text); font-family:'Bebas Neue',sans-serif; font-size:42px; text-align:center; padding:10px 4px; outline:none; transition:border-color .15s; -moz-appearance:textfield; }
+.inp-score::-webkit-outer-spin-button,.inp-score::-webkit-inner-spin-button { -webkit-appearance:none; }
+.inp-score:focus { border-color:var(--amarelo); background:rgba(255,223,0,.05); }
+.inp-score.brasil:focus { border-color:var(--verde); }
+.inp-score.marrocos:focus { border-color:var(--vermelho); }
+.score-x { font-family:'Bebas Neue',sans-serif; font-size:32px; color:var(--muted); }
+
+/* STATUS */
+.status-box { padding:14px 16px; border-radius:12px; font-size:14px; font-weight:600; text-align:center; display:none; }
+.status-ok  { background:rgba(0,156,59,.15); color:#4ade80; border:1px solid rgba(0,156,59,.3); }
+.status-err { background:rgba(255,107,107,.15); color:#f87171; border:1px solid rgba(255,107,107,.3); }
+.status-loading { background:rgba(255,223,0,.1); color:var(--amarelo); border:1px solid rgba(255,223,0,.2); }
+
+/* CONSOLIDADO */
+.section-title { font-family:'Bebas Neue',sans-serif; font-size:18px; letter-spacing:3px; color:var(--amarelo); margin-bottom:14px; }
+
+.palpite-card-list { display:flex; flex-direction:column; gap:10px; }
+.palpite-item { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:14px 16px; display:flex; align-items:center; gap:14px; }
+.pi-num { font-family:'Bebas Neue',sans-serif; font-size:20px; color:var(--border); width:24px; text-align:center; flex-shrink:0; }
+.pi-info { flex:1; }
+.pi-nome { font-size:15px; font-weight:700; margin-bottom:4px; }
+.pi-placar { font-family:'Bebas Neue',sans-serif; font-size:22px; color:var(--amarelo); letter-spacing:2px; }
+.pi-result { font-size:11px; font-weight:700; color:var(--muted); margin-top:2px; }
+.pi-badge { flex-shrink:0; }
+
+/* RESULTADO REAL */
+.resultado-card { background:var(--card); border:1px solid var(--border); border-radius:20px; overflow:hidden; margin-bottom:24px; }
+.resultado-header { background:linear-gradient(90deg,#001a55,#060e22); padding:16px 20px; display:flex; align-items:center; gap:10px; }
+.resultado-header h3 { font-family:'Bebas Neue',sans-serif; font-size:18px; letter-spacing:3px; color:var(--amarelo); }
+.resultado-body { padding:20px; }
+.real-score-row { display:flex; align-items:center; gap:12px; margin-bottom:16px; }
+.real-team { display:flex; flex-direction:column; align-items:center; gap:6px; flex:1; }
+.real-flag { font-size:36px; }
+.real-name { font-size:11px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--muted); }
+.real-x { font-family:'Bebas Neue',sans-serif; font-size:28px; color:var(--muted); }
+
+/* RANKING */
+.ranking-wrap { background:var(--card); border:1px solid var(--border); border-radius:20px; overflow:hidden; margin-top:20px; display:none; }
+.ranking-header { background:linear-gradient(90deg,#001a55,#060e22); padding:16px 20px; font-family:'Bebas Neue',sans-serif; font-size:20px; letter-spacing:3px; color:var(--amarelo); }
+.rank-row { display:flex; align-items:center; gap:14px; padding:14px 20px; border-bottom:1px solid var(--border); }
+.rank-row:last-child { border-bottom:none; }
+.rank-pos { font-size:22px; width:28px; text-align:center; flex-shrink:0; }
+.rank-info { flex:1; }
+.rank-name { font-size:15px; font-weight:700; margin-bottom:2px; }
+.rank-guess { font-size:12px; color:var(--muted); }
+.rank-result { font-size:22px; }
+
+/* BADGES */
+.rbadge { display:inline-flex; align-items:center; gap:5px; padding:4px 10px; border-radius:20px; font-size:11px; font-weight:700; }
+.rb-brasil   { background:rgba(0,156,59,.15); color:#4ade80; border:1px solid rgba(0,156,59,.3); }
+.rb-marrocos { background:rgba(193,18,31,.15); color:#f87171; border:1px solid rgba(193,18,31,.3); }
+.rb-empate   { background:rgba(255,223,0,.12); color:var(--amarelo); border:1px solid rgba(255,223,0,.25); }
+
+/* EMPTY */
+.empty-state { text-align:center; padding:48px 20px; color:var(--muted); background:var(--card); border:1px dashed var(--border); border-radius:16px; }
+.empty-state .emoji { font-size:40px; margin-bottom:12px; display:block; }
+
+/* TOAST */
+.toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(80px); background:var(--verde); color:#fff; padding:13px 24px; border-radius:12px; font-size:14px; font-weight:700; transition:transform .3s ease; z-index:999; white-space:nowrap; box-shadow:0 4px 20px rgba(0,0,0,.4); }
+.toast.show { transform:translateX(-50%) translateY(0); }
+
+/* LOADING SPINNER */
+.spinner { display:inline-block; width:16px; height:16px; border:2px solid rgba(255,255,255,.3); border-top-color:#fff; border-radius:50%; animation:spin .7s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
+
+.regras { margin-top:16px; padding:12px 16px; background:rgba(255,223,0,.05); border:1px solid rgba(255,223,0,.12); border-radius:12px; font-size:12px; color:var(--muted); text-align:center; }
+.regras strong { color:var(--amarelo); }
+
+@media(min-width:480px) { .team-flag { font-size:96px; } }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-inner">
+    <div class="eyebrow">⚽ Copa do Mundo 2026 — Bolão da Família</div>
+    <div class="matchup">
+      <div class="team">
+        <div class="team-flag">🇧🇷</div>
+        <div class="team-name">Brasil</div>
+      </div>
+      <div class="vs-col">
+        <div class="vs-text">×</div>
+        <div class="vs-sub">versus</div>
+      </div>
+      <div class="team">
+        <div class="team-flag">🇲🇦</div>
+        <div class="team-name">Marrocos</div>
+      </div>
+    </div>
+    <div class="header-badge">🏆 Placar exato ganha!</div>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('enviar')">✏️ Meu Palpite</button>
+    <button class="tab" onclick="showTab('consolidado')">📋 Todos os Palpites</button>
+    <button class="tab" onclick="showTab('resultado')">🏆 Resultado</button>
+  </div>
+
+  <!-- ABA: ENVIAR -->
+  <div id="tab-enviar">
+    <div class="form-card">
+      <div class="form-header"><h3>✏️ Digite seu palpite</h3></div>
+      <div class="form-body">
+        <input class="inp" id="inp-nome" placeholder="Seu nome" maxlength="40">
+        <div class="score-section">
+          <label>Placar que você espera</label>
+          <div class="score-inputs">
+            <div class="score-team">
+              <div class="score-flag">🇧🇷</div>
+              <div class="score-label">Brasil</div>
+              <input class="inp-score brasil" id="inp-brasil" type="number" min="0" max="20" placeholder="0">
+            </div>
+            <div class="score-x">×</div>
+            <div class="score-team">
+              <div class="score-flag">🇲🇦</div>
+              <div class="score-label">Marrocos</div>
+              <input class="inp-score marrocos" id="inp-marrocos" type="number" min="0" max="20" placeholder="0">
+            </div>
+          </div>
+        </div>
+        <div class="status-box" id="status-enviar"></div>
+        <button class="btn btn-salvar" onclick="salvarPalpite()">💾 Salvar Palpite</button>
+      </div>
+    </div>
+    <div class="regras">
+      <strong>Regra:</strong> só vale placar exato — quem acertar leva a fama! 🏆
+    </div>
+  </div>
+
+  <!-- ABA: CONSOLIDADO -->
+  <div id="tab-consolidado" style="display:none">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+      <div class="section-title" style="margin:0">📋 Palpites da Família</div>
+      <button class="btn btn-ghost btn-sm" onclick="carregarPalpites()">↻ Atualizar</button>
+    </div>
+    <div id="lista-palpites">
+      <div class="empty-state"><span class="emoji">⏳</span><p>Carregando...</p></div>
+    </div>
+  </div>
+
+  <!-- ABA: RESULTADO -->
+  <div id="tab-resultado" style="display:none">
+    <div class="resultado-card">
+      <div class="resultado-header"><span>⚽</span><h3>Resultado Real da Partida</h3></div>
+      <div class="resultado-body">
+        <div class="real-score-row">
+          <div class="real-team">
+            <div class="real-flag">🇧🇷</div>
+            <div class="real-name">Brasil</div>
+            <input class="inp-score brasil" id="real-brasil" type="number" min="0" max="20" placeholder="—">
+          </div>
+          <div class="real-x">×</div>
+          <div class="real-team">
+            <div class="real-flag">🇲🇦</div>
+            <div class="real-name">Marrocos</div>
+            <input class="inp-score marrocos" id="real-marrocos" type="number" min="0" max="20" placeholder="—">
+          </div>
+        </div>
+        <button class="btn btn-calcular" onclick="calcularRanking()">🏆 Ver Quem Acertou</button>
+      </div>
+    </div>
+    <div class="ranking-wrap" id="ranking-wrap">
+      <div class="ranking-header">🏆 Resultado do Bolão</div>
+      <div id="ranking-list"></div>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- FIREBASE -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, push, onValue, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAmWsnnUBJzX72UL5flzHUa9eDXW-o06fI",
+  authDomain: "coppa-cappa.firebaseapp.com",
+  databaseURL: "https://coppa-cappa-default-rtdb.firebaseio.com",
+  projectId: "coppa-cappa",
+  storageBucket: "coppa-cappa.firebasestorage.app",
+  messagingSenderId: "340000809928",
+  appId: "1:340000809928:web:a4c010e1dec37414cc16fd"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const palpitesRef = ref(db, 'bolao-brasil-marrocos/palpites');
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function getResult(b, m) {
+  const bv = parseInt(b), mv = parseInt(m);
+  if (isNaN(bv)||isNaN(mv)) return null;
+  return bv > mv ? 'brasil' : mv > bv ? 'marrocos' : 'empate';
+}
+
+function resultBadge(b, m) {
+  const r = getResult(b, m);
+  if (r === 'brasil')   return `<span class="rbadge rb-brasil">🇧🇷 Brasil vence</span>`;
+  if (r === 'marrocos') return `<span class="rbadge rb-marrocos">🇲🇦 Marrocos vence</span>`;
+  if (r === 'empate')   return `<span class="rbadge rb-empate">🤝 Empate</span>`;
+  return '';
+}
+
+function showStatus(id, msg, tipo) {
+  const el = document.getElementById(id);
+  el.className = `status-box status-${tipo}`;
+  el.innerHTML = msg;
+  el.style.display = 'block';
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ── SALVAR PALPITE ──
+window.salvarPalpite = async function() {
+  const nome   = document.getElementById('inp-nome').value.trim();
+  const brasil = document.getElementById('inp-brasil').value;
+  const marrocos = document.getElementById('inp-marrocos').value;
+
+  if (!nome) { showStatus('status-enviar','⚠️ Digite seu nome!','err'); return; }
+  if (brasil === '' || marrocos === '') { showStatus('status-enviar','⚠️ Preencha o placar!','err'); return; }
+
+  showStatus('status-enviar','<span class="spinner"></span> Salvando...','loading');
+
+  try {
+    await push(palpitesRef, {
+      nome,
+      brasil: parseInt(brasil),
+      marrocos: parseInt(marrocos),
+      ts: Date.now()
+    });
+    showStatus('status-enviar', `✅ Palpite de <strong>${escHtml(nome)}</strong> salvo! ${brasil} × ${marrocos}`, 'ok');
+    document.getElementById('inp-nome').value = '';
+    document.getElementById('inp-brasil').value = '';
+    document.getElementById('inp-marrocos').value = '';
+    showToast('✅ Palpite salvo com sucesso!');
+  } catch(e) {
+    showStatus('status-enviar','❌ Erro ao salvar. Tente novamente.','err');
+    console.error(e);
+  }
+};
+
+// ── CARREGAR PALPITES ──
+window.carregarPalpites = function() {
+  const lista = document.getElementById('lista-palpites');
+  lista.innerHTML = '<div class="empty-state"><span class="emoji">⏳</span><p>Carregando...</p></div>';
+
+  get(palpitesRef).then(snap => {
+    if (!snap.exists()) {
+      lista.innerHTML = '<div class="empty-state"><span class="emoji">👥</span><p>Nenhum palpite ainda.<br>Seja o primeiro!</p></div>';
+      return;
+    }
+    const items = [];
+    snap.forEach(child => {
+      items.push({ id: child.key, ...child.val() });
+    });
+    items.sort((a,b) => (a.ts||0) - (b.ts||0));
+
+    lista.innerHTML = `<div class="palpite-card-list">${
+      items.map((p,i) => `
+        <div class="palpite-item">
+          <div class="pi-num">${i+1}</div>
+          <div class="pi-info">
+            <div class="pi-nome">${escHtml(p.nome)}</div>
+            <div class="pi-placar">🇧🇷 ${p.brasil} × ${p.marrocos} 🇲🇦</div>
+            <div class="pi-result">${resultBadge(p.brasil, p.marrocos)}</div>
+          </div>
+        </div>`).join('')
+    }</div>`;
+  }).catch(e => {
+    lista.innerHTML = '<div class="empty-state"><span class="emoji">❌</span><p>Erro ao carregar. Tente novamente.</p></div>';
+    console.error(e);
+  });
+};
+
+// ── CALCULAR RANKING ──
+window.calcularRanking = function() {
+  const rb = document.getElementById('real-brasil').value;
+  const rm = document.getElementById('real-marrocos').value;
+  if (rb===''||rm==='') { alert('Preencha o resultado real!'); return; }
+  const realB = parseInt(rb), realM = parseInt(rm);
+
+  get(palpitesRef).then(snap => {
+    if (!snap.exists()) { alert('Nenhum palpite cadastrado ainda!'); return; }
+
+    const items = [];
+    snap.forEach(child => items.push({ id: child.key, ...child.val() }));
+
+    const scored = items.map(p => ({
+      ...p,
+      acertou: parseInt(p.brasil) === realB && parseInt(p.marrocos) === realM
+    })).sort((a,b) => b.acertou - a.acertou);
+
+    const wrap = document.getElementById('ranking-wrap');
+    const list = document.getElementById('ranking-list');
+    wrap.style.display = 'block';
+    const medals = ['🥇','🥈','🥉'];
+
+    list.innerHTML = scored.map((p,i) => `
+      <div class="rank-row">
+        <div class="rank-pos">${p.acertou ? (medals[i]||`${i+1}º`) : '💀'}</div>
+        <div class="rank-info">
+          <div class="rank-name">${escHtml(p.nome)}</div>
+          <div class="rank-guess">Palpite: ${p.brasil} × ${p.marrocos}</div>
+        </div>
+        <div class="rank-result">${p.acertou ? '✅' : '❌'}</div>
+      </div>`).join('');
+
+    wrap.scrollIntoView({ behavior:'smooth', block:'start' });
+  });
+};
+
+// ── TABS ──
+window.showTab = function(tab) {
+  ['enviar','consolidado','resultado'].forEach(t => {
+    document.getElementById(`tab-${t}`).style.display = t===tab ? 'block' : 'none';
+  });
+  document.querySelectorAll('.tab').forEach((el,i) => {
+    el.classList.toggle('active', ['enviar','consolidado','resultado'][i]===tab);
+  });
+  if (tab==='consolidado') window.carregarPalpites();
+};
+
+// auto-reload consolidado em tempo real
+onValue(palpitesRef, () => {
+  const consolidado = document.getElementById('tab-consolidado');
+  if (consolidado.style.display !== 'none') window.carregarPalpites();
+});
+
+</script>
+</body>
+</html>
