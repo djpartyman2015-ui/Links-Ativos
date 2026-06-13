@@ -545,22 +545,34 @@ window.carregarAdmin = function() {
   const lista = document.getElementById('lista-admin');
   lista.innerHTML = '<div class="empty-state"><span class="emoji">⏳</span><p>Carregando...</p></div>';
   get(palpitesRef).then(snap => {
-    if (!snap.exists()) {
-      lista.innerHTML = '<div class="empty-state"><span class="emoji">✅</span><p>Nenhum palpite.</p></div>';
-      return;
+    try {
+      if (!snap.exists()) {
+        lista.innerHTML = '<div class="empty-state"><span class="emoji">✅</span><p>Nenhum palpite.</p></div>';
+        return;
+      }
+      const items = [];
+      snap.forEach(child => {
+        const v = child.val();
+        if (v && v.nome) items.push({ id: child.key, nome: v.nome, brasil: v.brasil ?? '?', marrocos: v.marrocos ?? '?', ts: v.ts || 0 });
+      });
+      items.sort((a,b) => a.ts - b.ts);
+      let html = '<div class="palpite-card-list">';
+      items.forEach((p, i) => {
+        const nomeEsc = escHtml(p.nome).replace(/'/g, "\'");
+        html += '<div class="palpite-item">';
+        html += '<div class="pi-num">' + (i+1) + '</div>';
+        html += '<div class="pi-info">';
+        html += '<div class="pi-nome">' + escHtml(p.nome) + '</div>';
+        html += '<div class="pi-placar">🇧🇷 ' + p.brasil + ' × ' + p.marrocos + ' 🇲🇦</div>';
+        html += '</div>';
+        html += '<button class="btn-del-palpite" onclick="apagarPalpite('' + p.id + '','' + nomeEsc + '')">🗑️ Apagar</button>';
+        html += '</div>';
+      });
+      html += '</div>';
+      lista.innerHTML = html;
+    } catch(e2) {
+      lista.innerHTML = '<div class="empty-state"><span class="emoji">❌</span><p>Erro: ' + e2.message + '</p></div>';
     }
-    const items = [];
-    snap.forEach(child => items.push({ id: child.key, ...child.val() }));
-    items.sort((a,b) => (a.ts||0) - (b.ts||0));
-    lista.innerHTML = '<div class="palpite-card-list">' + items.map((p,i) => `
-      <div class="palpite-item">
-        <div class="pi-num">${i+1}</div>
-        <div class="pi-info">
-          <div class="pi-nome">${escHtml(p.nome)}</div>
-          <div class="pi-placar">🇧🇷 ${p.brasil} × ${p.marrocos} 🇲🇦</div>
-        </div>
-        <button class="btn-del-palpite" onclick="apagarPalpite('${p.id}','${escHtml(p.nome)}')">🗑️ Apagar</button>
-      </div>`).join('') + '</div>';
   }).catch(() => {
     lista.innerHTML = '<div class="empty-state"><span class="emoji">❌</span><p>Erro ao carregar.</p></div>';
   });
