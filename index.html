@@ -565,7 +565,7 @@ window.carregarAdmin = function() {
         html += '<div class="pi-nome">' + escHtml(p.nome) + '</div>';
         html += '<div class="pi-placar">🇧🇷 ' + p.brasil + ' × ' + p.marrocos + ' 🇲🇦</div>';
         html += '</div>';
-        html += '<button class="btn-del-palpite" onclick="apagarPalpite('' + p.id + '','' + nomeEsc + '')">🗑️ Apagar</button>';
+        html += '<button class="btn-del-palpite" onclick="apagarPalpite(\'' + p.id + '\',\'' + nomeEsc + '\')">🗑️ Apagar</button>';
         html += '</div>';
       });
       html += '</div>';
