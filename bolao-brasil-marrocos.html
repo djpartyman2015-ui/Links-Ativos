@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Bolão — Brasil × Marrocos</title>
+<title>Coppa dos Cappa — Bolão Brasil × Marrocos</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -17,40 +17,55 @@
 }
 body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; padding-bottom:80px; }
 
-/* HEADER */
-.header { position:relative; overflow:hidden; background:linear-gradient(160deg,#001a55 0%,#060e22 45%,#3d0810 100%); padding:48px 20px 36px; text-align:center; }
+/* ── HEADER ── */
+.header { position:relative; overflow:hidden; background:linear-gradient(160deg,#001a55 0%,#060e22 45%,#3d0810 100%); padding:36px 20px 28px; text-align:center; }
 .header::after { content:''; position:absolute; inset:0; background:radial-gradient(ellipse at 20% 50%,rgba(0,39,118,.4) 0%,transparent 60%),radial-gradient(ellipse at 80% 50%,rgba(193,18,31,.3) 0%,transparent 60%); pointer-events:none; }
 .header-inner { position:relative; z-index:1; }
-.eyebrow { font-family:'Bebas Neue',sans-serif; font-size:13px; letter-spacing:5px; color:var(--amarelo); opacity:.8; margin-bottom:28px; }
-.matchup { display:flex; align-items:center; justify-content:center; gap:20px; }
-.team { display:flex; flex-direction:column; align-items:center; gap:10px; flex:1; max-width:140px; }
-.team-flag { font-size:80px; line-height:1; filter:drop-shadow(0 6px 20px rgba(0,0,0,.6)); }
-.team-name { font-family:'Bebas Neue',sans-serif; font-size:26px; letter-spacing:3px; color:#fff; }
-.vs-col { display:flex; flex-direction:column; align-items:center; gap:2px; padding-bottom:8px; }
-.vs-text { font-family:'Bebas Neue',sans-serif; font-size:52px; line-height:1; color:var(--amarelo); text-shadow:0 0 40px rgba(255,223,0,.45); }
-.vs-sub { font-size:10px; letter-spacing:2px; color:rgba(255,255,255,.4); text-transform:uppercase; }
-.header-badge { margin-top:24px; display:inline-block; padding:6px 20px; border-radius:30px; border:1px solid rgba(255,223,0,.3); background:rgba(255,223,0,.08); font-family:'Bebas Neue',sans-serif; font-size:14px; letter-spacing:4px; color:var(--amarelo); }
+
+.nome-bolao { font-family:'Bebas Neue',sans-serif; font-size:32px; letter-spacing:6px; color:#fff; margin-bottom:4px; text-shadow:0 2px 20px rgba(0,0,0,.5); }
+.nome-bolao span { color:var(--amarelo); }
+.eyebrow { font-family:'Bebas Neue',sans-serif; font-size:12px; letter-spacing:4px; color:rgba(255,255,255,.45); margin-bottom:24px; }
+
+.matchup { display:flex; align-items:center; justify-content:center; gap:16px; margin-bottom:20px; }
+.team { display:flex; flex-direction:column; align-items:center; gap:8px; flex:1; max-width:130px; }
+.team-flag { font-size:72px; line-height:1; filter:drop-shadow(0 6px 20px rgba(0,0,0,.6)); }
+.team-name { font-family:'Bebas Neue',sans-serif; font-size:24px; letter-spacing:3px; color:#fff; }
+.vs-col { display:flex; flex-direction:column; align-items:center; gap:2px; padding-bottom:6px; }
+.vs-text { font-family:'Bebas Neue',sans-serif; font-size:46px; line-height:1; color:var(--amarelo); text-shadow:0 0 40px rgba(255,223,0,.45); }
+.vs-sub { font-size:10px; letter-spacing:2px; color:rgba(255,255,255,.35); text-transform:uppercase; }
+
+/* PRÊMIO */
+.premio-box {
+  display:inline-flex; flex-direction:column; align-items:center;
+  background:linear-gradient(135deg, rgba(255,223,0,.15), rgba(255,223,0,.05));
+  border:1px solid rgba(255,223,0,.35);
+  border-radius:16px; padding:14px 28px; margin-top:4px;
+  position:relative;
+}
+.premio-label { font-size:10px; font-weight:700; letter-spacing:3px; text-transform:uppercase; color:rgba(255,223,0,.6); margin-bottom:4px; }
+.premio-valor { font-family:'Bebas Neue',sans-serif; font-size:44px; line-height:1; color:var(--amarelo); text-shadow:0 0 30px rgba(255,223,0,.5); letter-spacing:2px; }
+.premio-sub { font-size:11px; color:rgba(255,255,255,.4); margin-top:2px; }
 
 /* MAIN */
-.main { max-width:640px; margin:0 auto; padding:28px 16px; }
+.main { max-width:640px; margin:0 auto; padding:24px 16px; }
 
 /* TABS */
-.tabs { display:flex; gap:0; margin-bottom:24px; background:var(--card); border:1px solid var(--border); border-radius:14px; overflow:hidden; }
-.tab { flex:1; padding:13px; text-align:center; font-size:13px; font-weight:700; color:var(--muted); cursor:pointer; transition:all .15s; border:none; background:transparent; font-family:'Inter',sans-serif; -webkit-tap-highlight-color:transparent; }
+.tabs { display:flex; gap:0; margin-bottom:20px; background:var(--card); border:1px solid var(--border); border-radius:14px; overflow:hidden; }
+.tab { flex:1; padding:11px 6px; text-align:center; font-size:11px; font-weight:700; color:var(--muted); cursor:pointer; transition:all .15s; border:none; background:transparent; font-family:'Inter',sans-serif; -webkit-tap-highlight-color:transparent; letter-spacing:.3px; }
 .tab.active { background:var(--azul); color:#fff; }
 
 /* BUTTONS */
 .btn { display:flex; align-items:center; justify-content:center; gap:8px; padding:14px 18px; border-radius:12px; border:none; cursor:pointer; font-family:'Inter',sans-serif; font-size:14px; font-weight:700; transition:all .15s; -webkit-tap-highlight-color:transparent; width:100%; margin-bottom:10px; }
-.btn-add  { background:var(--verde); color:#fff; }
-.btn-share { background:var(--amarelo); color:var(--azul); }
 .btn-ghost { background:var(--card2); color:var(--muted); border:1px solid var(--border); }
 .btn-calcular { background:linear-gradient(135deg,var(--verde),var(--verde-d)); color:#fff; }
 .btn-salvar { background:linear-gradient(135deg,#002776,#003ea0); color:#fff; font-size:15px; font-weight:800; padding:16px; }
-.btn-sm { padding:10px 14px; font-size:13px; width:auto; margin:0; }
+.btn-sm { padding:9px 13px; font-size:12px; width:auto; margin:0; }
+.btn-del-palpite { background:rgba(255,107,107,.12); color:#f87171; border:1px solid rgba(255,107,107,.2); border-radius:8px; padding:6px 12px; font-size:12px; font-weight:700; cursor:pointer; font-family:'Inter',sans-serif; -webkit-tap-highlight-color:transparent; flex-shrink:0; }
+.btn-del-palpite:active { background:rgba(255,107,107,.25); }
 
-/* PALPITE FORM (aba enviar) */
+/* FORM */
 .form-card { background:var(--card); border:1px solid var(--border); border-radius:20px; overflow:hidden; margin-bottom:16px; }
-.form-header { background:linear-gradient(90deg,#001a55,#060e22); padding:16px 20px; }
+.form-header { background:linear-gradient(90deg,#001a55,#060e22); padding:14px 20px; }
 .form-header h3 { font-family:'Bebas Neue',sans-serif; font-size:18px; letter-spacing:3px; color:var(--amarelo); }
 .form-body { padding:20px; display:flex; flex-direction:column; gap:14px; }
 
@@ -76,9 +91,8 @@ body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); 
 .status-err { background:rgba(255,107,107,.15); color:#f87171; border:1px solid rgba(255,107,107,.3); }
 .status-loading { background:rgba(255,223,0,.1); color:var(--amarelo); border:1px solid rgba(255,223,0,.2); }
 
-/* CONSOLIDADO */
+/* PALPITES LIST */
 .section-title { font-family:'Bebas Neue',sans-serif; font-size:18px; letter-spacing:3px; color:var(--amarelo); margin-bottom:14px; }
-
 .palpite-card-list { display:flex; flex-direction:column; gap:10px; }
 .palpite-item { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:14px 16px; display:flex; align-items:center; gap:14px; }
 .pi-num { font-family:'Bebas Neue',sans-serif; font-size:20px; color:var(--border); width:24px; text-align:center; flex-shrink:0; }
@@ -86,11 +100,10 @@ body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); 
 .pi-nome { font-size:15px; font-weight:700; margin-bottom:4px; }
 .pi-placar { font-family:'Bebas Neue',sans-serif; font-size:22px; color:var(--amarelo); letter-spacing:2px; }
 .pi-result { font-size:11px; font-weight:700; color:var(--muted); margin-top:2px; }
-.pi-badge { flex-shrink:0; }
 
-/* RESULTADO REAL */
+/* RESULTADO */
 .resultado-card { background:var(--card); border:1px solid var(--border); border-radius:20px; overflow:hidden; margin-bottom:24px; }
-.resultado-header { background:linear-gradient(90deg,#001a55,#060e22); padding:16px 20px; display:flex; align-items:center; gap:10px; }
+.resultado-header { background:linear-gradient(90deg,#001a55,#060e22); padding:14px 20px; display:flex; align-items:center; gap:10px; }
 .resultado-header h3 { font-family:'Bebas Neue',sans-serif; font-size:18px; letter-spacing:3px; color:var(--amarelo); }
 .resultado-body { padding:20px; }
 .real-score-row { display:flex; align-items:center; gap:12px; margin-bottom:16px; }
@@ -101,7 +114,7 @@ body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); 
 
 /* RANKING */
 .ranking-wrap { background:var(--card); border:1px solid var(--border); border-radius:20px; overflow:hidden; margin-top:20px; display:none; }
-.ranking-header { background:linear-gradient(90deg,#001a55,#060e22); padding:16px 20px; font-family:'Bebas Neue',sans-serif; font-size:20px; letter-spacing:3px; color:var(--amarelo); }
+.ranking-header { background:linear-gradient(90deg,#001a55,#060e22); padding:14px 20px; font-family:'Bebas Neue',sans-serif; font-size:20px; letter-spacing:3px; color:var(--amarelo); }
 .rank-row { display:flex; align-items:center; gap:14px; padding:14px 20px; border-bottom:1px solid var(--border); }
 .rank-row:last-child { border-bottom:none; }
 .rank-pos { font-size:22px; width:28px; text-align:center; flex-shrink:0; }
@@ -116,6 +129,21 @@ body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); 
 .rb-marrocos { background:rgba(193,18,31,.15); color:#f87171; border:1px solid rgba(193,18,31,.3); }
 .rb-empate   { background:rgba(255,223,0,.12); color:var(--amarelo); border:1px solid rgba(255,223,0,.25); }
 
+/* REGRAS ABA */
+.regra-item { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:16px; display:flex; align-items:flex-start; gap:14px; margin-bottom:10px; }
+.regra-num { font-family:'Bebas Neue',sans-serif; font-size:28px; color:var(--amarelo); line-height:1; flex-shrink:0; width:28px; text-align:center; }
+.regra-texto { font-size:14px; line-height:1.55; color:var(--text); }
+.regra-texto strong { color:var(--amarelo); }
+.regras-intro { background:linear-gradient(135deg,rgba(0,39,118,.3),rgba(193,18,31,.2)); border:1px solid rgba(255,223,0,.2); border-radius:14px; padding:16px 18px; margin-bottom:16px; text-align:center; }
+.regras-intro p { font-size:14px; color:rgba(255,255,255,.7); line-height:1.5; }
+.regras-intro .boa-sorte { font-family:'Bebas Neue',sans-serif; font-size:22px; letter-spacing:3px; color:var(--amarelo); margin-top:8px; display:block; }
+
+/* ADMIN */
+.admin-bar { background:rgba(193,18,31,.08); border:1px solid rgba(193,18,31,.2); border-radius:12px; padding:12px 14px; margin-bottom:14px; display:flex; align-items:center; gap:10px; }
+.admin-bar span { font-size:12px; color:#f87171; font-weight:600; flex:1; }
+.admin-lock { display:flex; flex-direction:column; gap:10px; background:var(--card); border:1px solid var(--border); border-radius:14px; padding:16px; }
+.admin-lock label { font-size:12px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--muted); }
+
 /* EMPTY */
 .empty-state { text-align:center; padding:48px 20px; color:var(--muted); background:var(--card); border:1px dashed var(--border); border-radius:16px; }
 .empty-state .emoji { font-size:40px; margin-bottom:12px; display:block; }
@@ -124,21 +152,19 @@ body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); 
 .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(80px); background:var(--verde); color:#fff; padding:13px 24px; border-radius:12px; font-size:14px; font-weight:700; transition:transform .3s ease; z-index:999; white-space:nowrap; box-shadow:0 4px 20px rgba(0,0,0,.4); }
 .toast.show { transform:translateX(-50%) translateY(0); }
 
-/* LOADING SPINNER */
 .spinner { display:inline-block; width:16px; height:16px; border:2px solid rgba(255,255,255,.3); border-top-color:#fff; border-radius:50%; animation:spin .7s linear infinite; }
 @keyframes spin { to { transform:rotate(360deg); } }
 
-.regras { margin-top:16px; padding:12px 16px; background:rgba(255,223,0,.05); border:1px solid rgba(255,223,0,.12); border-radius:12px; font-size:12px; color:var(--muted); text-align:center; }
-.regras strong { color:var(--amarelo); }
-
-@media(min-width:480px) { .team-flag { font-size:96px; } }
+@media(min-width:480px) { .team-flag { font-size:88px; } .nome-bolao { font-size:40px; } }
 </style>
 </head>
 <body>
 
+<!-- HEADER -->
 <div class="header">
   <div class="header-inner">
-    <div class="eyebrow">⚽ Copa do Mundo 2026 — Bolão da Família</div>
+    <div class="nome-bolao">🏆 Coppa <span>dos</span> Cappa</div>
+    <div class="eyebrow">⚽ Copa do Mundo 2026 · Brasil × Marrocos · 13/06</div>
     <div class="matchup">
       <div class="team">
         <div class="team-flag">🇧🇷</div>
@@ -153,7 +179,11 @@ body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); 
         <div class="team-name">Marrocos</div>
       </div>
     </div>
-    <div class="header-badge">🏆 Placar exato ganha!</div>
+    <div class="premio-box">
+      <div class="premio-label">💰 Prêmio do Bolão</div>
+      <div class="premio-valor" id="premio-valor">R$ —</div>
+      <div class="premio-sub" id="premio-sub">Aguardando palpites...</div>
+    </div>
   </div>
 </div>
 
@@ -161,9 +191,11 @@ body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); 
 
   <!-- TABS -->
   <div class="tabs">
-    <button class="tab active" onclick="showTab('enviar')">✏️ Meu Palpite</button>
-    <button class="tab" onclick="showTab('consolidado')">📋 Todos os Palpites</button>
-    <button class="tab" onclick="showTab('resultado')">🏆 Resultado</button>
+    <button class="tab active" onclick="showTab('enviar')">✏️ Palpite</button>
+    <button class="tab" onclick="showTab('consolidado')">📋 Todos</button>
+    <button class="tab" onclick="showTab('regras')">📜 Regras</button>
+    <button class="tab" onclick="showTab('resultado')">🏆 Result.</button>
+    <button class="tab" onclick="showTab('admin')">🔐</button>
   </div>
 
   <!-- ABA: ENVIAR -->
@@ -192,9 +224,6 @@ body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); 
         <button class="btn btn-salvar" onclick="salvarPalpite()">💾 Salvar Palpite</button>
       </div>
     </div>
-    <div class="regras">
-      <strong>Regra:</strong> só vale placar exato — quem acertar leva a fama! 🏆
-    </div>
   </div>
 
   <!-- ABA: CONSOLIDADO -->
@@ -205,6 +234,39 @@ body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); 
     </div>
     <div id="lista-palpites">
       <div class="empty-state"><span class="emoji">⏳</span><p>Carregando...</p></div>
+    </div>
+  </div>
+
+  <!-- ABA: REGRAS -->
+  <div id="tab-regras" style="display:none">
+    <div class="regras-intro">
+      <p>Bem-vindos ao bolão da família! 🎉<br>Leia as regras antes de apostar.</p>
+      <span class="boa-sorte">Boa Sorte a Todos! 🎉</span>
+    </div>
+
+    <div class="regra-item">
+      <div class="regra-num">1</div>
+      <div class="regra-texto"><strong>R$ 10 por pessoa</strong> — cada participante paga dez reais para entrar no bolão.</div>
+    </div>
+    <div class="regra-item">
+      <div class="regra-num">2</div>
+      <div class="regra-texto"><strong>Pagamento após o jogo</strong> — só paga depois que acabar a partida no sábado, <strong>13/06</strong>.</div>
+    </div>
+    <div class="regra-item">
+      <div class="regra-num">3</div>
+      <div class="regra-texto"><strong>Se ninguém acertar, ninguém paga.</strong> Se o acerto for repetido entre mais de um participante, o prêmio é <strong>dividido igualmente</strong>.</div>
+    </div>
+    <div class="regra-item">
+      <div class="regra-num">4</div>
+      <div class="regra-texto"><strong>Palpite é definitivo!</strong> Após salvar, não é possível alterar ou cancelar sua aposta.</div>
+    </div>
+    <div class="regra-item">
+      <div class="regra-num">5</div>
+      <div class="regra-texto"><strong>Encerramento antes do jogo</strong> — as apostas são encerradas antes da bola rolar. Fora do prazo não vale!</div>
+    </div>
+    <div class="regra-item">
+      <div class="regra-num">6</div>
+      <div class="regra-texto"><strong>Só placar exato vence</strong> — não adianta acertar só o vencedor, tem que acertar o <strong>placar certinho</strong>.</div>
     </div>
   </div>
 
@@ -235,6 +297,31 @@ body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); 
     </div>
   </div>
 
+  <!-- ABA: ADMIN -->
+  <div id="tab-admin" style="display:none">
+    <div id="admin-lock-box">
+      <div class="admin-lock">
+        <label>🔐 Área restrita — Digite a senha de admin</label>
+        <input class="inp" id="inp-admin-senha" type="password" placeholder="Senha" maxlength="20">
+        <button class="btn btn-salvar" onclick="verificarSenhaAdmin()" style="margin:0">Entrar</button>
+        <div class="status-box" id="status-admin-login"></div>
+      </div>
+    </div>
+    <div id="admin-panel" style="display:none">
+      <div class="admin-bar">
+        <span>🔐 Modo Admin ativo — você pode apagar palpites</span>
+        <button class="btn-del-palpite" onclick="sairAdmin()">Sair</button>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+        <div class="section-title" style="margin:0">🗑️ Gerenciar Palpites</div>
+        <button class="btn btn-ghost btn-sm" onclick="carregarAdmin()">↻ Atualizar</button>
+      </div>
+      <div id="lista-admin">
+        <div class="empty-state"><span class="emoji">⏳</span><p>Carregando...</p></div>
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <div class="toast" id="toast"></div>
@@ -242,7 +329,7 @@ body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); 
 <!-- FIREBASE -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getDatabase, ref, push, onValue, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import { getDatabase, ref, push, onValue, get, remove } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAmWsnnUBJzX72UL5flzHUa9eDXW-o06fI",
@@ -257,6 +344,8 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const palpitesRef = ref(db, 'bolao-brasil-marrocos/palpites');
+
+const VALOR_POR_PESSOA = 10;
 
 function escHtml(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -290,24 +379,42 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove('show'), 3000);
 }
 
+function atualizarPremio(total) {
+  const valor = total * VALOR_POR_PESSOA;
+  const el = document.getElementById('premio-valor');
+  const sub = document.getElementById('premio-sub');
+  if (total === 0) {
+    el.textContent = 'R$ —';
+    sub.textContent = 'Aguardando palpites...';
+  } else {
+    el.textContent = `R$ ${valor.toLocaleString('pt-BR')},00`;
+    sub.textContent = `${total} palpiteiro${total > 1 ? 's' : ''} × R$ ${VALOR_POR_PESSOA}`;
+  }
+}
+
+// Atualiza prêmio em tempo real
+onValue(palpitesRef, (snap) => {
+  const total = snap.exists() ? Object.keys(snap.val()).length : 0;
+  atualizarPremio(total);
+
+  const consolidado = document.getElementById('tab-consolidado');
+  if (consolidado.style.display !== 'none') window.carregarPalpites();
+  const adminPanel = document.getElementById('admin-panel');
+  if (adminPanel && adminPanel.style.display !== 'none') window.carregarAdmin();
+});
+
 // ── SALVAR PALPITE ──
 window.salvarPalpite = async function() {
-  const nome   = document.getElementById('inp-nome').value.trim();
-  const brasil = document.getElementById('inp-brasil').value;
+  const nome     = document.getElementById('inp-nome').value.trim();
+  const brasil   = document.getElementById('inp-brasil').value;
   const marrocos = document.getElementById('inp-marrocos').value;
 
-  if (!nome) { showStatus('status-enviar','⚠️ Digite seu nome!','err'); return; }
+  if (!nome)   { showStatus('status-enviar','⚠️ Digite seu nome!','err'); return; }
   if (brasil === '' || marrocos === '') { showStatus('status-enviar','⚠️ Preencha o placar!','err'); return; }
 
   showStatus('status-enviar','<span class="spinner"></span> Salvando...','loading');
-
   try {
-    await push(palpitesRef, {
-      nome,
-      brasil: parseInt(brasil),
-      marrocos: parseInt(marrocos),
-      ts: Date.now()
-    });
+    await push(palpitesRef, { nome, brasil: parseInt(brasil), marrocos: parseInt(marrocos), ts: Date.now() });
     showStatus('status-enviar', `✅ Palpite de <strong>${escHtml(nome)}</strong> salvo! ${brasil} × ${marrocos}`, 'ok');
     document.getElementById('inp-nome').value = '';
     document.getElementById('inp-brasil').value = '';
@@ -323,32 +430,25 @@ window.salvarPalpite = async function() {
 window.carregarPalpites = function() {
   const lista = document.getElementById('lista-palpites');
   lista.innerHTML = '<div class="empty-state"><span class="emoji">⏳</span><p>Carregando...</p></div>';
-
   get(palpitesRef).then(snap => {
     if (!snap.exists()) {
       lista.innerHTML = '<div class="empty-state"><span class="emoji">👥</span><p>Nenhum palpite ainda.<br>Seja o primeiro!</p></div>';
       return;
     }
     const items = [];
-    snap.forEach(child => {
-      items.push({ id: child.key, ...child.val() });
-    });
+    snap.forEach(child => items.push({ id: child.key, ...child.val() }));
     items.sort((a,b) => (a.ts||0) - (b.ts||0));
-
-    lista.innerHTML = `<div class="palpite-card-list">${
-      items.map((p,i) => `
-        <div class="palpite-item">
-          <div class="pi-num">${i+1}</div>
-          <div class="pi-info">
-            <div class="pi-nome">${escHtml(p.nome)}</div>
-            <div class="pi-placar">🇧🇷 ${p.brasil} × ${p.marrocos} 🇲🇦</div>
-            <div class="pi-result">${resultBadge(p.brasil, p.marrocos)}</div>
-          </div>
-        </div>`).join('')
-    }</div>`;
-  }).catch(e => {
-    lista.innerHTML = '<div class="empty-state"><span class="emoji">❌</span><p>Erro ao carregar. Tente novamente.</p></div>';
-    console.error(e);
+    lista.innerHTML = '<div class="palpite-card-list">' + items.map((p,i) => `
+      <div class="palpite-item">
+        <div class="pi-num">${i+1}</div>
+        <div class="pi-info">
+          <div class="pi-nome">${escHtml(p.nome)}</div>
+          <div class="pi-placar">🇧🇷 ${p.brasil} × ${p.marrocos} 🇲🇦</div>
+          <div class="pi-result">${resultBadge(p.brasil, p.marrocos)}</div>
+        </div>
+      </div>`).join('') + '</div>';
+  }).catch(() => {
+    lista.innerHTML = '<div class="empty-state"><span class="emoji">❌</span><p>Erro ao carregar.</p></div>';
   });
 };
 
@@ -361,51 +461,104 @@ window.calcularRanking = function() {
 
   get(palpitesRef).then(snap => {
     if (!snap.exists()) { alert('Nenhum palpite cadastrado ainda!'); return; }
-
     const items = [];
     snap.forEach(child => items.push({ id: child.key, ...child.val() }));
-
     const scored = items.map(p => ({
-      ...p,
-      acertou: parseInt(p.brasil) === realB && parseInt(p.marrocos) === realM
+      ...p, acertou: parseInt(p.brasil)===realB && parseInt(p.marrocos)===realM
     })).sort((a,b) => b.acertou - a.acertou);
 
     const wrap = document.getElementById('ranking-wrap');
     const list = document.getElementById('ranking-list');
     wrap.style.display = 'block';
     const medals = ['🥇','🥈','🥉'];
+    const vencedores = scored.filter(p => p.acertou);
 
     list.innerHTML = scored.map((p,i) => `
       <div class="rank-row">
-        <div class="rank-pos">${p.acertou ? (medals[i]||`${i+1}º`) : '💀'}</div>
+        <div class="rank-pos">${p.acertou ? (medals[Math.min(i,2)]||'🏅') : '💀'}</div>
         <div class="rank-info">
           <div class="rank-name">${escHtml(p.nome)}</div>
           <div class="rank-guess">Palpite: ${p.brasil} × ${p.marrocos}</div>
         </div>
         <div class="rank-result">${p.acertou ? '✅' : '❌'}</div>
-      </div>`).join('');
-
+      </div>`).join('') +
+      (vencedores.length === 0
+        ? `<div style="padding:16px 20px;font-size:13px;color:var(--muted);text-align:center">😬 Ninguém acertou — ninguém paga!</div>`
+        : vencedores.length > 1
+          ? `<div style="padding:14px 20px;font-size:13px;color:var(--amarelo);background:rgba(255,223,0,.06);border-top:1px solid var(--border)">🤝 Prêmio dividido entre ${vencedores.length} vencedores — R$ ${Math.floor(items.length*VALOR_POR_PESSOA/vencedores.length)},00 cada</div>`
+          : `<div style="padding:14px 20px;font-size:13px;color:#4ade80;background:rgba(0,156,59,.06);border-top:1px solid var(--border)">🏆 ${escHtml(vencedores[0].nome)} leva R$ ${items.length*VALOR_POR_PESSOA},00!</div>`
+      );
     wrap.scrollIntoView({ behavior:'smooth', block:'start' });
   });
 };
 
 // ── TABS ──
 window.showTab = function(tab) {
-  ['enviar','consolidado','resultado'].forEach(t => {
+  ['enviar','consolidado','regras','resultado','admin'].forEach(t => {
     document.getElementById(`tab-${t}`).style.display = t===tab ? 'block' : 'none';
   });
   document.querySelectorAll('.tab').forEach((el,i) => {
-    el.classList.toggle('active', ['enviar','consolidado','resultado'][i]===tab);
+    el.classList.toggle('active', ['enviar','consolidado','regras','resultado','admin'][i]===tab);
   });
   if (tab==='consolidado') window.carregarPalpites();
 };
 
-// auto-reload consolidado em tempo real
-onValue(palpitesRef, () => {
-  const consolidado = document.getElementById('tab-consolidado');
-  if (consolidado.style.display !== 'none') window.carregarPalpites();
-});
+// ── ADMIN ──
+window.verificarSenhaAdmin = function() {
+  const senha = document.getElementById('inp-admin-senha').value;
+  if (senha === '203142') {
+    document.getElementById('admin-lock-box').style.display = 'none';
+    document.getElementById('admin-panel').style.display = 'block';
+    window.carregarAdmin();
+  } else {
+    showStatus('status-admin-login','❌ Senha incorreta!','err');
+  }
+};
 
+window.sairAdmin = function() {
+  document.getElementById('admin-panel').style.display = 'none';
+  document.getElementById('admin-lock-box').style.display = 'block';
+  document.getElementById('inp-admin-senha').value = '';
+  document.getElementById('status-admin-login').style.display = 'none';
+  showTab('enviar');
+};
+
+window.carregarAdmin = function() {
+  const lista = document.getElementById('lista-admin');
+  lista.innerHTML = '<div class="empty-state"><span class="emoji">⏳</span><p>Carregando...</p></div>';
+  get(palpitesRef).then(snap => {
+    if (!snap.exists()) {
+      lista.innerHTML = '<div class="empty-state"><span class="emoji">✅</span><p>Nenhum palpite.</p></div>';
+      return;
+    }
+    const items = [];
+    snap.forEach(child => items.push({ id: child.key, ...child.val() }));
+    items.sort((a,b) => (a.ts||0) - (b.ts||0));
+    lista.innerHTML = '<div class="palpite-card-list">' + items.map((p,i) => `
+      <div class="palpite-item">
+        <div class="pi-num">${i+1}</div>
+        <div class="pi-info">
+          <div class="pi-nome">${escHtml(p.nome)}</div>
+          <div class="pi-placar">🇧🇷 ${p.brasil} × ${p.marrocos} 🇲🇦</div>
+        </div>
+        <button class="btn-del-palpite" onclick="apagarPalpite('${p.id}','${escHtml(p.nome)}')">🗑️ Apagar</button>
+      </div>`).join('') + '</div>';
+  }).catch(() => {
+    lista.innerHTML = '<div class="empty-state"><span class="emoji">❌</span><p>Erro ao carregar.</p></div>';
+  });
+};
+
+window.apagarPalpite = async function(id, nome) {
+  if (!confirm(`Apagar palpite de "${nome}"?`)) return;
+  try {
+    await remove(ref(db, `bolao-brasil-marrocos/palpites/${id}`));
+    showToast(`🗑️ Palpite de ${nome} apagado!`);
+    window.carregarAdmin();
+  } catch(e) {
+    alert('Erro ao apagar. Tente novamente.');
+    console.error(e);
+  }
+};
 </script>
 </body>
 </html>
