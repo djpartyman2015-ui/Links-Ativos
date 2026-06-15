@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🏝️ Noronha — Refeições</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap');
+
+  :root {
+    --ocean: #0077B6;
+    --teal: #00B4D8;
+    --coral: #E07A5F;
+    --sky: #CAF0F8;
+    --dark: #03045E;
+    --text: #1a1a2e;
+    --muted: #6b7280;
+    --white: #ffffff;
+    --card-bg: rgba(255,255,255,0.92);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { overflow-x: hidden; width: 100%; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: linear-gradient(160deg, #03045E 0%, #0077B6 45%, #00B4D8 100%);
+    min-height: 100vh;
+    padding: 20px 12px 48px;
+    color: var(--text);
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 24px;
+  }
+  header .emoji { font-size: 2.4rem; display: block; margin-bottom: 6px; }
+  header h1 {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 1.6rem;
+    color: var(--white);
+    line-height: 1.1;
+  }
+  header p {
+    font-size: 0.8rem;
+    color: var(--sky);
+    margin-top: 4px;
+    opacity: 0.85;
+  }
+
+  .container {
+    max-width: 480px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  /* DAY CARD */
+  .day-card {
+    background: var(--card-bg);
+    border-radius: 18px;
+    padding: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    border: 1px solid rgba(255,255,255,0.6);
+  }
+
+  .day-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .day-label {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--dark);
+  }
+  .day-label span {
+    font-size: 0.73rem;
+    font-weight: 400;
+    color: var(--muted);
+    font-family: 'Inter', sans-serif;
+    margin-left: 5px;
+  }
+  .day-total-badge {
+    background: var(--dark);
+    color: var(--white);
+    font-family: 'Syne', sans-serif;
+    font-size: 0.78rem;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 20px;
+    white-space: nowrap;
+  }
+
+  /* MEAL BLOCKS */
+  .meal-block {
+    background: #f4f7fb;
+    border-radius: 12px;
+    padding: 11px 12px;
+    margin-bottom: 8px;
+  }
+  .meal-block:last-of-type { margin-bottom: 0; }
+
+  .meal-block-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .meal-block-title {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--ocean);
+    flex: 1;
+  }
+
+  .meal-row {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+  }
+
+  /* valor */
+  .input-valor {
+    position: relative;
+    width: 120px;
+    flex-shrink: 0;
+  }
+  .input-valor span {
+    position: absolute;
+    left: 9px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.8rem;
+    color: var(--muted);
+    font-weight: 500;
+    pointer-events: none;
+  }
+  .input-valor input {
+    width: 100%;
+    padding: 9px 8px 9px 28px;
+    border: 1.5px solid #dde3ee;
+    border-radius: 9px;
+    font-size: 0.95rem;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    color: var(--text);
+    background: var(--white);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .input-valor input:focus { border-color: var(--teal); }
+  .input-valor input::placeholder { color: #c8cdd8; font-weight: 400; font-size: 0.85rem; }
+
+  /* local */
+  .input-local {
+    flex: 1;
+  }
+  .input-local input {
+    width: 100%;
+    padding: 9px 10px;
+    border: 1.5px solid #dde3ee;
+    border-radius: 9px;
+    font-size: 0.82rem;
+    font-family: 'Inter', sans-serif;
+    color: var(--text);
+    background: var(--white);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .input-local input:focus { border-color: var(--teal); }
+  .input-local input::placeholder { color: #c8cdd8; }
+
+  /* BREAKDOWN */
+  .day-breakdown {
+    background: linear-gradient(135deg, var(--sky) 0%, #ddf4fc 100%);
+    border-radius: 11px;
+    padding: 10px 12px;
+    margin-top: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 6px;
+  }
+  .breakdown-item {
+    text-align: center;
+    flex: 1;
+  }
+  .breakdown-item + .breakdown-item {
+    border-left: 1px solid rgba(0,119,182,0.15);
+  }
+  .b-label {
+    font-size: 0.58rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--ocean);
+    font-weight: 700;
+    margin-bottom: 3px;
+    line-height: 1.3;
+  }
+  .b-value {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 0.9rem;
+    color: var(--dark);
+    white-space: nowrap;
+  }
+  .b-value.highlight {
+    color: var(--coral);
+    font-size: 1rem;
+  }
+
+  /* RESUMÃO */
+  .summary-card {
+    background: linear-gradient(135deg, var(--dark) 0%, var(--ocean) 100%);
+    border-radius: 18px;
+    padding: 20px;
+    color: var(--white);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  }
+  .summary-card h2 {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    opacity: 0.75;
+    margin-bottom: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+  }
+  .summary-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .summary-item {
+    background: rgba(255,255,255,0.1);
+    border-radius: 12px;
+    padding: 12px;
+  }
+  .s-label {
+    font-size: 0.62rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    opacity: 0.7;
+    margin-bottom: 4px;
+    line-height: 1.3;
+  }
+  .s-value {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 1.1rem;
+    white-space: nowrap;
+  }
+  .s-value.coral { color: #FF9F86; }
+  .s-value.green { color: #7AFFC9; }
+
+  .grand-total {
+    background: var(--white);
+    border-radius: 12px;
+    padding: 14px;
+    text-align: center;
+  }
+  .gt-label {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ocean);
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .gt-value {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 2rem;
+    color: var(--dark);
+    line-height: 1;
+    white-space: nowrap;
+  }
+  .gt-sub {
+    font-size: 0.72rem;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  .btn-reset {
+    background: rgba(255,255,255,0.12);
+    border: 1.5px solid rgba(255,255,255,0.25);
+    color: var(--white);
+    font-family: 'Syne', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 700;
+    padding: 10px;
+    border-radius: 10px;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 12px;
+    letter-spacing: 0.04em;
+    transition: background 0.2s;
+  }
+  .btn-reset:hover { background: rgba(255,255,255,0.2); }
+</style>
+</head>
+<body>
+
+<header>
+  <span class="emoji">🏝️</span>
+  <h1>Noronha — Refeições</h1>
+  <p>Andrey & Tiago · 14–20 jun · gasto por pessoa/refeição</p>
+</header>
+
+<div class="container" id="app"></div>
+
+<script>
+const DAYS = [
+  { id: 0, label: "Dia 1", date: "Sáb 14/06" },
+  { id: 1, label: "Dia 2", date: "Dom 15/06" },
+  { id: 2, label: "Dia 3", date: "Seg 16/06" },
+  { id: 3, label: "Dia 4", date: "Ter 17/06" },
+  { id: 4, label: "Dia 5", date: "Qua 18/06" },
+  { id: 5, label: "Dia 6", date: "Qui 19/06" },
+];
+
+const PEOPLE = 2;
+const MEALS = 2;
+
+function fmt(val) {
+  return val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
+
+function getVal(id) {
+  return parseFloat(document.getElementById(id)?.value) || 0;
+}
+
+function update() {
+  let totalGeral = 0, totalAlmoco = 0, totalJanta = 0, diasComDados = 0;
+
+  DAYS.forEach(d => {
+    const a = getVal(`almoco_${d.id}`);
+    const j = getVal(`janta_${d.id}`);
+    const total = a + j;
+
+    const porPessoa = total / PEOPLE;
+    const porRef = total / (PEOPLE * MEALS);
+
+    const el = (id) => document.getElementById(id);
+    if (el(`total_${d.id}`))   el(`total_${d.id}`).textContent   = total > 0 ? fmt(total) : "—";
+    if (el(`b_total_${d.id}`)) el(`b_total_${d.id}`).textContent = total > 0 ? fmt(total) : "—";
+    if (el(`b_pp_${d.id}`))    el(`b_pp_${d.id}`).textContent    = total > 0 ? fmt(porPessoa) : "—";
+    if (el(`b_ref_${d.id}`))   el(`b_ref_${d.id}`).textContent   = total > 0 ? fmt(porRef) : "—";
+
+    totalAlmoco += a;
+    totalJanta  += j;
+    totalGeral  += total;
+    if (total > 0) diasComDados++;
+  });
+
+  const porPessoaTotal = totalGeral / PEOPLE;
+  const mediaDiaPP = diasComDados > 0 ? (totalGeral / diasComDados) / PEOPLE : 0;
+
+  setEl("s_almoco",   totalAlmoco > 0 ? fmt(totalAlmoco) : "—");
+  setEl("s_janta",    totalJanta  > 0 ? fmt(totalJanta)  : "—");
+  setEl("s_pessoa",   porPessoaTotal > 0 ? fmt(porPessoaTotal) : "—");
+  setEl("s_media",    mediaDiaPP > 0 ? fmt(mediaDiaPP) : "—");
+  setEl("gt_value",   totalGeral > 0 ? fmt(totalGeral) : "R$ 0,00");
+  setEl("gt_sub",     diasComDados > 0 ? `${diasComDados} dia(s) registrado(s)` : "Nenhum dado ainda");
+}
+
+function setEl(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = val;
+}
+
+function buildApp() {
+  const app = document.getElementById("app");
+
+  DAYS.forEach(d => {
+    const card = document.createElement("div");
+    card.className = "day-card";
+    card.innerHTML = `
+      <div class="day-header">
+        <div class="day-label">${d.label} <span>${d.date}</span></div>
+        <div class="day-total-badge" id="total_${d.id}">—</div>
+      </div>
+
+      <div class="meal-block">
+        <div class="meal-block-title">🍽️ Almoço</div>
+        <div class="meal-row">
+          <div class="input-valor">
+            <span>R$</span>
+            <input type="number" id="almoco_${d.id}" placeholder="0,00" min="0" step="0.01" oninput="update()">
+          </div>
+          <div class="input-local">
+            <input type="text" id="local_almoco_${d.id}" placeholder="📍 Onde comemos?">
+          </div>
+        </div>
+      </div>
+
+      <div class="meal-block">
+        <div class="meal-block-title">🌙 Janta</div>
+        <div class="meal-row">
+          <div class="input-valor">
+            <span>R$</span>
+            <input type="number" id="janta_${d.id}" placeholder="0,00" min="0" step="0.01" oninput="update()">
+          </div>
+          <div class="input-local">
+            <input type="text" id="local_janta_${d.id}" placeholder="📍 Onde comemos?">
+          </div>
+        </div>
+      </div>
+
+      <div class="day-breakdown">
+        <div class="breakdown-item">
+          <div class="b-label">Total do dia</div>
+          <div class="b-value" id="b_total_${d.id}">—</div>
+        </div>
+        <div class="breakdown-item">
+          <div class="b-label">Por pessoa</div>
+          <div class="b-value" id="b_pp_${d.id}">—</div>
+        </div>
+        <div class="breakdown-item">
+          <div class="b-label">Por refeição / pessoa</div>
+          <div class="b-value highlight" id="b_ref_${d.id}">—</div>
+        </div>
+      </div>
+    `;
+    app.appendChild(card);
+  });
+
+  // Resumão
+  const summary = document.createElement("div");
+  summary.className = "summary-card";
+  summary.innerHTML = `
+    <h2>📊 Resumo da Viagem</h2>
+    <div class="summary-grid">
+      <div class="summary-item">
+        <div class="s-label">Total Almoços</div>
+        <div class="s-value coral" id="s_almoco">—</div>
+      </div>
+      <div class="summary-item">
+        <div class="s-label">Total Jantas</div>
+        <div class="s-value coral" id="s_janta">—</div>
+      </div>
+      <div class="summary-item">
+        <div class="s-label">Total por pessoa</div>
+        <div class="s-value green" id="s_pessoa">—</div>
+      </div>
+      <div class="summary-item">
+        <div class="s-label">Média / dia por pessoa</div>
+        <div class="s-value green" id="s_media">—</div>
+      </div>
+    </div>
+    <div class="grand-total">
+      <div class="gt-label">💰 Gasto Total em Refeições</div>
+      <div class="gt-value" id="gt_value">R$ 0,00</div>
+      <div class="gt-sub" id="gt_sub">Nenhum dado ainda</div>
+    </div>
+    <button class="btn-reset" onclick="resetAll()">🔄 Limpar tudo</button>
+  `;
+  app.appendChild(summary);
+}
+
+function resetAll() {
+  if (!confirm("Limpar todos os valores?")) return;
+  DAYS.forEach(d => {
+    ["almoco","janta","local_almoco","local_janta"].forEach(f => {
+      const el = document.getElementById(`${f}_${d.id}`);
+      if (el) el.value = "";
+    });
+  });
+  update();
+}
+
+buildApp();
+update();
+</script>
+</body>
+</html>
