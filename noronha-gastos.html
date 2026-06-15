@@ -466,18 +466,55 @@ function buildApp() {
   app.appendChild(summary);
 }
 
+const FIELDS = ["almoco","janta","local_almoco","local_janta"];
+const STORAGE_KEY = "noronha_gastos_v1";
+
+function saveData() {
+  const data = {};
+  DAYS.forEach(d => {
+    data[d.id] = {};
+    FIELDS.forEach(f => {
+      const el = document.getElementById(`${f}_${d.id}`);
+      if (el) data[d.id][f] = el.value;
+    });
+  });
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+function loadData() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (!saved) return;
+    const data = JSON.parse(saved);
+    DAYS.forEach(d => {
+      if (!data[d.id]) return;
+      FIELDS.forEach(f => {
+        const el = document.getElementById(`${f}_${d.id}`);
+        if (el && data[d.id][f] !== undefined) el.value = data[d.id][f];
+      });
+    });
+  } catch(e) {}
+}
+
 function resetAll() {
   if (!confirm("Limpar todos os valores?")) return;
   DAYS.forEach(d => {
-    ["almoco","janta","local_almoco","local_janta"].forEach(f => {
+    FIELDS.forEach(f => {
       const el = document.getElementById(`${f}_${d.id}`);
       if (el) el.value = "";
     });
   });
+  localStorage.removeItem(STORAGE_KEY);
   update();
 }
 
+// Salva a cada mudança nos inputs
+document.addEventListener("input", () => {
+  saveData();
+});
+
 buildApp();
+loadData();
 update();
 </script>
 </body>
