@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Indiko – Fornecedores Vila Ytú</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --petrol:   #1B4F72;
+    --petrol2:  #2E86C1;
+    --amber:    #E67E22;
+    --amber-lt: #FAD7A0;
+    --bg:       #F7F9FB;
+    --card:     #FFFFFF;
+    --text:     #1A1A2E;
+    --muted:    #6B7280;
+    --border:   #E5E7EB;
+    --danger:   #E53E3E;
+    --radius:   14px;
+    --shadow:   0 2px 12px rgba(27,79,114,.10);
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  /* HEADER */
+  header { background: linear-gradient(135deg, var(--petrol) 0%, var(--petrol2) 100%); padding: 28px 24px 20px; text-align: center; position: relative; }
+  .logo-badge { display: inline-flex; align-items: center; gap: 10px; background: rgba(255,255,255,.12); border-radius: 50px; padding: 6px 18px; margin-bottom: 14px; }
+  .logo-badge span { font-family: 'Nunito', sans-serif; font-weight: 900; font-size: 13px; color: var(--amber-lt); letter-spacing: .08em; text-transform: uppercase; }
+  h1 { font-family: 'Nunito', sans-serif; font-weight: 900; font-size: clamp(22px, 5vw, 34px); color: #fff; line-height: 1.15; }
+  h1 em { color: var(--amber); font-style: normal; }
+  .subtitle { color: rgba(255,255,255,.75); font-size: 14px; margin-top: 6px; }
+  .header-actions { margin-top: 18px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+  .btn { display: inline-flex; align-items: center; gap: 7px; border: none; border-radius: 50px; cursor: pointer; font-family: 'Inter', sans-serif; font-weight: 600; font-size: 14px; padding: 10px 22px; transition: all .18s; }
+  .btn-primary { background: var(--amber); color: #fff; }
+  .btn-primary:hover { background: #CF6D17; transform: translateY(-1px); }
+  .btn-ghost { background: rgba(255,255,255,.15); color: #fff; border: 1px solid rgba(255,255,255,.3); }
+  .btn-ghost:hover { background: rgba(255,255,255,.25); }
+  .btn-sm { padding: 7px 14px; font-size: 13px; }
+  .btn-danger { background: var(--danger); color: #fff; }
+  .btn-danger:hover { background: #C53030; }
+  #admin-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,.22); border: 1.5px solid rgba(255,255,255,.5); border-radius: 50px; padding: 7px 16px; font-size: 13px; font-weight: 600; color: #fff; cursor: pointer; position: absolute; top: 16px; right: 16px; transition: all .15s; box-shadow: 0 2px 8px rgba(0,0,0,.15); }
+  #admin-badge:hover { background: rgba(255,255,255,.38); transform: translateY(-1px); }
+
+  /* TABS */
+  nav.tabs { background: var(--card); border-bottom: 2px solid var(--border); display: flex; justify-content: center; position: sticky; top: 0; z-index: 100; }
+  .tab { padding: 14px 22px; font-size: 14px; font-weight: 600; color: var(--muted); cursor: pointer; border-bottom: 3px solid transparent; transition: all .15s; user-select: none; }
+  .tab:hover { color: var(--petrol); }
+  .tab.active { color: var(--petrol); border-bottom-color: var(--amber); }
+
+  /* ADMIN BAR */
+  .admin-bar { background: #FFF3CD; border-bottom: 2px solid #FFC107; padding: 10px 20px; display: none; align-items: center; gap: 14px; font-size: 13px; font-weight: 600; color: #856404; }
+  .admin-bar.show { display: flex; }
+
+  /* MAIN */
+  main { max-width: 980px; margin: 0 auto; padding: 24px 16px 60px; }
+
+  /* CONTROLS */
+  .controls { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 24px; }
+  .search-wrap { flex: 1 1 220px; position: relative; }
+  .search-wrap input { width: 100%; padding: 10px 14px 10px 40px; border: 1.5px solid var(--border); border-radius: 50px; font-size: 14px; outline: none; transition: border .15s; background: var(--card); }
+  .search-wrap input:focus { border-color: var(--petrol2); }
+  .search-icon { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+  select.filter { padding: 10px 14px; border: 1.5px solid var(--border); border-radius: 50px; font-size: 14px; background: var(--card); outline: none; cursor: pointer; }
+  select.filter:focus { border-color: var(--petrol2); }
+
+  /* CARDS */
+  #cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 18px; }
+  .card { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; display: flex; flex-direction: column; transition: transform .18s, box-shadow .18s; }
+  .card:hover { transform: translateY(-3px); box-shadow: 0 6px 24px rgba(27,79,114,.14); }
+  .card-header { background: linear-gradient(135deg, var(--petrol) 0%, var(--petrol2) 100%); padding: 16px 18px 12px; display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; position: relative; }
+  .card-name { font-family: 'Nunito', sans-serif; font-weight: 900; font-size: 17px; color: #fff; line-height: 1.2; }
+  .cat-badge { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 50px; background: var(--amber); color: #fff; white-space: nowrap; flex-shrink: 0; }
+  .card-body { padding: 14px 18px; flex: 1; }
+  .rating-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .stars { display: flex; gap: 2px; }
+  .star { font-size: 18px; color: #D1D5DB; }
+  .star.filled { color: var(--amber); }
+  .price-tag { display: inline-flex; align-items: center; gap: 5px; background: #EEF6FF; color: var(--petrol); border-radius: 6px; padding: 3px 10px; font-size: 12px; font-weight: 600; margin-bottom: 10px; }
+  .contact-row { font-size: 13px; color: var(--muted); margin-bottom: 10px; }
+  .card-desc { font-size: 13px; color: #374151; line-height: 1.55; }
+  .card-footer { padding: 12px 18px; border-top: 1px solid var(--border); display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .comentarios-count { font-size: 12px; color: var(--muted); }
+
+  /* COMMENTS */
+  .comments-panel { padding: 0 18px 16px; display: none; }
+  .comment-item { background: var(--bg); border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; position: relative; }
+  .comment-author { font-size: 12px; font-weight: 700; color: var(--petrol); }
+  .comment-date { font-size: 11px; color: var(--muted); margin-left: 6px; }
+  .comment-text { font-size: 13px; color: #374151; margin-top: 3px; }
+  .add-comment { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+  .add-comment input, .add-comment textarea { padding: 8px 12px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 13px; font-family: 'Inter', sans-serif; resize: vertical; outline: none; }
+  .add-comment input:focus, .add-comment textarea:focus { border-color: var(--petrol2); }
+  .by-line { font-size: 11px; color: var(--muted); margin-top: 6px; }
+
+  /* MODAL */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 1000; display: none; align-items: center; justify-content: center; padding: 16px; }
+  .modal-overlay.show { display: flex; }
+  .modal { background: var(--card); border-radius: var(--radius); width: 100%; max-width: 540px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,.25); }
+  .modal-header { background: linear-gradient(135deg, var(--petrol) 0%, var(--petrol2) 100%); padding: 20px 24px; display: flex; align-items: center; justify-content: space-between; }
+  .modal-title { font-family: 'Nunito', sans-serif; font-weight: 900; font-size: 20px; color: #fff; }
+  .modal-close { background: rgba(255,255,255,.2); border: none; color: #fff; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; }
+  .modal-close:hover { background: rgba(255,255,255,.35); }
+  .modal-body { padding: 24px; }
+  .form-group { margin-bottom: 16px; }
+  label { display: block; font-size: 13px; font-weight: 600; color: var(--petrol); margin-bottom: 6px; }
+  .form-control { width: 100%; padding: 10px 14px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 14px; font-family: 'Inter', sans-serif; outline: none; transition: border .15s; }
+  .form-control:focus { border-color: var(--petrol2); }
+  textarea.form-control { resize: vertical; min-height: 80px; }
+  .star-picker { display: flex; gap: 6px; }
+  .star-pick { font-size: 28px; color: #D1D5DB; cursor: pointer; transition: color .1s, transform .1s; }
+  .star-pick:hover, .star-pick.active { color: var(--amber); transform: scale(1.15); }
+  .price-options { display: flex; gap: 8px; flex-wrap: wrap; }
+  .price-opt { padding: 7px 14px; border: 2px solid var(--border); border-radius: 50px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all .15s; }
+  .price-opt:hover { border-color: var(--petrol2); color: var(--petrol2); }
+  .price-opt.selected { border-color: var(--amber); background: var(--amber); color: #fff; }
+  .modal-footer { padding: 0 24px 24px; display: flex; gap: 10px; justify-content: flex-end; }
+
+  /* LOADING */
+  .loading { text-align: center; padding: 60px 20px; color: var(--muted); }
+  .spinner { width: 40px; height: 40px; border: 4px solid var(--border); border-top-color: var(--petrol2); border-radius: 50%; animation: spin .8s linear infinite; margin: 0 auto 16px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* EMPTY */
+  .empty { text-align: center; padding: 60px 20px; color: var(--muted); grid-column: 1/-1; }
+  .empty-icon { font-size: 56px; margin-bottom: 16px; }
+  .empty h3 { font-family: 'Nunito', sans-serif; font-weight: 700; font-size: 20px; color: var(--petrol); margin-bottom: 8px; }
+
+  /* TOAST */
+  #toast { position: fixed; bottom: 24px; right: 24px; background: var(--petrol); color: #fff; padding: 12px 22px; border-radius: 50px; font-size: 14px; font-weight: 600; box-shadow: 0 4px 20px rgba(0,0,0,.2); opacity: 0; transform: translateY(20px); transition: all .3s; z-index: 2000; pointer-events: none; }
+  #toast.show { opacity: 1; transform: translateY(0); }
+
+  /* FOOTER */
+  footer.site-footer { text-align: center; padding: 20px; font-size: 12px; color: var(--muted); border-top: 1px solid var(--border); }
+  footer.site-footer a { color: var(--muted); text-decoration: none; cursor: pointer; }
+  footer.site-footer a:hover { color: var(--petrol); }
+
+  /* ADMIN VIEW */
+  .stat-cards { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 28px; }
+  .stat-card { background: var(--card); border-radius: var(--radius); padding: 20px 28px; box-shadow: var(--shadow); flex: 1; min-width: 120px; text-align: center; }
+  .stat-num { font-size: 36px; font-family: 'Nunito', sans-serif; font-weight: 900; }
+  .stat-label { color: var(--muted); font-size: 13px; }
+  .admin-list-item { background: var(--card); border-radius: 10px; padding: 14px 18px; box-shadow: var(--shadow); display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
+
+  @media (max-width: 600px) {
+    h1 { font-size: 22px; }
+    #cards-grid { grid-template-columns: 1fr; }
+    .tab { padding: 12px 14px; font-size: 13px; }
+    #admin-badge { font-size: 11px; padding: 5px 10px; top: 10px; right: 10px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-badge"><span>🏘️ Indiko · Vila Ytú</span></div>
+  <h1>Indicações de <em>Fornecedores</em></h1>
+  <p class="subtitle">Avalie, indique e compartilhe suas experiências com a comunidade</p>
+  <div class="header-actions">
+    <button class="btn btn-primary" onclick="openModal()">＋ Indicar Fornecedor</button>
+  </div>
+  <div id="admin-badge" onclick="switchToAdmin()">🔐 Admin</div>
+</header>
+
+<div class="admin-bar" id="admin-bar">
+  🛡️ Modo Administrador ativo
+  <div style="margin-left:auto">
+    <button class="btn btn-sm" style="background:#856404;color:#fff" onclick="exitAdmin()">Sair do Admin</button>
+  </div>
+</div>
+
+<nav class="tabs">
+  <div class="tab active" id="tab-btn-fornecedores" onclick="showTab('fornecedores',this)">🏪 Fornecedores</div>
+  <div class="tab" id="tab-btn-categorias" onclick="showTab('categorias',this)">📂 Por Categoria</div>
+  <div class="tab" id="tab-btn-admin" onclick="showTab('admin',this)" style="display:none">🔐 Administração</div>
+</nav>
+
+<main>
+  <div id="tab-fornecedores">
+    <div class="controls">
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="search-input" placeholder="Buscar fornecedor…" oninput="renderCards()"/>
+      </div>
+      <select class="filter" id="cat-filter" onchange="renderCards()">
+        <option value="">Todas as categorias</option>
+      </select>
+      <select class="filter" id="sort-filter" onchange="renderCards()">
+        <option value="recent">Mais recentes</option>
+        <option value="rating">Melhor avaliados</option>
+        <option value="az">A–Z</option>
+      </select>
+    </div>
+    <div id="cards-grid"><div class="loading"><div class="spinner"></div>Carregando fornecedores…</div></div>
+  </div>
+
+  <div id="tab-categorias" style="display:none">
+    <div id="cat-view"><div class="loading"><div class="spinner"></div>Carregando…</div></div>
+  </div>
+
+  <div id="tab-admin" style="display:none">
+    <div id="admin-content"></div>
+  </div>
+</main>
+
+<!-- MODAL NOVO FORNECEDOR -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">✨ Indicar Fornecedor</span>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Nome do Fornecedor *</label>
+        <input class="form-control" id="f-nome" placeholder="Ex: Elétrica do João"/>
+      </div>
+      <div class="form-group">
+        <label>Categoria *</label>
+        <select class="form-control" id="f-cat">
+          <option value="">Selecione…</option>
+          <optgroup label="🔧 Manutenção & Reparos">
+            <option>Elétrica</option><option>Hidráulica / Encanamento</option><option>Pintura</option>
+            <option>Gesso / Drywall</option><option>Impermeabilização</option><option>Telhado / Calhas</option>
+            <option>Serralheria / Ferragem</option><option>Vidraçaria / Esquadrias</option>
+            <option>Piso / Azulejo / Revestimento</option><option>Ar Condicionado / Climatização</option>
+            <option>Elevadores</option><option>Portões / Automatização</option>
+            <option>Interfone / CFTV</option><option>Reformas Gerais / Obras</option>
+          </optgroup>
+          <optgroup label="🌿 Áreas Externas & Lazer">
+            <option>Jardinagem / Paisagismo</option><option>Piscinas / Tratamento de Água</option>
+            <option>Playground / Equipamentos</option><option>Quadras / Esportes</option>
+            <option>Churrasqueira / Área Gourmet</option><option>Iluminação Externa</option>
+          </optgroup>
+          <optgroup label="🧹 Limpeza & Conservação">
+            <option>Limpeza Geral / Faxina</option><option>Limpeza de Fachada / Lavagem</option>
+            <option>Dedetização / Controle de Pragas</option><option>Desentupimento</option>
+            <option>Limpeza de Caixa D'água</option><option>Descarte / Coleta de Entulho</option>
+          </optgroup>
+          <optgroup label="🔐 Segurança">
+            <option>Segurança / Vigilância</option><option>Câmeras / Monitoramento</option>
+            <option>Portaria Remota</option><option>Alarmes / Cerca Elétrica</option>
+            <option>Controle de Acesso / Biometria</option>
+          </optgroup>
+          <optgroup label="🏡 Casa & Decoração">
+            <option>Móveis / Marcenaria</option><option>Persianas / Cortinas</option>
+            <option>Decoração / Design de Interiores</option><option>Arquitetura / Projetos</option>
+            <option>Armários / Closets Planejados</option>
+          </optgroup>
+          <optgroup label="💻 Tecnologia & Conectividade">
+            <option>Internet / Fibra Óptica</option><option>Tecnologia / TI / Suporte</option>
+            <option>Automação Residencial / Smart Home</option><option>Antenas / TV a Cabo</option>
+          </optgroup>
+          <optgroup label="🚗 Mobilidade & Garagem">
+            <option>Mecânica / Automóveis</option><option>Lavagem de Carros</option>
+            <option>Pintura Automotiva</option><option>Motocicletas</option><option>Bicicletas / Patinetes</option>
+          </optgroup>
+          <optgroup label="🐾 Pet & Saúde">
+            <option>Pet Care / Veterinário</option><option>Banho & Tosa</option><option>Adestramento</option>
+            <option>Saúde / Médicos</option><option>Fisioterapia / Pilates</option>
+            <option>Personal Trainer</option><option>Psicologia / Terapia</option>
+          </optgroup>
+          <optgroup label="📦 Serviços Gerais">
+            <option>Mudanças / Fretes</option><option>Entregas / Motoboy</option>
+            <option>Montagem de Móveis</option><option>Chaveiro</option><option>Lavanderia</option>
+            <option>Costura / Customização</option><option>Contabilidade / Financeiro</option>
+            <option>Advocacia / Jurídico</option><option>Seguros</option>
+          </optgroup>
+          <optgroup label="🍽️ Alimentação & Eventos">
+            <option>Delivery / Restaurantes</option><option>Buffet / Catering</option>
+            <option>Confeitaria / Bolos</option><option>Festas / Eventos</option>
+            <option>DJ / Música ao Vivo</option><option>Fotografia / Vídeo</option>
+          </optgroup>
+          <optgroup label="📚 Educação & Bem-Estar">
+            <option>Aulas Particulares</option><option>Idiomas</option>
+            <option>Musicalização / Instrumentos</option><option>Cuidador / Babá</option>
+            <option>Cuidador de Idosos</option>
+          </optgroup>
+          <optgroup label="🌟 Outros"><option>Outros</option></optgroup>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Sua avaliação *</label>
+        <div class="star-picker" id="star-picker">
+          <span class="star-pick" data-val="1">★</span>
+          <span class="star-pick" data-val="2">★</span>
+          <span class="star-pick" data-val="3">★</span>
+          <span class="star-pick" data-val="4">★</span>
+          <span class="star-pick" data-val="5">★</span>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Faixa de Preço</label>
+        <div class="price-options">
+          <div class="price-opt" data-val="$">$ Econômico</div>
+          <div class="price-opt" data-val="$$">$$ Moderado</div>
+          <div class="price-opt" data-val="$$$">$$$ Premium</div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Contato (telefone / site / Instagram)</label>
+        <input class="form-control" id="f-contato" placeholder="(19) 99999-9999 ou @perfil"/>
+      </div>
+      <div class="form-group">
+        <label>Descrição / Experiência *</label>
+        <textarea class="form-control" id="f-desc" placeholder="Conte como foi sua experiência…"></textarea>
+      </div>
+      <div class="form-group">
+        <label>Seu nome (opcional)</label>
+        <input class="form-control" id="f-autor" placeholder="Ex: Moradora Bloco A"/>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()" style="color:var(--petrol);border-color:var(--border)">Cancelar</button>
+      <button class="btn btn-primary" id="btn-salvar" onclick="salvarFornecedor()">Publicar Indicação</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL ADMIN LOGIN -->
+<div class="modal-overlay" id="modal-admin-login">
+  <div class="modal" style="max-width:380px">
+    <div class="modal-header">
+      <span class="modal-title">🔐 Acesso Admin</span>
+      <button class="modal-close" onclick="document.getElementById('modal-admin-login').classList.remove('show')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Senha de Administrador</label>
+        <input class="form-control" type="password" id="admin-pw" placeholder="Digite a senha…" onkeydown="if(event.key==='Enter') checkAdminPw()"/>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="checkAdminPw()">Entrar</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<footer class="site-footer">
+  Indiko – Vila Ytú &nbsp;·&nbsp; <a onclick="switchToAdmin()">🔐 Acesso Admin</a>
+</footer>
+
+<!-- FIREBASE -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, addDoc as addDocAlias, query, orderBy, onSnapshot, serverTimestamp, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyD0WsoLcwDZkJoUZTznx_5z2wKEg5PqZHg",
+  authDomain: "indiko-vila-ytu.firebaseapp.com",
+  databaseURL: "https://indiko-vila-ytu-default-rtdb.firebaseio.com",
+  projectId: "indiko-vila-ytu",
+  storageBucket: "indiko-vila-ytu.firebasestorage.app",
+  messagingSenderId: "1014191893025",
+  appId: "1:1014191893025:web:722ca9e85891adac435160"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const COLECAO = "fornecedores";
+const ADMIN_PW = "vila2024"; // ← Altere a senha aqui
+
+// STATE
+let fornecedores = [];
+let isAdmin = false;
+let selectedRating = 0;
+let selectedPrice = '';
+
+// ── UTILS ──
+function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function fmtDate(ts) {
+  if (!ts) return '';
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  return d.toLocaleDateString('pt-BR', {day:'2-digit', month:'short', year:'numeric'});
+}
+function starsHtml(n) {
+  return [1,2,3,4,5].map(i=>`<span class="star${i<=n?' filled':''}">★</span>`).join('');
+}
+function toast(msg, err=false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.background = err ? 'var(--danger)' : 'var(--petrol)';
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ── FIRESTORE LISTENER (tempo real) ──
+const q = query(collection(db, COLECAO), orderBy("data", "desc"));
+onSnapshot(q, (snapshot) => {
+  fornecedores = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+  renderCards();
+  buildCatDropdown();
+  if (document.getElementById('tab-categorias').style.display !== 'none') renderCatView();
+  if (document.getElementById('tab-admin').style.display !== 'none') renderAdminView();
+});
+
+// ── TABS ──
+window.showTab = function(name, el) {
+  if (name === 'admin' && !isAdmin) { switchToAdmin(); return; }
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  if (el) el.classList.add('active');
+  ['fornecedores','categorias','admin'].forEach(t => {
+    document.getElementById('tab-'+t).style.display = t===name ? '' : 'none';
+  });
+  if (name === 'categorias') renderCatView();
+  if (name === 'admin') renderAdminView();
+}
+
+// ── CARDS ──
+window.renderCards = function() {
+  const q = document.getElementById('search-input').value.toLowerCase();
+  const cat = document.getElementById('cat-filter').value;
+  const sort = document.getElementById('sort-filter').value;
+  let list = [...fornecedores];
+  if (q) list = list.filter(f => (f.nome||'').toLowerCase().includes(q) || (f.desc||'').toLowerCase().includes(q) || (f.cat||'').toLowerCase().includes(q));
+  if (cat) list = list.filter(f => f.cat === cat);
+  if (sort === 'rating') list.sort((a,b) => b.rating - a.rating);
+  else if (sort === 'az') list.sort((a,b) => (a.nome||'').localeCompare(b.nome||''));
+
+  const grid = document.getElementById('cards-grid');
+  if (list.length === 0) {
+    grid.innerHTML = `<div class="empty"><div class="empty-icon">🔍</div><h3>Nenhum fornecedor encontrado</h3><p>Seja o primeiro a indicar!</p></div>`;
+    return;
+  }
+  grid.innerHTML = list.map(f => cardHtml(f)).join('');
+}
+
+function cardHtml(f) {
+  const comentarios = f.comentarios || [];
+  const countTxt = comentarios.length === 0 ? 'Sem comentários' : comentarios.length === 1 ? '1 comentário' : `${comentarios.length} comentários`;
+  const adminDel = isAdmin ? `<button class="btn btn-sm btn-danger" style="position:absolute;top:8px;right:8px;padding:4px 10px;font-size:11px" onclick="deleteFornecedor('${f.id}')">🗑️</button>` : '';
+  return `
+  <div class="card" id="card-${f.id}">
+    <div class="card-header">
+      <div><div class="card-name">${escHtml(f.nome)}</div></div>
+      <span class="cat-badge">${escHtml(f.cat)}</span>
+      ${adminDel}
+    </div>
+    <div class="card-body">
+      <div class="rating-row"><div class="stars">${starsHtml(f.rating)}</div><span style="font-size:13px;color:var(--muted)">${f.rating}/5</span></div>
+      ${f.preco ? `<div class="price-tag">💰 ${escHtml(f.preco)}</div>` : ''}
+      ${f.contato ? `<div class="contact-row">📞 ${escHtml(f.contato)}</div>` : ''}
+      <div class="card-desc">${escHtml(f.desc)}</div>
+    </div>
+    <div class="card-footer">
+      <span class="comentarios-count">💬 ${countTxt}</span>
+      <button class="btn btn-sm" style="color:var(--petrol2);background:none;border:1px solid var(--petrol2);border-radius:50px;padding:5px 14px;font-size:13px;font-weight:600;cursor:pointer" onclick="toggleComments('${f.id}')">Ver / Comentar</button>
+    </div>
+    <div class="comments-panel" id="comments-${f.id}">
+      ${comentarios.map((c,i) => `
+        <div class="comment-item">
+          ${isAdmin ? `<button class="btn btn-danger btn-sm" style="float:right;padding:3px 8px;font-size:11px" onclick="deleteComment('${f.id}',${i})">🗑️</button>` : ''}
+          <span class="comment-author">${escHtml(c.autor||'Anônimo')}</span>
+          <span class="comment-date">${c.data ? fmtDate(c.data) : ''}</span>
+          <div class="comment-text">${escHtml(c.texto)}</div>
+        </div>`).join('')}
+      <div class="add-comment">
+        <input id="com-autor-${f.id}" placeholder="Seu nome (opcional)"/>
+        <textarea id="com-texto-${f.id}" placeholder="Compartilhe sua experiência…" rows="3"></textarea>
+        <button class="btn btn-primary btn-sm" onclick="addComment('${f.id}')">Publicar comentário</button>
+      </div>
+      <div class="by-line">Indicado por ${escHtml(f.autor||'Anônimo')} em ${fmtDate(f.data)}</div>
+    </div>
+  </div>`;
+}
+
+window.toggleComments = function(id) {
+  const el = document.getElementById('comments-'+id);
+  if (el) el.style.display = el.style.display === 'none' || el.style.display === '' ? 'block' : 'none';
+}
+
+// ── CATEGORIAS ──
+function renderCatView() {
+  const cats = {};
+  fornecedores.forEach(f => { if (!cats[f.cat]) cats[f.cat]=[]; cats[f.cat].push(f); });
+  const html = Object.entries(cats).sort((a,b)=>a[0].localeCompare(b[0])).map(([cat,list])=>`
+    <div style="margin-bottom:32px">
+      <h2 style="font-family:Nunito,sans-serif;font-weight:900;font-size:20px;color:var(--petrol);margin-bottom:14px;display:flex;align-items:center;gap:10px">
+        <span style="background:var(--amber);color:#fff;border-radius:50px;padding:3px 14px;font-size:14px">${list.length}</span>${escHtml(cat)}
+      </h2>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px">${list.map(f=>cardHtml(f)).join('')}</div>
+    </div>`).join('');
+  document.getElementById('cat-view').innerHTML = html || `<div class="empty"><div class="empty-icon">📂</div><h3>Nenhum fornecedor ainda</h3></div>`;
+}
+
+function buildCatDropdown() {
+  const cats = [...new Set(fornecedores.map(f=>f.cat))].sort();
+  const sel = document.getElementById('cat-filter');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">Todas as categorias</option>' + cats.map(c=>`<option${c===cur?' selected':''}>${escHtml(c)}</option>`).join('');
+}
+
+// ── MODAL ──
+window.openModal = function() {
+  selectedRating = 0; selectedPrice = '';
+  ['f-nome','f-contato','f-desc','f-autor'].forEach(id => document.getElementById(id).value='');
+  document.getElementById('f-cat').value='';
+  document.querySelectorAll('.star-pick').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.price-opt').forEach(p=>p.classList.remove('selected'));
+  document.getElementById('modal').classList.add('show');
+}
+window.closeModal = function() { document.getElementById('modal').classList.remove('show'); }
+
+document.getElementById('star-picker').addEventListener('click', e => {
+  if (!e.target.classList.contains('star-pick')) return;
+  selectedRating = parseInt(e.target.dataset.val);
+  document.querySelectorAll('.star-pick').forEach(s => s.classList.toggle('active', parseInt(s.dataset.val) <= selectedRating));
+});
+document.querySelectorAll('.price-opt').forEach(p => {
+  p.addEventListener('click', () => {
+    selectedPrice = p.dataset.val;
+    document.querySelectorAll('.price-opt').forEach(x=>x.classList.remove('selected'));
+    p.classList.add('selected');
+  });
+});
+
+window.salvarFornecedor = async function() {
+  const nome = document.getElementById('f-nome').value.trim();
+  const cat  = document.getElementById('f-cat').value;
+  const desc = document.getElementById('f-desc').value.trim();
+  if (!nome || !cat || !desc || !selectedRating) { toast('Preencha os campos obrigatórios ★', true); return; }
+  const btn = document.getElementById('btn-salvar');
+  btn.disabled = true; btn.textContent = 'Publicando…';
+  try {
+    await addDoc(collection(db, COLECAO), {
+      nome, cat, rating: selectedRating, preco: selectedPrice,
+      contato: document.getElementById('f-contato').value.trim(),
+      desc, autor: document.getElementById('f-autor').value.trim() || 'Morador(a)',
+      data: serverTimestamp(), comentarios: []
+    });
+    closeModal();
+    toast('✅ Indicação publicada com sucesso!');
+  } catch(e) { toast('Erro ao salvar. Tente novamente.', true); console.error(e); }
+  btn.disabled = false; btn.textContent = 'Publicar Indicação';
+}
+
+// ── COMENTÁRIOS ──
+window.addComment = async function(fid) {
+  const texto = document.getElementById('com-texto-'+fid)?.value.trim();
+  if (!texto) { toast('Digite algo no comentário', true); return; }
+  const autor = document.getElementById('com-autor-'+fid)?.value.trim() || 'Anônimo';
+  try {
+    const ref = doc(db, COLECAO, fid);
+    const f = fornecedores.find(x=>x.id===fid);
+    const comentarios = [...(f.comentarios||[]), { autor, texto, data: new Date().toISOString() }];
+    await updateDoc(ref, { comentarios });
+    toast('💬 Comentário publicado!');
+  } catch(e) { toast('Erro ao comentar.', true); console.error(e); }
+}
+
+window.deleteComment = async function(fid, idx) {
+  if (!confirm('Remover este comentário?')) return;
+  const f = fornecedores.find(x=>x.id===fid);
+  if (!f) return;
+  const comentarios = [...(f.comentarios||[])];
+  comentarios.splice(idx,1);
+  try {
+    await updateDoc(doc(db, COLECAO, fid), { comentarios });
+    toast('Comentário removido');
+  } catch(e) { toast('Erro ao remover.', true); }
+}
+
+// ── ADMIN ──
+window.switchToAdmin = function() {
+  if (isAdmin) { showTab('admin', document.getElementById('tab-btn-admin')); return; }
+  document.getElementById('modal-admin-login').classList.add('show');
+  setTimeout(() => document.getElementById('admin-pw').focus(), 100);
+}
+window.checkAdminPw = function() {
+  if (document.getElementById('admin-pw').value === ADMIN_PW) {
+    isAdmin = true;
+    document.getElementById('modal-admin-login').classList.remove('show');
+    document.getElementById('admin-pw').value = '';
+    document.getElementById('admin-bar').classList.add('show');
+    document.getElementById('tab-btn-admin').style.display = '';
+    toast('🛡️ Bem-vindo, admin!');
+    renderCards();
+    showTab('admin', document.getElementById('tab-btn-admin'));
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.getElementById('tab-btn-admin').classList.add('active');
+  } else { toast('Senha incorreta', true); }
+}
+window.exitAdmin = function() {
+  isAdmin = false;
+  document.getElementById('admin-bar').classList.remove('show');
+  document.getElementById('tab-btn-admin').style.display = 'none';
+  renderCards();
+  showTab('fornecedores', document.getElementById('tab-btn-fornecedores'));
+  toast('Saiu do modo admin');
+}
+window.deleteFornecedor = async function(id) {
+  if (!confirm('Remover este fornecedor e todos os seus comentários?')) return;
+  try {
+    await deleteDoc(doc(db, COLECAO, id));
+    toast('🗑️ Fornecedor removido');
+  } catch(e) { toast('Erro ao remover.', true); }
+}
+
+function renderAdminView() {
+  const total = fornecedores.length;
+  const totalCom = fornecedores.reduce((acc,f)=>acc+(f.comentarios?.length||0),0);
+  const totalCats = [...new Set(fornecedores.map(f=>f.cat))].length;
+  document.getElementById('admin-content').innerHTML = `
+    <div class="stat-cards">
+      <div class="stat-card"><div class="stat-num" style="color:var(--petrol)">${total}</div><div class="stat-label">Fornecedores</div></div>
+      <div class="stat-card"><div class="stat-num" style="color:var(--amber)">${totalCom}</div><div class="stat-label">Comentários</div></div>
+      <div class="stat-card"><div class="stat-num" style="color:var(--petrol2)">${totalCats}</div><div class="stat-label">Categorias</div></div>
+    </div>
+    <h3 style="font-family:Nunito,sans-serif;font-weight:900;color:var(--petrol);margin-bottom:14px">Gerenciar Fornecedores</h3>
+    ${fornecedores.map(f=>`
+      <div class="admin-list-item">
+        <div style="flex:1;min-width:180px">
+          <strong style="color:var(--petrol)">${escHtml(f.nome)}</strong>
+          <span style="background:var(--amber);color:#fff;border-radius:50px;padding:2px 10px;font-size:11px;font-weight:700;margin-left:8px">${escHtml(f.cat)}</span>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px">${fmtDate(f.data)} · ${f.comentarios?.length||0} comentário(s)</div>
+        </div>
+        <div class="stars" style="font-size:14px">${starsHtml(f.rating)}</div>
+        <button class="btn btn-sm btn-danger" onclick="deleteFornecedor('${f.id}')">🗑️ Remover</button>
+      </div>`).join('')}
+    <div style="margin-top:24px;padding:20px;background:#FFF3CD;border-radius:var(--radius);border:1px solid #FFC107;font-size:13px;color:#856404">
+      <strong>⚠️ Para alterar a senha admin:</strong> edite a constante <code>ADMIN_PW</code> no HTML e faça commit no GitHub.
+    </div>`;
+}
+
+// fechar modais clicando fora
+document.getElementById('modal').addEventListener('click', e => { if(e.target===e.currentTarget) closeModal(); });
+document.getElementById('modal-admin-login').addEventListener('click', e => { if(e.target===e.currentTarget) e.target.classList.remove('show'); });
+
+</script>
+</body>
+</html>
