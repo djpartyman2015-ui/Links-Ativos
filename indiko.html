@@ -458,7 +458,7 @@ function cardHtml(f) {
     </div>
     <div class="card-body">
       <div class="rating-row">
-        ${(() => { const m = calcMedia(f); const med = Math.round(m.media*10)/10; return `<div class="stars">${starsHtml(Math.round(m.media))}</div><span style="font-size:13px;color:var(--muted)">${med}/5</span><span class="media-badge">📊 ${m.total} avaliação${m.total>1?'ões':''}</span>`; })()}
+        ${(() => { const m = calcMedia(f); const med = Math.round(m.media*10)/10; return `<div class="stars">${starsHtml(Math.round(m.media))}</div><span style="font-size:13px;color:var(--muted)">${med}/5</span><span class="media-badge">📊 ${m.total} ${m.total>1?'avaliações':'avaliação'}</span>`; })()}
       </div>
       ${f.preco ? `<div class="price-tag">💰 ${escHtml(f.preco)}</div>` : ''}
       ${f.contato ? `<div class="contact-row">📞 ${escHtml(f.contato)}</div>` : ''}
