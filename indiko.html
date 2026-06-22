@@ -93,6 +93,13 @@
   .add-comment input, .add-comment textarea { padding: 8px 12px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 13px; font-family: 'Inter', sans-serif; resize: vertical; outline: none; }
   .add-comment input:focus, .add-comment textarea:focus { border-color: var(--petrol2); }
   .by-line { font-size: 11px; color: var(--muted); margin-top: 6px; }
+  .com-star-picker { display: flex; gap: 4px; margin-bottom: 4px; }
+  .com-star { font-size: 24px; color: #D1D5DB; cursor: pointer; transition: color .1s, transform .1s; user-select: none; }
+  .com-star.active { color: var(--amber); transform: scale(1.1); }
+  .media-badge { display: inline-flex; align-items: center; gap: 5px; background: #FEF3C7; color: #92400E; border-radius: 20px; padding: 3px 10px; font-size: 12px; font-weight: 700; margin-left: 8px; }
+  .comment-rating { display: flex; gap: 2px; margin-top: 4px; }
+  .comment-star { font-size: 13px; color: #D1D5DB; }
+  .comment-star.filled { color: var(--amber); }
 
   /* MODAL */
   .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 1000; display: none; align-items: center; justify-content: center; padding: 16px; }
@@ -379,6 +386,15 @@ function fmtDate(ts) {
 function starsHtml(n) {
   return [1,2,3,4,5].map(i=>`<span class="star${i<=n?' filled':''}">★</span>`).join('');
 }
+function calcMedia(f) {
+  const comentarios = (f.comentarios||[]).filter(c => c.rating && c.rating > 0);
+  if (comentarios.length === 0) return { media: f.rating, total: 1 };
+  const soma = f.rating + comentarios.reduce((acc,c) => acc + c.rating, 0);
+  return { media: (soma / (1 + comentarios.length)), total: 1 + comentarios.length };
+}
+function comStarsHtml(fid) {
+  return [1,2,3,4,5].map(i=>`<span class="com-star" data-fid="${fid}" data-val="${i}" onclick="pickComStar(this)">★</span>`).join('');
+}
 function toast(msg, err=false) {
   const t = document.getElementById('toast');
   t.textContent = msg;
@@ -417,7 +433,7 @@ window.renderCards = function() {
   let list = [...fornecedores];
   if (q) list = list.filter(f => (f.nome||'').toLowerCase().includes(q) || (f.desc||'').toLowerCase().includes(q) || (f.cat||'').toLowerCase().includes(q));
   if (cat) list = list.filter(f => f.cat === cat);
-  if (sort === 'rating') list.sort((a,b) => b.rating - a.rating);
+  if (sort === 'rating') list.sort((a,b) => calcMedia(b).media - calcMedia(a).media);
   else if (sort === 'az') list.sort((a,b) => (a.nome||'').localeCompare(b.nome||''));
 
   const grid = document.getElementById('cards-grid');
@@ -440,7 +456,9 @@ function cardHtml(f) {
       ${adminDel}
     </div>
     <div class="card-body">
-      <div class="rating-row"><div class="stars">${starsHtml(f.rating)}</div><span style="font-size:13px;color:var(--muted)">${f.rating}/5</span></div>
+      <div class="rating-row">
+        ${(() => { const m = calcMedia(f); const med = Math.round(m.media*10)/10; return `<div class="stars">${starsHtml(Math.round(m.media))}</div><span style="font-size:13px;color:var(--muted)">${med}/5</span><span class="media-badge">📊 ${m.total} avaliação${m.total>1?'ões':''}</span>`; })()}
+      </div>
       ${f.preco ? `<div class="price-tag">💰 ${escHtml(f.preco)}</div>` : ''}
       ${f.contato ? `<div class="contact-row">📞 ${escHtml(f.contato)}</div>` : ''}
       <div class="card-desc">${escHtml(f.desc)}</div>
@@ -455,10 +473,13 @@ function cardHtml(f) {
           ${isAdmin ? `<button class="btn btn-danger btn-sm" style="float:right;padding:3px 8px;font-size:11px" onclick="deleteComment('${f.id}',${i})">🗑️</button>` : ''}
           <span class="comment-author">${escHtml(c.autor||'Anônimo')}</span>
           <span class="comment-date">${c.data ? fmtDate(c.data) : ''}</span>
+          ${c.rating ? `<div class="comment-rating">${[1,2,3,4,5].map(s=>`<span class="comment-star${s<=c.rating?' filled':''}">★</span>`).join('')}</div>` : ''}
           <div class="comment-text">${escHtml(c.texto)}</div>
         </div>`).join('')}
       <div class="add-comment">
         <input id="com-autor-${f.id}" placeholder="Seu nome (opcional)"/>
+        <label style="font-size:12px;font-weight:600;color:var(--petrol);margin-bottom:2px">Sua avaliação</label>
+        <div class="com-star-picker" id="com-stars-${f.id}">${comStarsHtml(f.id)}</div>
         <textarea id="com-texto-${f.id}" placeholder="Compartilhe sua experiência…" rows="3"></textarea>
         <button class="btn btn-primary btn-sm" onclick="addComment('${f.id}')">Publicar comentário</button>
       </div>
@@ -538,15 +559,26 @@ window.salvarFornecedor = async function() {
 }
 
 // ── COMENTÁRIOS ──
+// Guardar rating temporário por fornecedor
+const comRatings = {};
+window.pickComStar = function(el) {
+  const fid = el.dataset.fid;
+  const val = parseInt(el.dataset.val);
+  comRatings[fid] = val;
+  const picker = document.getElementById('com-stars-'+fid);
+  if (picker) picker.querySelectorAll('.com-star').forEach(s => s.classList.toggle('active', parseInt(s.dataset.val) <= val));
+}
 window.addComment = async function(fid) {
   const texto = document.getElementById('com-texto-'+fid)?.value.trim();
   if (!texto) { toast('Digite algo no comentário', true); return; }
   const autor = document.getElementById('com-autor-'+fid)?.value.trim() || 'Anônimo';
+  const rating = comRatings[fid] || 0;
   try {
     const ref = doc(db, COLECAO, fid);
     const f = fornecedores.find(x=>x.id===fid);
-    const comentarios = [...(f.comentarios||[]), { autor, texto, data: new Date().toISOString() }];
+    const comentarios = [...(f.comentarios||[]), { autor, texto, rating, data: new Date().toISOString() }];
     await updateDoc(ref, { comentarios });
+    delete comRatings[fid];
     toast('💬 Comentário publicado!');
   } catch(e) { toast('Erro ao comentar.', true); console.error(e); }
 }
