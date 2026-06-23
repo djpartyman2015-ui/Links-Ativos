@@ -491,7 +491,16 @@ function cardHtml(f) {
 
 window.toggleComments = function(id) {
   const el = document.getElementById('comments-'+id);
-  if (el) el.style.display = el.style.display === 'none' || el.style.display === '' ? 'block' : 'none';
+  if (!el) return;
+  const isHidden = el.style.display === 'none' || el.style.display === '';
+  el.style.display = isHidden ? 'block' : 'none';
+  // Se estiver dentro de accordion fechado, abrir o accordion pai
+  if (isHidden) {
+    let parent = el.closest('.cat-accordion-body');
+    if (parent && parent.style.display === 'none') {
+      parent.style.display = 'block';
+    }
+  }
 }
 
 // ── CATEGORIAS ──
@@ -506,7 +515,7 @@ function renderCatView() {
         <span style="font-family:Nunito,sans-serif;font-weight:900;font-size:18px;color:var(--petrol);flex:1">${escHtml(cat)}</span>
         <span class="cat-chevron" id="chevron-${idx}" style="color:var(--muted);font-size:20px;transition:transform .25s">▸</span>
       </div>
-      <div class="cat-accordion-body" id="catbody-${idx}" style="display:none;background:var(--bg);padding:16px;display:none">
+      <div class="cat-accordion-body" id="catbody-${idx}" style="display:none;background:var(--bg);padding:16px;">
         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px">
           ${list.map(f=>cardHtml(f)).join('')}
         </div>
