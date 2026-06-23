@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Monitor de Cotações · USD · EUR · BTC</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📈</text></svg>" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" />
+<style>
+  :root {
+    --bg: #f7f8fa;
+    --surface: #ffffff;
+    --surface2: #f0f2f6;
+    --border: rgba(0,0,0,0.08);
+    --border2: rgba(0,0,0,0.13);
+    --text: #1a1d23;
+    --text2: #5a6072;
+    --text3: #9ba3b4;
+    --up: #0f6e56;
+    --up-bg: #e1f5ee;
+    --down: #993c1d;
+    --down-bg: #faece7;
+    --accent: #185FA5;
+    --accent-bg: #e6f1fb;
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #13151a;
+      --surface: #1e2128;
+      --surface2: #272b35;
+      --border: rgba(255,255,255,0.07);
+      --border2: rgba(255,255,255,0.13);
+      --text: #e8eaf0;
+      --text2: #9ba3b4;
+      --text3: #5a6072;
+      --up: #5DCAA5;
+      --up-bg: #04342c;
+      --down: #F0997B;
+      --down-bg: #4A1B0C;
+      --accent: #85B7EB;
+      --accent-bg: #042C53;
+    }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  /* Header */
+  .topbar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 1.5rem; display: flex; align-items: center; justify-content: space-between; height: 56px; position: sticky; top: 0; z-index: 100; }
+  .topbar-left { display: flex; align-items: center; gap: 10px; }
+  .topbar-logo { font-size: 20px; font-weight: 600; color: var(--text); letter-spacing: -0.3px; }
+  .topbar-logo span { color: var(--accent); }
+  .update-badge { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text2); background: var(--surface2); padding: 5px 10px; border-radius: 20px; border: 1px solid var(--border); }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: #1D9E75; flex-shrink: 0; transition: background 0.3s; }
+  .dot.loading { background: #BA7517; }
+  .dot.error { background: #D85A30; }
+  .refresh-btn { font-size: 13px; padding: 6px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border2); background: transparent; color: var(--text2); cursor: pointer; display: flex; align-items: center; gap: 5px; transition: background 0.15s; }
+  .refresh-btn:hover { background: var(--surface2); }
+
+  /* Layout */
+  .container { max-width: 960px; margin: 0 auto; padding: 1.5rem 1rem 3rem; }
+
+  /* Metric cards */
+  .metric-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 1.5rem; }
+  .metric { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.1rem 1.25rem; }
+  .metric-label { font-size: 12px; color: var(--text2); margin-bottom: 6px; display: flex; align-items: center; gap: 5px; }
+  .metric-value { font-size: 24px; font-weight: 600; color: var(--text); line-height: 1.1; margin-bottom: 5px; }
+  .metric-change { font-size: 12px; font-weight: 500; display: inline-flex; align-items: center; gap: 3px; padding: 2px 8px; border-radius: 20px; }
+  .metric-change.up { color: var(--up); background: var(--up-bg); }
+  .metric-change.down { color: var(--down); background: var(--down-bg); }
+  .metric-change.neutral { color: var(--text2); background: var(--surface2); }
+
+  /* Section title */
+  .section-title { font-size: 13px; font-weight: 500; color: var(--text2); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+
+  /* Calculadoras */
+  .calc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 1.5rem; }
+  .calc-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.1rem 1.25rem; }
+  .calc-card-title { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+  .field-label { font-size: 11px; color: var(--text3); margin-bottom: 4px; font-weight: 500; letter-spacing: 0.03em; }
+  .calc-input { width: 100%; padding: 8px 12px; font-size: 15px; border-radius: var(--radius-sm); border: 1px solid var(--border2); background: var(--surface2); color: var(--text); outline: none; transition: border 0.15s; }
+  .calc-input:focus { border-color: var(--accent); }
+  .swap-btn { width: 100%; margin: 8px 0; padding: 6px; font-size: 12px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: transparent; color: var(--text2); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; transition: background 0.15s; }
+  .swap-btn:hover { background: var(--surface2); }
+  .calc-result-box { background: var(--accent-bg); border-radius: var(--radius-sm); padding: 10px 12px; text-align: center; margin-top: 8px; }
+  .calc-result-value { font-size: 20px; font-weight: 600; color: var(--accent); }
+  .calc-rate-note { font-size: 11px; color: var(--text3); text-align: center; margin-top: 5px; }
+
+  /* Chart */
+  .chart-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.1rem 1.25rem; margin-bottom: 1.5rem; }
+  .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 8px; }
+  .chart-card-title { font-size: 14px; font-weight: 600; color: var(--text); }
+  .tabs { display: flex; gap: 4px; background: var(--surface2); padding: 3px; border-radius: var(--radius-sm); }
+  .tab { font-size: 12px; font-weight: 500; padding: 5px 14px; border-radius: 6px; border: none; background: transparent; color: var(--text2); cursor: pointer; transition: all 0.15s; }
+  .tab.active { background: var(--surface); color: var(--text); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+  .chart-wrap { position: relative; width: 100%; height: 240px; }
+
+  /* Footer */
+  footer { text-align: center; font-size: 11px; color: var(--text3); padding: 1rem; }
+
+  /* Mobile */
+  @media (max-width: 480px) {
+    .topbar { padding: 0 1rem; }
+    .topbar-logo { font-size: 16px; }
+    #update-text { display: none; }
+    .container { padding: 1rem 0.75rem 2rem; }
+    .metric-value { font-size: 20px; }
+    .calc-result-value { font-size: 17px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-left">
+    <span class="topbar-logo">Monitor<span>FX</span></span>
+  </div>
+  <div class="update-badge">
+    <span class="dot loading" id="dot"></span>
+    <span id="update-text">Carregando...</span>
+  </div>
+  <button class="refresh-btn" onclick="loadAll()">
+    <i class="ti ti-refresh"></i> Atualizar
+  </button>
+</div>
+
+<div class="container">
+
+  <!-- Cotações -->
+  <div class="section-title" style="margin-top:0.5rem">Cotações em tempo real</div>
+  <div class="metric-grid">
+    <div class="metric">
+      <div class="metric-label">💵 Dólar americano</div>
+      <div class="metric-value" id="usd-val">—</div>
+      <span class="metric-change neutral" id="usd-chg">— % hoje</span>
+    </div>
+    <div class="metric">
+      <div class="metric-label">💶 Euro</div>
+      <div class="metric-value" id="eur-val">—</div>
+      <span class="metric-change neutral" id="eur-chg">— % hoje</span>
+    </div>
+    <div class="metric">
+      <div class="metric-label">₿ Bitcoin</div>
+      <div class="metric-value" id="btc-val">—</div>
+      <span class="metric-change neutral" id="btc-chg">— % hoje</span>
+    </div>
+  </div>
+
+  <!-- Calculadoras -->
+  <div class="section-title">Calculadora de conversão</div>
+  <div class="calc-grid">
+
+    <!-- USD -->
+    <div class="calc-card">
+      <div class="calc-card-title"><i class="ti ti-currency-dollar" style="font-size:16px;color:var(--accent)"></i> USD ↔ BRL</div>
+      <div class="field-label" id="usd-lbl-a">Valor em USD</div>
+      <input class="calc-input" type="number" id="usd-a" placeholder="0.00" min="0" step="0.01" oninput="calcUSD('a')" />
+      <button class="swap-btn" onclick="swapCalc('usd')"><i class="ti ti-arrows-exchange"></i> Inverter direção</button>
+      <div class="field-label" id="usd-lbl-b">Resultado em BRL</div>
+      <input class="calc-input" type="number" id="usd-b" placeholder="0.00" min="0" step="0.01" oninput="calcUSD('b')" />
+      <div class="calc-result-box"><div class="calc-result-value" id="usd-result">—</div></div>
+      <div class="calc-rate-note" id="usd-rate">Cotação: carregando...</div>
+    </div>
+
+    <!-- EUR -->
+    <div class="calc-card">
+      <div class="calc-card-title"><i class="ti ti-currency-euro" style="font-size:16px;color:#3B6D11"></i> EUR ↔ BRL</div>
+      <div class="field-label" id="eur-lbl-a">Valor em EUR</div>
+      <input class="calc-input" type="number" id="eur-a" placeholder="0.00" min="0" step="0.01" oninput="calcEUR('a')" />
+      <button class="swap-btn" onclick="swapCalc('eur')"><i class="ti ti-arrows-exchange"></i> Inverter direção</button>
+      <div class="field-label" id="eur-lbl-b">Resultado em BRL</div>
+      <input class="calc-input" type="number" id="eur-b" placeholder="0.00" min="0" step="0.01" oninput="calcEUR('b')" />
+      <div class="calc-result-box"><div class="calc-result-value" id="eur-result" style="color:#3B6D11">—</div></div>
+      <div class="calc-rate-note" id="eur-rate">Cotação: carregando...</div>
+    </div>
+
+    <!-- BTC -->
+    <div class="calc-card">
+      <div class="calc-card-title"><i class="ti ti-currency-bitcoin" style="font-size:16px;color:#BA7517"></i> BTC ↔ BRL</div>
+      <div class="field-label" id="btc-lbl-a">Valor em BTC</div>
+      <input class="calc-input" type="number" id="btc-a" placeholder="0.00000000" min="0" step="0.00000001" oninput="calcBTC('a')" />
+      <button class="swap-btn" onclick="swapCalc('btc')"><i class="ti ti-arrows-exchange"></i> Inverter direção</button>
+      <div class="field-label" id="btc-lbl-b">Resultado em BRL</div>
+      <input class="calc-input" type="number" id="btc-b" placeholder="0.00" min="0" step="0.01" oninput="calcBTC('b')" />
+      <div class="calc-result-box"><div class="calc-result-value" id="btc-result" style="color:#BA7517">—</div></div>
+      <div class="calc-rate-note" id="btc-rate">Cotação: carregando...</div>
+    </div>
+
+  </div>
+
+  <!-- Gráfico -->
+  <div class="section-title">Evolução — últimos 15 dias</div>
+  <div class="chart-card">
+    <div class="chart-header">
+      <span class="chart-card-title" id="chart-title">Dólar (USD/BRL)</span>
+      <div class="tabs">
+        <button class="tab active" onclick="switchChart('USD')">USD</button>
+        <button class="tab" onclick="switchChart('EUR')">EUR</button>
+        <button class="tab" onclick="switchChart('BTC')">BTC</button>
+      </div>
+    </div>
+    <div class="chart-wrap">
+      <canvas id="mainChart" role="img" aria-label="Gráfico de evolução da cotação nos últimos 15 dias"></canvas>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  Fontes: <strong>AwesomeAPI</strong> (câmbio) · <strong>CoinGecko</strong> (Bitcoin) · Atualização automática a cada 5 minutos · Dados para fins informativos.
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+let chartInstance = null;
+let allData = { USD: null, EUR: null, BTC: null };
+let rates = { usd: null, eur: null, btc: null };
+let swapped = { usd: false, eur: false, btc: false };
+let currentTab = 'USD';
+
+const CHART_COLORS = {
+  USD: { border: '#185FA5', bg: 'rgba(24,95,165,0.08)' },
+  EUR: { border: '#3B6D11', bg: 'rgba(59,109,17,0.08)' },
+  BTC: { border: '#BA7517', bg: 'rgba(186,117,23,0.08)' }
+};
+
+const CHART_TITLES = {
+  USD: 'Dólar (USD/BRL)',
+  EUR: 'Euro (EUR/BRL)',
+  BTC: 'Bitcoin (BTC/BRL)'
+};
+
+function fmtBRL(v) {
+  return 'R$ ' + parseFloat(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+function fmtBRLBig(v) {
+  return 'R$ ' + parseFloat(v).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+}
+function fmtBTC(v) {
+  return parseFloat(v).toFixed(8) + ' BTC';
+}
+
+function setCard(id, val, pct, isBTC) {
+  document.getElementById(id + '-val').textContent = isBTC ? fmtBRLBig(val) : fmtBRL(val);
+  const p = parseFloat(pct);
+  const el = document.getElementById(id + '-chg');
+  const arrow = p > 0 ? '▲' : p < 0 ? '▼' : '●';
+  el.textContent = arrow + ' ' + Math.abs(p).toFixed(2) + '% hoje';
+  el.className = 'metric-change ' + (p > 0.01 ? 'up' : p < -0.01 ? 'down' : 'neutral');
+}
+
+function calcUSD(from) {
+  if (!rates.usd) return;
+  const s = swapped.usd;
+  const a = document.getElementById('usd-a');
+  const b = document.getElementById('usd-b');
+  const res = document.getElementById('usd-result');
+  if (from === 'a') {
+    const v = parseFloat(a.value);
+    if (isNaN(v) || a.value === '') { res.textContent = '—'; return; }
+    const r = s ? v / rates.usd : v * rates.usd;
+    res.textContent = s ? r.toFixed(2) + ' USD' : fmtBRL(r);
+  } else {
+    const v = parseFloat(b.value);
+    if (isNaN(v) || b.value === '') { res.textContent = '—'; return; }
+    const r = s ? v * rates.usd : v / rates.usd;
+    res.textContent = s ? fmtBRL(r) : r.toFixed(2) + ' USD';
+  }
+}
+
+function calcEUR(from) {
+  if (!rates.eur) return;
+  const s = swapped.eur;
+  const a = document.getElementById('eur-a');
+  const b = document.getElementById('eur-b');
+  const res = document.getElementById('eur-result');
+  if (from === 'a') {
+    const v = parseFloat(a.value);
+    if (isNaN(v) || a.value === '') { res.textContent = '—'; return; }
+    const r = s ? v / rates.eur : v * rates.eur;
+    res.textContent = s ? r.toFixed(2) + ' EUR' : fmtBRL(r);
+  } else {
+    const v = parseFloat(b.value);
+    if (isNaN(v) || b.value === '') { res.textContent = '—'; return; }
+    const r = s ? v * rates.eur : v / rates.eur;
+    res.textContent = s ? fmtBRL(r) : r.toFixed(2) + ' EUR';
+  }
+}
+
+function calcBTC(from) {
+  if (!rates.btc) return;
+  const s = swapped.btc;
+  const a = document.getElementById('btc-a');
+  const b = document.getElementById('btc-b');
+  const res = document.getElementById('btc-result');
+  if (from === 'a') {
+    const v = parseFloat(a.value);
+    if (isNaN(v) || a.value === '') { res.textContent = '—'; return; }
+    const r = s ? v / rates.btc : v * rates.btc;
+    res.textContent = s ? fmtBTC(r) : fmtBRLBig(r);
+  } else {
+    const v = parseFloat(b.value);
+    if (isNaN(v) || b.value === '') { res.textContent = '—'; return; }
+    const r = s ? v * rates.btc : v / rates.btc;
+    res.textContent = s ? fmtBRLBig(r) : fmtBTC(r);
+  }
+}
+
+function swapCalc(cur) {
+  swapped[cur] = !swapped[cur];
+  const s = swapped[cur];
+  const map = {
+    usd: { a: ['Valor em USD', 'Valor em BRL'], b: ['Resultado em BRL', 'Resultado em USD'] },
+    eur: { a: ['Valor em EUR', 'Valor em BRL'], b: ['Resultado em BRL', 'Resultado em EUR'] },
+    btc: { a: ['Valor em BTC', 'Valor em BRL'], b: ['Resultado em BRL', 'Resultado em BTC'] }
+  };
+  document.getElementById(cur + '-lbl-a').textContent = map[cur].a[s ? 1 : 0];
+  document.getElementById(cur + '-lbl-b').textContent = map[cur].b[s ? 1 : 0];
+  document.getElementById(cur + '-a').value = '';
+  document.getElementById(cur + '-b').value = '';
+  document.getElementById(cur + '-result').textContent = '—';
+}
+
+function updateTimestamp() {
+  const now = new Date();
+  const pad = n => String(n).padStart(2, '0');
+  const ts = `${pad(now.getDate())}/${pad(now.getMonth() + 1)}/${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+  document.getElementById('update-text').textContent = 'Atualizado: ' + ts;
+  document.getElementById('dot').className = 'dot';
+}
+
+function renderChart(tab) {
+  document.getElementById('chart-title').textContent = CHART_TITLES[tab];
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.textContent === tab));
+  const d = allData[tab];
+  if (!d) return;
+  if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
+  const isBTC = tab === 'BTC';
+  chartInstance = new Chart(document.getElementById('mainChart'), {
+    type: 'line',
+    data: {
+      labels: d.labels,
+      datasets: [{
+        label: tab + '/BRL',
+        data: d.values,
+        borderColor: CHART_COLORS[tab].border,
+        backgroundColor: CHART_COLORS[tab].bg,
+        fill: true,
+        tension: 0.35,
+        pointRadius: 4,
+        pointHoverRadius: 6,
+        pointBackgroundColor: CHART_COLORS[tab].border,
+        borderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => isBTC ? fmtBRLBig(ctx.parsed.y) : fmtBRL(ctx.parsed.y)
+          }
+        }
+      },
+      scales: {
+        x: {
+          ticks: { font: { size: 11 }, maxRotation: 45, autoSkip: false, color: '#9ba3b4' },
+          grid: { display: false },
+          border: { display: false }
+        },
+        y: {
+          ticks: {
+            font: { size: 11 },
+            color: '#9ba3b4',
+            callback: v => isBTC ? 'R$' + (v / 1000).toFixed(0) + 'k' : 'R$' + parseFloat(v).toFixed(2)
+          },
+          grid: { color: 'rgba(128,128,128,0.08)' },
+          border: { display: false }
+        }
+      }
+    }
+  });
+}
+
+function switchChart(tab) {
+  currentTab = tab;
+  renderChart(tab);
+}
+
+function dayLabel(ts) {
+  const dt = new Date(parseInt(ts) * 1000);
+  return String(dt.getDate()).padStart(2, '0') + '/' + String(dt.getMonth() + 1).padStart(2, '0');
+}
+
+async function loadFX() {
+  const [r1, r2] = await Promise.all([
+    fetch('https://economia.awesomeapi.com.br/json/daily/USD-BRL/15'),
+    fetch('https://economia.awesomeapi.com.br/json/daily/EUR-BRL/15')
+  ]);
+  const d1 = await r1.json();
+  const d2 = await r2.json();
+
+  rates.usd = parseFloat(d1[0].bid);
+  document.getElementById('usd-rate').textContent = '1 USD = ' + fmtBRL(rates.usd);
+  setCard('usd', d1[0].bid, d1[0].pctChange, false);
+  allData.USD = {
+    labels: d1.map(d => dayLabel(d.timestamp)).reverse(),
+    values: d1.map(d => parseFloat(d.bid)).reverse()
+  };
+
+  rates.eur = parseFloat(d2[0].bid);
+  document.getElementById('eur-rate').textContent = '1 EUR = ' + fmtBRL(rates.eur);
+  setCard('eur', d2[0].bid, d2[0].pctChange, false);
+  allData.EUR = {
+    labels: d2.map(d => dayLabel(d.timestamp)).reverse(),
+    values: d2.map(d => parseFloat(d.bid)).reverse()
+  };
+}
+
+async function loadBTC() {
+  const r = await fetch('https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=brl&days=15&interval=daily');
+  const data = await r.json();
+  const prices = data.prices;
+  rates.btc = prices[prices.length - 1][1];
+  document.getElementById('btc-rate').textContent = '1 BTC = ' + fmtBRLBig(rates.btc);
+  const prev = prices[prices.length - 2][1];
+  const pct = ((rates.btc - prev) / prev) * 100;
+  setCard('btc', rates.btc, pct, true);
+  allData.BTC = {
+    labels: prices.map(p => { const d = new Date(p[0]); return String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0'); }),
+    values: prices.map(p => p[1])
+  };
+}
+
+async function loadAll() {
+  document.getElementById('dot').className = 'dot loading';
+  document.getElementById('update-text').textContent = 'Atualizando...';
+  try {
+    await Promise.all([loadFX(), loadBTC()]);
+    renderChart(currentTab);
+    updateTimestamp();
+  } catch (e) {
+    document.getElementById('update-text').textContent = 'Erro — tente novamente';
+    document.getElementById('dot').className = 'dot error';
+    console.error(e);
+  }
+}
+
+loadAll();
+setInterval(loadAll, 5 * 60 * 1000);
+</script>
+</body>
+</html>
