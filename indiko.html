@@ -378,6 +378,29 @@ let selectedPrice = '';
 
 // ── UTILS ──
 function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function contatoHtml(contato) {
+  if (!contato) return '';
+  // Detectar se tem número de telefone (8+ dígitos)
+  const digits = contato.replace(/\D/g,'');
+  if (digits.length >= 8) {
+    // Formatar para WhatsApp: adicionar +55 se não tiver código de país
+    const waNum = digits.length <= 11 ? '55' + digits : digits;
+    const waUrl = `https://wa.me/${waNum}`;
+    return `<div class="contact-row"><a href="${waUrl}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;color:#25D366;font-weight:600;text-decoration:none;font-size:13px">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+      ${escHtml(contato)}</a></div>`;
+  }
+  // Se for @instagram ou site, link clicável normal
+  if (contato.startsWith('@')) {
+    const igUrl = `https://instagram.com/${contato.replace('@','')}`;
+    return `<div class="contact-row"><a href="${igUrl}" target="_blank" rel="noopener" style="color:var(--petrol2);font-size:13px;text-decoration:none">📷 ${escHtml(contato)}</a></div>`;
+  }
+  if (contato.startsWith('http') || contato.includes('www.')) {
+    const url = contato.startsWith('http') ? contato : 'https://'+contato;
+    return `<div class="contact-row"><a href="${url}" target="_blank" rel="noopener" style="color:var(--petrol2);font-size:13px;text-decoration:none">🔗 ${escHtml(contato)}</a></div>`;
+  }
+  return `<div class="contact-row">📞 ${escHtml(contato)}</div>`;
+}
 function fmtDate(ts) {
   if (!ts) return '';
   const d = ts.toDate ? ts.toDate() : new Date(ts);
@@ -405,6 +428,15 @@ function toast(msg, err=false) {
 }
 
 // ── FIRESTORE LISTENER (tempo real) ──
+// Capturar IP do usuário
+async function getIP() {
+  try {
+    const r = await fetch('https://api.ipify.org?format=json');
+    const d = await r.json();
+    return d.ip || 'desconhecido';
+  } catch { return 'desconhecido'; }
+}
+
 const q = query(collection(db, COLECAO), orderBy("data", "desc"));
 onSnapshot(q, (snapshot) => {
   fornecedores = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -461,7 +493,7 @@ function cardHtml(f) {
         ${(() => { const m = calcMedia(f); const med = Math.round(m.media*10)/10; return `<div class="stars">${starsHtml(Math.round(m.media))}</div><span style="font-size:13px;color:var(--muted)">${med}/5</span><span class="media-badge">📊 ${m.total} ${m.total>1?'avaliações':'avaliação'}</span>`; })()}
       </div>
       ${f.preco ? `<div class="price-tag">💰 ${escHtml(f.preco)}</div>` : ''}
-      ${f.contato ? `<div class="contact-row">📞 ${escHtml(f.contato)}</div>` : ''}
+      ${f.contato ? contatoHtml(f.contato) : ''}
       <div class="card-desc">${escHtml(f.desc)}</div>
     </div>
     <div class="card-footer">
@@ -474,6 +506,7 @@ function cardHtml(f) {
           ${isAdmin ? `<button class="btn btn-danger btn-sm" style="float:right;padding:3px 8px;font-size:11px" onclick="deleteComment('${f.id}',${i})">🗑️</button>` : ''}
           <span class="comment-author">${escHtml(c.autor||'Anônimo')}</span>
           <span class="comment-date">${c.data ? fmtDate(c.data) : ''}</span>
+          ${isAdmin && c._ip ? `<span style="font-size:10px;color:#9CA3AF;margin-left:6px">🌐 ${c._ip}</span>` : ''}
           ${c.rating ? `<div class="comment-rating">${[1,2,3,4,5].map(s=>`<span class="comment-star${s<=c.rating?' filled':''}">★</span>`).join('')}</div>` : ''}
           <div class="comment-text">${escHtml(c.texto)}</div>
         </div>`).join('')}
@@ -572,11 +605,12 @@ window.salvarFornecedor = async function() {
   const btn = document.getElementById('btn-salvar');
   btn.disabled = true; btn.textContent = 'Publicando…';
   try {
+    const ip = await getIP();
     await addDoc(collection(db, COLECAO), {
       nome, cat, rating: selectedRating, preco: selectedPrice,
       contato: document.getElementById('f-contato').value.trim(),
       desc, autor: document.getElementById('f-autor').value.trim() || 'Morador(a)',
-      data: serverTimestamp(), comentarios: []
+      data: serverTimestamp(), comentarios: [], _ip: ip
     });
     closeModal();
     toast('✅ Indicação publicada com sucesso!');
@@ -602,7 +636,8 @@ window.addComment = async function(fid) {
   try {
     const ref = doc(db, COLECAO, fid);
     const f = fornecedores.find(x=>x.id===fid);
-    const comentarios = [...(f.comentarios||[]), { autor, texto, rating, data: new Date().toISOString() }];
+    const ip = await getIP();
+    const comentarios = [...(f.comentarios||[]), { autor, texto, rating, data: new Date().toISOString(), _ip: ip }];
     await updateDoc(ref, { comentarios });
     delete comRatings[fid];
     toast('💬 Comentário publicado!');
@@ -674,6 +709,7 @@ function renderAdminView() {
           <strong style="color:var(--petrol)">${escHtml(f.nome)}</strong>
           <span style="background:var(--amber);color:#fff;border-radius:50px;padding:2px 10px;font-size:11px;font-weight:700;margin-left:8px">${escHtml(f.cat)}</span>
           <div style="font-size:12px;color:var(--muted);margin-top:2px">${fmtDate(f.data)} · ${f.comentarios?.length||0} comentário(s)</div>
+          ${f._ip ? `<div style="font-size:11px;color:#9CA3AF;margin-top:2px">🌐 IP: <code>${f._ip}</code></div>` : ''}
         </div>
         <div class="stars" style="font-size:14px">${starsHtml(f.rating)}</div>
         <button class="btn btn-sm btn-danger" onclick="deleteFornecedor('${f.id}')">🗑️ Remover</button>
