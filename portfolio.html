@@ -119,10 +119,7 @@
     }
     .drag-hint:hover { border-color: var(--cyan); color: var(--cyan); }
     .drag-hint.active { border-color: var(--cyan); color: var(--cyan); background: rgba(0,212,255,0.06); }
-    .drag-hint .dot {
-      width: 6px; height: 6px; border-radius: 50%;
-      background: var(--muted); transition: background 0.2s;
-    }
+    .drag-hint .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); transition: background 0.2s; }
     .drag-hint.active .dot { background: var(--cyan); }
 
     /* ── GRID ── */
@@ -155,17 +152,17 @@
     .card[data-color="teal"]   { --ac: var(--teal);   }
     .card[data-color="red"]    { --ac: var(--red);    }
 
-    .grid:not(.drag-mode) .card:not(.wip):hover {
+    .grid:not(.drag-mode) .card:not(.wip):not(.add-card):hover {
       transform: translateY(-4px) scale(1.01);
       border-color: var(--ac);
       box-shadow: 0 8px 40px -8px color-mix(in srgb, var(--ac) 40%, transparent);
     }
 
-    .grid.drag-mode .card:not(.wip) {
+    .grid.drag-mode .card:not(.wip):not(.add-card) {
       cursor: grab;
       animation: wiggle 0.3s ease;
     }
-    .grid.drag-mode .card:not(.wip):hover {
+    .grid.drag-mode .card:not(.wip):not(.add-card):hover {
       border-color: var(--ac);
       box-shadow: 0 4px 20px -4px color-mix(in srgb, var(--ac) 30%, transparent);
     }
@@ -185,7 +182,6 @@
       box-shadow: 0 0 0 2px var(--ac) !important;
     }
 
-    /* card content */
     .card-icon {
       font-size: 36px; line-height: 1;
       filter: drop-shadow(0 2px 8px rgba(0,0,0,0.4));
@@ -203,11 +199,7 @@
       pointer-events: none;
     }
 
-    .card-body {
-      flex: 1; display: flex; flex-direction: column; gap: 4px;
-      pointer-events: none;
-    }
-
+    .card-body { flex: 1; display: flex; flex-direction: column; gap: 4px; pointer-events: none; }
     .card-title { font-size: 16px; font-weight: 700; color: #fff; line-height: 1.2; }
     .card-desc  { font-size: 12px; color: var(--muted); line-height: 1.5; }
 
@@ -217,94 +209,97 @@
       transition: color 0.2s ease, transform 0.2s ease;
       pointer-events: none;
     }
-    .grid:not(.drag-mode) .card:not(.wip):hover .card-arrow {
+    .grid:not(.drag-mode) .card:not(.wip):not(.add-card):hover .card-arrow {
       color: var(--ac); transform: translate(2px, -2px);
     }
 
-    /* ── DRAG HANDLE (top-right in drag mode) ── */
+    /* drag handle */
     .drag-handle {
       position: absolute; top: 10px; right: 38px;
       font-size: 13px; color: var(--muted);
       opacity: 0; transition: opacity 0.2s; pointer-events: none;
     }
-    .grid.drag-mode .card:not(.wip) .drag-handle { opacity: 0.45; }
-    .grid.drag-mode .card:not(.wip):hover .drag-handle { opacity: 0.9; }
+    .grid.drag-mode .card:not(.wip):not(.add-card) .drag-handle { opacity: 0.45; }
+    .grid.drag-mode .card:not(.wip):not(.add-card):hover .drag-handle { opacity: 0.9; }
 
-    /* ── EDIT PENCIL BUTTON ── */
+    /* ── EDIT PENCIL ── */
     .edit-btn {
       position: absolute; top: 8px; right: 10px;
-      width: 24px; height: 24px;
-      border-radius: 50%;
+      width: 24px; height: 24px; border-radius: 50%;
       background: rgba(255,255,255,0.06);
       border: 1px solid rgba(255,255,255,0.1);
-      color: var(--muted);
-      font-size: 12px;
+      color: var(--muted); font-size: 12px;
       display: flex; align-items: center; justify-content: center;
-      cursor: pointer;
-      opacity: 0;
+      cursor: pointer; opacity: 0;
       transition: opacity 0.2s, background 0.2s, color 0.2s;
-      z-index: 10;
-      line-height: 1;
+      z-index: 10; line-height: 1;
     }
-    /* show pencil only in drag/edit mode */
-    .grid.drag-mode .card:not(.wip) .edit-btn { opacity: 1; }
+    .grid.drag-mode .card:not(.wip):not(.add-card) .edit-btn { opacity: 1; }
     .edit-btn:hover { background: rgba(0,212,255,0.15); color: var(--cyan); border-color: var(--cyan); }
+
+    /* delete btn */
+    .delete-btn {
+      position: absolute; top: 8px; right: 38px;
+      width: 24px; height: 24px; border-radius: 50%;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: var(--muted); font-size: 11px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; opacity: 0;
+      transition: opacity 0.2s, background 0.2s, color 0.2s;
+      z-index: 10; line-height: 1;
+    }
+    .grid.drag-mode .card:not(.wip):not(.add-card) .delete-btn { opacity: 1; }
+    .delete-btn:hover { background: rgba(255,77,109,0.2); color: var(--red); border-color: var(--red); }
+
+    /* adjust drag handle when delete btn is shown */
+    .grid.drag-mode .card:not(.wip):not(.add-card) .drag-handle { right: 68px; }
 
     /* ── INLINE EDIT PANEL ── */
     .edit-panel {
-      display: none;
-      position: absolute;
-      inset: 0;
+      display: none; position: absolute; inset: 0;
       background: rgba(10,10,25,0.97);
-      border-radius: 20px;
-      padding: 14px;
-      flex-direction: column;
-      gap: 8px;
-      z-index: 20;
+      border-radius: 20px; padding: 14px;
+      flex-direction: column; gap: 8px; z-index: 20;
     }
     .edit-panel.open { display: flex; }
 
     .edit-panel label {
       font-size: 9px; font-weight: 700;
       letter-spacing: 0.12em; text-transform: uppercase;
-      color: var(--muted);
-      margin-bottom: 2px;
-      display: block;
+      color: var(--muted); margin-bottom: 2px; display: block;
     }
 
     .edit-panel input {
       width: 100%;
       background: rgba(255,255,255,0.05);
       border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 8px;
-      color: var(--text);
-      font-family: 'Inter', sans-serif;
-      font-size: 12px;
-      padding: 5px 8px;
-      outline: none;
-      transition: border-color 0.2s;
-      user-select: text;
+      border-radius: 8px; color: var(--text);
+      font-family: 'Inter', sans-serif; font-size: 12px;
+      padding: 5px 8px; outline: none;
+      transition: border-color 0.2s; user-select: text;
     }
     .edit-panel input:focus { border-color: var(--cyan); }
 
     .edit-panel-row { display: flex; gap: 6px; }
+    .edit-panel-emoji { width: 48px; flex-shrink: 0; font-size: 20px; text-align: center; padding: 4px 2px; }
 
-    .edit-panel-emoji {
-      width: 48px; flex-shrink: 0;
-      font-size: 20px; text-align: center;
-      padding: 4px 2px;
+    /* color picker row */
+    .color-picker { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 2px; }
+    .color-dot {
+      width: 18px; height: 18px; border-radius: 50%; cursor: pointer;
+      border: 2px solid transparent;
+      transition: transform 0.15s, border-color 0.15s;
     }
+    .color-dot:hover { transform: scale(1.2); }
+    .color-dot.selected { border-color: #fff; transform: scale(1.15); }
 
-    .edit-actions {
-      display: flex; gap: 6px; margin-top: auto;
-    }
+    .edit-actions { display: flex; gap: 6px; margin-top: auto; }
 
     .btn-save, .btn-cancel {
       flex: 1; border: none; border-radius: 8px;
-      font-size: 11px; font-weight: 600;
-      padding: 6px 4px;
-      cursor: pointer;
-      font-family: 'Inter', sans-serif;
+      font-size: 11px; font-weight: 600; padding: 6px 4px;
+      cursor: pointer; font-family: 'Inter', sans-serif;
       transition: opacity 0.15s;
     }
     .btn-save   { background: var(--cyan); color: #000; }
@@ -312,10 +307,77 @@
     .btn-save:hover   { opacity: 0.85; }
     .btn-cancel:hover { opacity: 0.7; }
 
+    /* ── ADD CARD ── */
+    .add-card {
+      border: 2px dashed rgba(255,255,255,0.12);
+      background: transparent;
+      border-radius: 20px;
+      display: none; /* shown only in drag mode */
+      flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 8px; cursor: pointer;
+      min-height: 160px;
+      transition: border-color 0.2s, background 0.2s;
+      padding: 24px 20px;
+    }
+    .grid.drag-mode .add-card { display: flex; }
+    .add-card:hover { border-color: var(--cyan); background: rgba(0,212,255,0.04); }
+    .add-card-icon { font-size: 28px; opacity: 0.4; }
+    .add-card-label { font-size: 12px; color: var(--muted); font-weight: 500; }
+    .add-card:hover .add-card-label { color: var(--cyan); }
+    .add-card:hover .add-card-icon { opacity: 0.7; }
+
+    /* ── NEW CARD MODAL ── */
+    .modal-backdrop {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);
+      z-index: 100; align-items: center; justify-content: center;
+    }
+    .modal-backdrop.open { display: flex; }
+
+    .modal {
+      background: #1A1A30;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 24px; padding: 28px;
+      width: 100%; max-width: 380px;
+      display: flex; flex-direction: column; gap: 16px;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.6);
+    }
+
+    .modal-title {
+      font-size: 16px; font-weight: 700; color: #fff;
+    }
+
+    .modal label {
+      font-size: 10px; font-weight: 600;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--muted); margin-bottom: 4px; display: block;
+    }
+
+    .modal input {
+      width: 100%;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 10px; color: var(--text);
+      font-family: 'Inter', sans-serif; font-size: 13px;
+      padding: 8px 12px; outline: none;
+      transition: border-color 0.2s; user-select: text;
+    }
+    .modal input:focus { border-color: var(--cyan); }
+
+    .modal-row { display: flex; gap: 10px; }
+    .modal-emoji { width: 56px; flex-shrink: 0; font-size: 22px; text-align: center; }
+
+    .modal .color-picker { gap: 8px; margin-top: 4px; }
+    .modal .color-dot { width: 22px; height: 22px; }
+
+    .modal-actions { display: flex; gap: 10px; margin-top: 4px; }
+    .modal-actions .btn-save   { font-size: 13px; padding: 10px 8px; }
+    .modal-actions .btn-cancel { font-size: 13px; padding: 10px 8px; }
+
     /* WIP */
     .card.wip { opacity: 0.5; cursor: not-allowed; }
     .card.wip:hover { transform: none; box-shadow: none; border-color: var(--border); }
-
     .wip-badge {
       position: absolute; top: 14px; right: 14px;
       font-size: 9px; font-weight: 700;
@@ -324,7 +386,7 @@
       padding: 2px 7px; border-radius: 20px;
     }
 
-    .card:active:not(.wip):not(.dragging) { transform: scale(0.97); }
+    .card:active:not(.wip):not(.dragging):not(.add-card) { transform: scale(0.97); }
 
     /* ── FOOTER ── */
     .footer { text-align: center; color: var(--muted); font-size: 12px; margin-top: 24px; }
@@ -338,6 +400,7 @@
       .card { padding: 18px 16px 16px; border-radius: 18px; }
       .card-icon { font-size: 30px; }
       .card-title { font-size: 14px; }
+      .modal { max-width: 92vw; padding: 20px; }
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -350,11 +413,6 @@
 
   <!-- HERO -->
   <header class="hero">
-    <!-- ══════════════════════════════════════════════
-         FOTO DE PERFIL
-         Troque o valor de MINHA_FOTO pelo nome do
-         arquivo (ex: "foto.jpg") ou uma URL completa.
-         ══════════════════════════════════════════════ -->
     <div class="hero-avatar" id="avatar-wrap">
       <img id="avatar-img" src="" alt="Andrey Cappa"
         style="display:none; width:100%; height:100%; object-fit:cover; border-radius:50%;"
@@ -365,7 +423,6 @@
       const MINHA_FOTO = ""; // ← "foto.jpg" ou URL
       if (MINHA_FOTO) document.getElementById("avatar-img").src = MINHA_FOTO;
     </script>
-
     <p class="hero-label">Andrey Cappa · Labs</p>
     <h1 class="hero-name">Minhas Soluções</h1>
     <p class="hero-bio">Apps, dashboards e ferramentas construídos do zero para resolver problemas reais — do bolão da família à gestão de projetos.</p>
@@ -388,6 +445,7 @@
        href="https://djpartyman2015-ui.github.io/Links-Ativos/indiko.html"
        target="_blank" rel="noopener">
       <span class="drag-handle">⠿</span>
+      <button class="delete-btn" title="Remover card">✕</button>
       <button class="edit-btn" title="Editar card">✏️</button>
       <span class="card-icon">📍</span>
       <span class="card-tag">Comunidade</span>
@@ -397,21 +455,15 @@
       </div>
       <span class="card-arrow">↗</span>
       <div class="edit-panel">
-        <div>
-          <label>Emoji</label>
+        <div><label>Emoji + Categoria</label>
           <div class="edit-panel-row">
             <input class="edit-panel-emoji" type="text" data-field="icon" maxlength="4" value="📍" />
-            <input style="flex:1" type="text" data-field="tag" placeholder="Categoria" value="Comunidade" />
+            <input style="flex:1" type="text" data-field="tag" value="Comunidade" />
           </div>
         </div>
-        <div>
-          <label>Título</label>
-          <input type="text" data-field="title" value="Indiko" />
-        </div>
-        <div>
-          <label>Descrição</label>
-          <input type="text" data-field="desc" value="Recomendações de prestadores de serviço no bairro" />
-        </div>
+        <div><label>Título</label><input type="text" data-field="title" value="Indiko" /></div>
+        <div><label>Descrição</label><input type="text" data-field="desc" value="Recomendações de prestadores de serviço no bairro" /></div>
+        <div><label>Cor</label><div class="color-picker" data-for="color"></div></div>
         <div class="edit-actions">
           <button class="btn-cancel">Cancelar</button>
           <button class="btn-save">Salvar</button>
@@ -423,6 +475,7 @@
        href="https://djpartyman2015-ui.github.io/Links-Ativos/bolao-brasil-escocia.html"
        target="_blank" rel="noopener">
       <span class="drag-handle">⠿</span>
+      <button class="delete-btn" title="Remover card">✕</button>
       <button class="edit-btn" title="Editar card">✏️</button>
       <span class="card-icon">⚽</span>
       <span class="card-tag">Esporte</span>
@@ -432,21 +485,15 @@
       </div>
       <span class="card-arrow">↗</span>
       <div class="edit-panel">
-        <div>
-          <label>Emoji</label>
+        <div><label>Emoji + Categoria</label>
           <div class="edit-panel-row">
             <input class="edit-panel-emoji" type="text" data-field="icon" maxlength="4" value="⚽" />
-            <input style="flex:1" type="text" data-field="tag" placeholder="Categoria" value="Esporte" />
+            <input style="flex:1" type="text" data-field="tag" value="Esporte" />
           </div>
         </div>
-        <div>
-          <label>Título</label>
-          <input type="text" data-field="title" value="Bolão Brasil x Escócia" />
-        </div>
-        <div>
-          <label>Descrição</label>
-          <input type="text" data-field="desc" value="Palpites e placar do confronto" />
-        </div>
+        <div><label>Título</label><input type="text" data-field="title" value="Bolão Brasil x Escócia" /></div>
+        <div><label>Descrição</label><input type="text" data-field="desc" value="Palpites e placar do confronto" /></div>
+        <div><label>Cor</label><div class="color-picker" data-for="color"></div></div>
         <div class="edit-actions">
           <button class="btn-cancel">Cancelar</button>
           <button class="btn-save">Salvar</button>
@@ -458,6 +505,7 @@
        href="https://djpartyman2015-ui.github.io/Links-Ativos/bolao-brasil-marrocos.html"
        target="_blank" rel="noopener">
       <span class="drag-handle">⠿</span>
+      <button class="delete-btn" title="Remover card">✕</button>
       <button class="edit-btn" title="Editar card">✏️</button>
       <span class="card-icon">🏆</span>
       <span class="card-tag">Esporte</span>
@@ -467,21 +515,15 @@
       </div>
       <span class="card-arrow">↗</span>
       <div class="edit-panel">
-        <div>
-          <label>Emoji</label>
+        <div><label>Emoji + Categoria</label>
           <div class="edit-panel-row">
             <input class="edit-panel-emoji" type="text" data-field="icon" maxlength="4" value="🏆" />
-            <input style="flex:1" type="text" data-field="tag" placeholder="Categoria" value="Esporte" />
+            <input style="flex:1" type="text" data-field="tag" value="Esporte" />
           </div>
         </div>
-        <div>
-          <label>Título</label>
-          <input type="text" data-field="title" value="Bolão Brasil x Marrocos" />
-        </div>
-        <div>
-          <label>Descrição</label>
-          <input type="text" data-field="desc" value="Palpites e placar do confronto" />
-        </div>
+        <div><label>Título</label><input type="text" data-field="title" value="Bolão Brasil x Marrocos" /></div>
+        <div><label>Descrição</label><input type="text" data-field="desc" value="Palpites e placar do confronto" /></div>
+        <div><label>Cor</label><div class="color-picker" data-for="color"></div></div>
         <div class="edit-actions">
           <button class="btn-cancel">Cancelar</button>
           <button class="btn-save">Salvar</button>
@@ -493,6 +535,7 @@
        href="https://djpartyman2015-ui.github.io/Links-Ativos/monitor-cotacoes.html"
        target="_blank" rel="noopener">
       <span class="drag-handle">⠿</span>
+      <button class="delete-btn" title="Remover card">✕</button>
       <button class="edit-btn" title="Editar card">✏️</button>
       <span class="card-icon">💱</span>
       <span class="card-tag">Finanças</span>
@@ -502,21 +545,15 @@
       </div>
       <span class="card-arrow">↗</span>
       <div class="edit-panel">
-        <div>
-          <label>Emoji</label>
+        <div><label>Emoji + Categoria</label>
           <div class="edit-panel-row">
             <input class="edit-panel-emoji" type="text" data-field="icon" maxlength="4" value="💱" />
-            <input style="flex:1" type="text" data-field="tag" placeholder="Categoria" value="Finanças" />
+            <input style="flex:1" type="text" data-field="tag" value="Finanças" />
           </div>
         </div>
-        <div>
-          <label>Título</label>
-          <input type="text" data-field="title" value="Cotação do Dia" />
-        </div>
-        <div>
-          <label>Descrição</label>
-          <input type="text" data-field="desc" value="Monitor de câmbio com calculadora em BRL" />
-        </div>
+        <div><label>Título</label><input type="text" data-field="title" value="Cotação do Dia" /></div>
+        <div><label>Descrição</label><input type="text" data-field="desc" value="Monitor de câmbio com calculadora em BRL" /></div>
+        <div><label>Cor</label><div class="color-picker" data-for="color"></div></div>
         <div class="edit-actions">
           <button class="btn-cancel">Cancelar</button>
           <button class="btn-save">Salvar</button>
@@ -528,6 +565,7 @@
        href="https://djpartyman2015-ui.github.io/Links-Ativos/checklist-viagem.html"
        target="_blank" rel="noopener">
       <span class="drag-handle">⠿</span>
+      <button class="delete-btn" title="Remover card">✕</button>
       <button class="edit-btn" title="Editar card">✏️</button>
       <span class="card-icon">🧳</span>
       <span class="card-tag">Viagem</span>
@@ -537,21 +575,15 @@
       </div>
       <span class="card-arrow">↗</span>
       <div class="edit-panel">
-        <div>
-          <label>Emoji</label>
+        <div><label>Emoji + Categoria</label>
           <div class="edit-panel-row">
             <input class="edit-panel-emoji" type="text" data-field="icon" maxlength="4" value="🧳" />
-            <input style="flex:1" type="text" data-field="tag" placeholder="Categoria" value="Viagem" />
+            <input style="flex:1" type="text" data-field="tag" value="Viagem" />
           </div>
         </div>
-        <div>
-          <label>Título</label>
-          <input type="text" data-field="title" value="Checklist de Viagem" />
-        </div>
-        <div>
-          <label>Descrição</label>
-          <input type="text" data-field="desc" value="Lista interativa de itens para não esquecer nada" />
-        </div>
+        <div><label>Título</label><input type="text" data-field="title" value="Checklist de Viagem" /></div>
+        <div><label>Descrição</label><input type="text" data-field="desc" value="Lista interativa de itens para não esquecer nada" /></div>
+        <div><label>Cor</label><div class="color-picker" data-for="color"></div></div>
         <div class="edit-actions">
           <button class="btn-cancel">Cancelar</button>
           <button class="btn-save">Salvar</button>
@@ -563,6 +595,7 @@
        href="https://djpartyman2015-ui.github.io/Links-Ativos/noronha-gastos.html"
        target="_blank" rel="noopener">
       <span class="drag-handle">⠿</span>
+      <button class="delete-btn" title="Remover card">✕</button>
       <button class="edit-btn" title="Editar card">✏️</button>
       <span class="card-icon">🏝️</span>
       <span class="card-tag">Viagem</span>
@@ -572,21 +605,15 @@
       </div>
       <span class="card-arrow">↗</span>
       <div class="edit-panel">
-        <div>
-          <label>Emoji</label>
+        <div><label>Emoji + Categoria</label>
           <div class="edit-panel-row">
             <input class="edit-panel-emoji" type="text" data-field="icon" maxlength="4" value="🏝️" />
-            <input style="flex:1" type="text" data-field="tag" placeholder="Categoria" value="Viagem" />
+            <input style="flex:1" type="text" data-field="tag" value="Viagem" />
           </div>
         </div>
-        <div>
-          <label>Título</label>
-          <input type="text" data-field="title" value="Noronha · Gastos" />
-        </div>
-        <div>
-          <label>Descrição</label>
-          <input type="text" data-field="desc" value="Controle de despesas da viagem a Fernando de Noronha" />
-        </div>
+        <div><label>Título</label><input type="text" data-field="title" value="Noronha · Gastos" /></div>
+        <div><label>Descrição</label><input type="text" data-field="desc" value="Controle de despesas da viagem a Fernando de Noronha" /></div>
+        <div><label>Cor</label><div class="color-picker" data-for="color"></div></div>
         <div class="edit-actions">
           <button class="btn-cancel">Cancelar</button>
           <button class="btn-save">Salvar</button>
@@ -594,22 +621,49 @@
       </div>
     </a>
 
+    <a class="card" data-color="purple" data-id="ptp-dashboard"
+       href="https://djpartyman2015-ui.github.io/Links-Ativos/Vale_PTP_Dashboard_Completo.html"
+       target="_blank" rel="noopener">
+      <span class="drag-handle">⠿</span>
+      <button class="delete-btn" title="Remover card">✕</button>
+      <button class="edit-btn" title="Editar card">✏️</button>
+      <span class="card-icon">📊</span>
+      <span class="card-tag">Gestão</span>
+      <div class="card-body">
+        <span class="card-title">Dashboard PTP</span>
+        <span class="card-desc">Painel executivo de transição de sistemas Vale</span>
+      </div>
+      <span class="card-arrow">↗</span>
+      <div class="edit-panel">
+        <div><label>Emoji + Categoria</label>
+          <div class="edit-panel-row">
+            <input class="edit-panel-emoji" type="text" data-field="icon" maxlength="4" value="📊" />
+            <input style="flex:1" type="text" data-field="tag" value="Gestão" />
+          </div>
+        </div>
+        <div><label>Título</label><input type="text" data-field="title" value="Dashboard PTP" /></div>
+        <div><label>Descrição</label><input type="text" data-field="desc" value="Painel executivo de transição de sistemas Vale" /></div>
+        <div><label>Cor</label><div class="color-picker" data-for="color"></div></div>
+        <div class="edit-actions">
+          <button class="btn-cancel">Cancelar</button>
+          <button class="btn-save">Salvar</button>
+        </div>
+      </div>
+    </a>
+
+    <!-- Botão adicionar novo card — aparece só no modo organizar -->
+    <div class="card add-card" id="add-card-btn" onclick="openModal()">
+      <span class="add-card-icon">＋</span>
+      <span class="add-card-label">Adicionar app</span>
+    </div>
+
   </div>
 
   <!-- ── EM DESENVOLVIMENTO ── -->
   <div class="section-header">
     <p class="section-label">Em desenvolvimento</p>
   </div>
-  <div class="grid">
-    <div class="card wip" data-color="purple">
-      <span class="wip-badge">Em breve</span>
-      <span class="card-icon">📊</span>
-      <span class="card-tag">Gestão</span>
-      <div class="card-body">
-        <span class="card-title">Dashboard PTP</span>
-        <span class="card-desc">Painel executivo de transição de sistemas</span>
-      </div>
-    </div>
+  <div class="grid" id="wip-grid">
     <div class="card wip" data-color="red">
       <span class="wip-badge">Em breve</span>
       <span class="card-icon">💡</span>
@@ -629,120 +683,313 @@
 
 </div>
 
+<!-- ── MODAL NOVO CARD ── -->
+<div class="modal-backdrop" id="modal-backdrop" onclick="handleBackdropClick(event)">
+  <div class="modal">
+    <p class="modal-title">Novo app</p>
+
+    <div>
+      <label>Emoji + Categoria</label>
+      <div class="modal-row">
+        <input class="modal-emoji" type="text" id="new-icon" maxlength="4" placeholder="🚀" />
+        <input style="flex:1" type="text" id="new-tag" placeholder="Ex: Finanças" />
+      </div>
+    </div>
+
+    <div>
+      <label>Título</label>
+      <input type="text" id="new-title" placeholder="Nome do app" />
+    </div>
+
+    <div>
+      <label>Descrição</label>
+      <input type="text" id="new-desc" placeholder="O que esse app faz?" />
+    </div>
+
+    <div>
+      <label>Link (URL)</label>
+      <input type="url" id="new-url" placeholder="https://..." />
+    </div>
+
+    <div>
+      <label>Cor do card</label>
+      <div class="color-picker" id="modal-color-picker"></div>
+    </div>
+
+    <div class="modal-actions edit-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="btn-save" onclick="addNewCard()">Criar card</button>
+    </div>
+  </div>
+</div>
+
 <script>
-  /* ════════════════════════════════════════════════
-     STORAGE KEYS
-     ════════════════════════════════════════════════ */
-  const ORDER_KEY  = 'cappa-labs-order';
-  const EDITS_KEY  = 'cappa-labs-edits';
-  const grid       = document.getElementById('main-grid');
-  const toggleBtn  = document.getElementById('drag-toggle');
+  /* ══════════════════════════════════════════ */
+  const ORDER_KEY   = 'cappa-labs-order';
+  const EDITS_KEY   = 'cappa-labs-edits';
+  const DYNAMIC_KEY = 'cappa-labs-dynamic';
+
+  const grid      = document.getElementById('main-grid');
+  const toggleBtn = document.getElementById('drag-toggle');
+
+  const COLORS = [
+    { name:'cyan',   hex:'#00D4FF' },
+    { name:'purple', hex:'#7B2FBE' },
+    { name:'green',  hex:'#00E5A0' },
+    { name:'orange', hex:'#FF7B2F' },
+    { name:'pink',   hex:'#FF2FB0' },
+    { name:'yellow', hex:'#FFD700' },
+    { name:'teal',   hex:'#00C9A7' },
+    { name:'red',    hex:'#FF4D6D' },
+  ];
 
   let dragMode    = false;
   let dragSrc     = null;
   let clickLocked = false;
+  let selectedModalColor = 'cyan';
 
-  /* ── Restore saved card text edits ── */
-  function restoreEdits() {
-    const saved = localStorage.getItem(EDITS_KEY);
-    if (!saved) return;
-    try {
-      const edits = JSON.parse(saved);
-      Object.entries(edits).forEach(([id, data]) => {
-        const card = grid.querySelector(`[data-id="${id}"]`);
-        if (!card) return;
-        if (data.icon)  card.querySelector('.card-icon').textContent = data.icon;
-        if (data.tag)   card.querySelector('.card-tag').textContent  = data.tag;
-        if (data.title) card.querySelector('.card-title').textContent = data.title;
-        if (data.desc)  card.querySelector('.card-desc').textContent  = data.desc;
-        // sync inputs in edit panel
-        if (data.icon)  card.querySelector('[data-field="icon"]').value  = data.icon;
-        if (data.tag)   card.querySelector('[data-field="tag"]').value   = data.tag;
-        if (data.title) card.querySelector('[data-field="title"]').value = data.title;
-        if (data.desc)  card.querySelector('[data-field="desc"]').value  = data.desc;
+  /* ── Build color pickers ── */
+  function buildColorPicker(container, currentColor, onChange) {
+    container.innerHTML = '';
+    COLORS.forEach(c => {
+      const dot = document.createElement('span');
+      dot.className = 'color-dot' + (c.name === currentColor ? ' selected' : '');
+      dot.style.background = c.hex;
+      dot.title = c.name;
+      dot.addEventListener('click', e => {
+        e.stopPropagation();
+        container.querySelectorAll('.color-dot').forEach(d => d.classList.remove('selected'));
+        dot.classList.add('selected');
+        onChange(c.name);
       });
-    } catch(e) {}
+      container.appendChild(dot);
+    });
   }
 
-  function saveEdit(card) {
-    const id = card.dataset.id;
-    const saved = JSON.parse(localStorage.getItem(EDITS_KEY) || '{}');
-    saved[id] = {
-      icon:  card.querySelector('[data-field="icon"]').value,
-      tag:   card.querySelector('[data-field="tag"]').value,
-      title: card.querySelector('[data-field="title"]').value,
-      desc:  card.querySelector('[data-field="desc"]').value,
-    };
-    localStorage.setItem(EDITS_KEY, JSON.stringify(saved));
-  }
+  /* build modal color picker */
+  buildColorPicker(
+    document.getElementById('modal-color-picker'),
+    selectedModalColor,
+    name => { selectedModalColor = name; }
+  );
 
-  /* ── Restore saved order ── */
-  function restoreOrder() {
-    const saved = localStorage.getItem(ORDER_KEY);
-    if (!saved) return;
-    try {
-      JSON.parse(saved).forEach(id => {
-        const card = grid.querySelector(`[data-id="${id}"]`);
-        if (card) grid.appendChild(card);
-      });
-    } catch(e) {}
-  }
+  /* ── Wire edit panels ── */
+  function wireCard(card) {
+    const editBtn   = card.querySelector('.edit-btn');
+    const deleteBtn = card.querySelector('.delete-btn');
+    const panel     = card.querySelector('.edit-panel');
+    if (!panel) return;
 
-  function saveOrder() {
-    const ids = [...grid.querySelectorAll('.card[data-id]')].map(c => c.dataset.id);
-    localStorage.setItem(ORDER_KEY, JSON.stringify(ids));
-  }
+    const saveB   = panel.querySelector('.btn-save');
+    const cancelB = panel.querySelector('.btn-cancel');
+    const colorPicker = panel.querySelector('.color-picker');
+    let panelColor = card.dataset.color || 'cyan';
 
-  /* ── Edit panel logic ── */
-  function openPanel(card) {
-    card.querySelector('.edit-panel').classList.add('open');
-  }
+    buildColorPicker(colorPicker, panelColor, name => { panelColor = name; });
 
-  function closePanel(card) {
-    card.querySelector('.edit-panel').classList.remove('open');
-  }
-
-  // Wire up all edit buttons & panels
-  grid.querySelectorAll('.card:not(.wip)').forEach(card => {
-    const btn    = card.querySelector('.edit-btn');
-    const panel  = card.querySelector('.edit-panel');
-    const saveB  = panel.querySelector('.btn-save');
-    const cancelB= panel.querySelector('.btn-cancel');
-
-    btn.addEventListener('click', e => {
+    editBtn && editBtn.addEventListener('click', e => {
       e.preventDefault(); e.stopPropagation();
-      openPanel(card);
+      panel.classList.add('open');
     });
 
-    cancelB.addEventListener('click', e => {
+    deleteBtn && deleteBtn.addEventListener('click', e => {
       e.preventDefault(); e.stopPropagation();
-      closePanel(card);
+      if (confirm('Remover esse card?')) {
+        const id = card.dataset.id;
+        // remove from edits & dynamic storage
+        const edits = JSON.parse(localStorage.getItem(EDITS_KEY) || '{}');
+        delete edits[id];
+        localStorage.setItem(EDITS_KEY, JSON.stringify(edits));
+        const dynamics = JSON.parse(localStorage.getItem(DYNAMIC_KEY) || '[]');
+        const newDyn = dynamics.filter(d => d.id !== id);
+        localStorage.setItem(DYNAMIC_KEY, JSON.stringify(newDyn));
+        card.remove();
+        saveOrder();
+      }
     });
 
-    saveB.addEventListener('click', e => {
+    cancelB && cancelB.addEventListener('click', e => {
       e.preventDefault(); e.stopPropagation();
-      const icon  = panel.querySelector('[data-field="icon"]').value.trim()  || card.querySelector('.card-icon').textContent;
-      const tag   = panel.querySelector('[data-field="tag"]').value.trim()   || card.querySelector('.card-tag').textContent;
-      const title = panel.querySelector('[data-field="title"]').value.trim() || card.querySelector('.card-title').textContent;
-      const desc  = panel.querySelector('[data-field="desc"]').value.trim()  || card.querySelector('.card-desc').textContent;
-
-      card.querySelector('.card-icon').textContent  = icon;
-      card.querySelector('.card-tag').textContent   = tag;
-      card.querySelector('.card-title').textContent = title;
-      card.querySelector('.card-desc').textContent  = desc;
-
-      saveEdit(card);
-      closePanel(card);
+      panel.classList.remove('open');
     });
 
-    // prevent inputs from triggering drag
+    saveB && saveB.addEventListener('click', e => {
+      e.preventDefault(); e.stopPropagation();
+      const icon  = panel.querySelector('[data-field="icon"]').value.trim();
+      const tag   = panel.querySelector('[data-field="tag"]').value.trim();
+      const title = panel.querySelector('[data-field="title"]').value.trim();
+      const desc  = panel.querySelector('[data-field="desc"]').value.trim();
+
+      if (icon)  card.querySelector('.card-icon').textContent  = icon;
+      if (tag)   card.querySelector('.card-tag').textContent   = tag;
+      if (title) card.querySelector('.card-title').textContent = title;
+      if (desc)  card.querySelector('.card-desc').textContent  = desc;
+
+      // update color
+      card.dataset.color = panelColor;
+      buildColorPicker(colorPicker, panelColor, name => { panelColor = name; });
+
+      saveEdit(card, panelColor);
+
+      // if dynamic card, update stored data
+      const dynamics = JSON.parse(localStorage.getItem(DYNAMIC_KEY) || '[]');
+      const idx = dynamics.findIndex(d => d.id === card.dataset.id);
+      if (idx !== -1) {
+        dynamics[idx] = { ...dynamics[idx], icon, tag, title, desc, color: panelColor };
+        localStorage.setItem(DYNAMIC_KEY, JSON.stringify(dynamics));
+      }
+
+      panel.classList.remove('open');
+    });
+
     panel.querySelectorAll('input').forEach(inp => {
       inp.addEventListener('mousedown', e => e.stopPropagation());
       inp.addEventListener('touchstart', e => e.stopPropagation(), { passive: true });
     });
-  });
+  }
 
-  /* ── Toggle drag/edit mode ── */
+  /* ── Create card element ── */
+  function createCardEl({ id, icon, tag, title, desc, url, color }) {
+    const a = document.createElement('a');
+    a.className = 'card';
+    a.dataset.color = color;
+    a.dataset.id    = id;
+    a.href          = url;
+    a.target        = '_blank';
+    a.rel           = 'noopener';
+    a.innerHTML = `
+      <span class="drag-handle">⠿</span>
+      <button class="delete-btn" title="Remover card">✕</button>
+      <button class="edit-btn" title="Editar card">✏️</button>
+      <span class="card-icon">${icon}</span>
+      <span class="card-tag">${tag}</span>
+      <div class="card-body">
+        <span class="card-title">${title}</span>
+        <span class="card-desc">${desc}</span>
+      </div>
+      <span class="card-arrow">↗</span>
+      <div class="edit-panel">
+        <div><label>Emoji + Categoria</label>
+          <div class="edit-panel-row">
+            <input class="edit-panel-emoji" type="text" data-field="icon" maxlength="4" value="${icon}" />
+            <input style="flex:1" type="text" data-field="tag" value="${tag}" />
+          </div>
+        </div>
+        <div><label>Título</label><input type="text" data-field="title" value="${title}" /></div>
+        <div><label>Descrição</label><input type="text" data-field="desc" value="${desc}" /></div>
+        <div><label>Cor</label><div class="color-picker" data-for="color"></div></div>
+        <div class="edit-actions">
+          <button class="btn-cancel">Cancelar</button>
+          <button class="btn-save">Salvar</button>
+        </div>
+      </div>`;
+    wireCard(a);
+    return a;
+  }
+
+  /* ── Modal ── */
+  function openModal() { document.getElementById('modal-backdrop').classList.add('open'); }
+  function closeModal() {
+    document.getElementById('modal-backdrop').classList.remove('open');
+    ['new-icon','new-tag','new-title','new-desc','new-url'].forEach(id => document.getElementById(id).value = '');
+    selectedModalColor = 'cyan';
+    buildColorPicker(document.getElementById('modal-color-picker'), 'cyan', n => { selectedModalColor = n; });
+  }
+  function handleBackdropClick(e) { if (e.target === e.currentTarget) closeModal(); }
+
+  function addNewCard() {
+    const icon  = document.getElementById('new-icon').value.trim()  || '🚀';
+    const tag   = document.getElementById('new-tag').value.trim()   || 'App';
+    const title = document.getElementById('new-title').value.trim() || 'Novo app';
+    const desc  = document.getElementById('new-desc').value.trim()  || '';
+    const url   = document.getElementById('new-url').value.trim()   || '#';
+    const color = selectedModalColor;
+    const id    = 'dynamic-' + Date.now();
+
+    const cardData = { id, icon, tag, title, desc, url, color };
+
+    // save to dynamic storage
+    const dynamics = JSON.parse(localStorage.getItem(DYNAMIC_KEY) || '[]');
+    dynamics.push(cardData);
+    localStorage.setItem(DYNAMIC_KEY, JSON.stringify(dynamics));
+
+    const cardEl = createCardEl(cardData);
+    if (dragMode) cardEl.draggable = true;
+    const addBtn = document.getElementById('add-card-btn');
+    grid.insertBefore(cardEl, addBtn);
+    saveOrder();
+    closeModal();
+  }
+
+  /* ── Storage: edits ── */
+  function saveEdit(card, colorOverride) {
+    const id = card.dataset.id;
+    const saved = JSON.parse(localStorage.getItem(EDITS_KEY) || '{}');
+    saved[id] = {
+      icon:  card.querySelector('.card-icon').textContent,
+      tag:   card.querySelector('.card-tag').textContent,
+      title: card.querySelector('.card-title').textContent,
+      desc:  card.querySelector('.card-desc').textContent,
+      color: colorOverride || card.dataset.color,
+    };
+    localStorage.setItem(EDITS_KEY, JSON.stringify(saved));
+  }
+
+  function restoreEdits() {
+    const saved = localStorage.getItem(EDITS_KEY);
+    if (!saved) return;
+    try {
+      Object.entries(JSON.parse(saved)).forEach(([id, data]) => {
+        const card = grid.querySelector(`[data-id="${id}"]`);
+        if (!card) return;
+        if (data.icon)  card.querySelector('.card-icon').textContent  = data.icon;
+        if (data.tag)   card.querySelector('.card-tag').textContent   = data.tag;
+        if (data.title) card.querySelector('.card-title').textContent = data.title;
+        if (data.desc)  card.querySelector('.card-desc').textContent  = data.desc;
+        if (data.color) card.dataset.color = data.color;
+        // sync panel inputs
+        const panel = card.querySelector('.edit-panel');
+        if (panel) {
+          if (data.icon)  panel.querySelector('[data-field="icon"]').value  = data.icon;
+          if (data.tag)   panel.querySelector('[data-field="tag"]').value   = data.tag;
+          if (data.title) panel.querySelector('[data-field="title"]').value = data.title;
+          if (data.desc)  panel.querySelector('[data-field="desc"]').value  = data.desc;
+        }
+      });
+    } catch(e) {}
+  }
+
+  function restoreDynamicCards() {
+    const saved = localStorage.getItem(DYNAMIC_KEY);
+    if (!saved) return;
+    try {
+      const addBtn = document.getElementById('add-card-btn');
+      JSON.parse(saved).forEach(data => {
+        const cardEl = createCardEl(data);
+        grid.insertBefore(cardEl, addBtn);
+      });
+    } catch(e) {}
+  }
+
+  /* ── Storage: order ── */
+  function saveOrder() {
+    const ids = [...grid.querySelectorAll('.card[data-id]:not(.add-card)')].map(c => c.dataset.id);
+    localStorage.setItem(ORDER_KEY, JSON.stringify(ids));
+  }
+
+  function restoreOrder() {
+    const saved = localStorage.getItem(ORDER_KEY);
+    if (!saved) return;
+    try {
+      const addBtn = document.getElementById('add-card-btn');
+      JSON.parse(saved).forEach(id => {
+        const card = grid.querySelector(`[data-id="${id}"]`);
+        if (card) grid.insertBefore(card, addBtn);
+      });
+    } catch(e) {}
+  }
+
+  /* ── Toggle drag mode ── */
   function toggleDragMode() {
     dragMode = !dragMode;
     grid.classList.toggle('drag-mode', dragMode);
@@ -750,21 +997,18 @@
     toggleBtn.innerHTML = dragMode
       ? '<span class="dot"></span> Pronto'
       : '<span class="dot"></span> Organizar';
-    grid.querySelectorAll('.card:not(.wip)').forEach(c => {
+    grid.querySelectorAll('.card:not(.wip):not(.add-card)').forEach(c => {
       c.draggable = dragMode;
-      // close any open panels when leaving edit mode
-      if (!dragMode) closePanel(c);
+      if (!dragMode) c.querySelector('.edit-panel')?.classList.remove('open');
     });
   }
 
   /* ── Desktop drag ── */
   grid.addEventListener('dragstart', e => {
-    const card = e.target.closest('.card:not(.wip)');
+    const card = e.target.closest('.card:not(.wip):not(.add-card)');
     if (!card || !dragMode) { e.preventDefault(); return; }
-    // don't drag if edit panel is open
     if (card.querySelector('.edit-panel.open')) { e.preventDefault(); return; }
-    dragSrc = card;
-    clickLocked = true;
+    dragSrc = card; clickLocked = true;
     setTimeout(() => card.classList.add('dragging'), 0);
     e.dataTransfer.effectAllowed = 'move';
   });
@@ -778,9 +1022,8 @@
   });
 
   grid.addEventListener('dragover', e => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    const card = e.target.closest('.card:not(.wip)');
+    e.preventDefault(); e.dataTransfer.dropEffect = 'move';
+    const card = e.target.closest('.card:not(.wip):not(.add-card)');
     if (!card || card === dragSrc) return;
     grid.querySelectorAll('.drag-over').forEach(c => c.classList.remove('drag-over'));
     card.classList.add('drag-over');
@@ -793,42 +1036,46 @@
 
   grid.addEventListener('drop', e => {
     e.preventDefault();
-    const target = e.target.closest('.card:not(.wip)');
+    const target = e.target.closest('.card:not(.wip):not(.add-card)');
     if (!target || target === dragSrc || !dragSrc) return;
     target.classList.remove('drag-over');
     const rect = target.getBoundingClientRect();
     const after = e.clientX > rect.left + rect.width / 2;
-    if (after) target.after(dragSrc);
-    else       target.before(dragSrc);
+    const addBtn = document.getElementById('add-card-btn');
+    if (after) {
+      if (target.nextSibling && target.nextSibling !== addBtn) target.after(dragSrc);
+      else grid.insertBefore(dragSrc, addBtn);
+    } else {
+      target.before(dragSrc);
+    }
     saveOrder();
   });
 
   grid.addEventListener('click', e => {
     if (clickLocked) { e.preventDefault(); return; }
-    if (dragMode && !e.target.closest('.edit-btn') && !e.target.closest('.edit-panel')) {
+    if (dragMode && !e.target.closest('.edit-btn') && !e.target.closest('.edit-panel') && !e.target.closest('.delete-btn') && !e.target.closest('.add-card')) {
       e.preventDefault();
     }
   }, true);
 
-  /* ── Touch drag (mobile) ── */
+  /* ── Touch drag ── */
   let touchCard = null, touchClone = null, touchOrigin = null;
 
   grid.addEventListener('touchstart', e => {
     if (!dragMode) return;
-    const card = e.target.closest('.card:not(.wip)');
+    const card = e.target.closest('.card:not(.wip):not(.add-card)');
     if (!card) return;
     if (card.querySelector('.edit-panel.open')) return;
-    if (e.target.closest('.edit-btn') || e.target.closest('.edit-panel')) return;
-    touchCard = card;
-    touchOrigin = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    if (e.target.closest('.edit-btn') || e.target.closest('.delete-btn') || e.target.closest('.edit-panel')) return;
+    touchCard = card; touchOrigin = { x: e.touches[0].clientX, y: e.touches[0].clientY };
     const r = card.getBoundingClientRect();
     touchClone = card.cloneNode(true);
     Object.assign(touchClone.style, {
-      position: 'fixed', top: r.top + 'px', left: r.left + 'px',
-      width: r.width + 'px', height: r.height + 'px',
-      opacity: '0.75', zIndex: '9999', pointerEvents: 'none',
-      transition: 'none', transform: 'scale(1.05)',
-      boxShadow: '0 16px 48px rgba(0,0,0,0.6)',
+      position:'fixed', top:r.top+'px', left:r.left+'px',
+      width:r.width+'px', height:r.height+'px',
+      opacity:'0.75', zIndex:'9999', pointerEvents:'none',
+      transition:'none', transform:'scale(1.05)',
+      boxShadow:'0 16px 48px rgba(0,0,0,0.6)',
     });
     document.body.appendChild(touchClone);
     card.classList.add('dragging');
@@ -838,13 +1085,11 @@
     if (!touchClone) return;
     e.preventDefault();
     const t = e.touches[0];
-    const dx = t.clientX - touchOrigin.x;
-    const dy = t.clientY - touchOrigin.y;
-    touchClone.style.transform = `translate(${dx}px, ${dy}px) scale(1.05)`;
+    touchClone.style.transform = `translate(${t.clientX-touchOrigin.x}px,${t.clientY-touchOrigin.y}px) scale(1.05)`;
     touchClone.style.display = 'none';
     const el = document.elementFromPoint(t.clientX, t.clientY);
     touchClone.style.display = '';
-    const over = el && el.closest('.card:not(.wip)');
+    const over = el && el.closest('.card:not(.wip):not(.add-card)');
     grid.querySelectorAll('.drag-over').forEach(c => c.classList.remove('drag-over'));
     if (over && over !== touchCard) over.classList.add('drag-over');
   }, { passive: false });
@@ -855,18 +1100,23 @@
     touchClone.remove(); touchClone = null;
     touchCard.classList.remove('dragging');
     const el = document.elementFromPoint(t.clientX, t.clientY);
-    const target = el && el.closest('.card:not(.wip)');
+    const target = el && el.closest('.card:not(.wip):not(.add-card)');
     grid.querySelectorAll('.drag-over').forEach(c => c.classList.remove('drag-over'));
     if (target && target !== touchCard) {
       const rect = target.getBoundingClientRect();
-      if (t.clientX > rect.left + rect.width / 2) target.after(touchCard);
+      const addBtn = document.getElementById('add-card-btn');
+      if (t.clientX > rect.left + rect.width / 2) grid.insertBefore(touchCard, addBtn);
       else target.before(touchCard);
       saveOrder();
     }
     touchCard = null;
   });
 
+  /* ── Wire static cards ── */
+  grid.querySelectorAll('.card:not(.wip):not(.add-card)').forEach(wireCard);
+
   /* ── Init ── */
+  restoreDynamicCards();
   restoreOrder();
   restoreEdits();
 </script>
