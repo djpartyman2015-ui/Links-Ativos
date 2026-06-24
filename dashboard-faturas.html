@@ -2088,7 +2088,8 @@ function togglePwdVisibility(){
 // ── EXPORTAR PARA NOTION ─────────────────────────────────────────────────
 const NOTION_DS_ID = 'ffa76f3d-05d2-48f1-88fe-3c66c0e32d8f';
 const NOTION_DB_URL = 'https://www.notion.so/db6403030368494f982485dbb26dcbb1';
-const NOTION_API = 'https://api.notion.com/v1';
+// Proxy CORS público que adiciona os headers necessários
+const NOTION_PROXY = 'https://corsproxy.io/?url=https://api.notion.com/v1';
 
 // Token salvo na sessão (memória — não persiste após fechar a aba)
 let _notionToken = sessionStorage.getItem('notion_token') || '';
@@ -2160,7 +2161,7 @@ async function exportToNotion(){
         if(t.note) props['Nota'] = { rich_text: [{ text: { content: t.note.slice(0,200) } }] };
         if(isoDate) props['Data'] = { date: { start: isoDate } };
 
-        const resp = await fetch(`${NOTION_API}/pages`, {
+        const resp = await fetch(`${NOTION_PROXY}/pages`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token.trim()}`,
