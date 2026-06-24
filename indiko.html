@@ -150,6 +150,18 @@
   .stat-label { color: var(--muted); font-size: 13px; }
   .admin-list-item { background: var(--card); border-radius: 10px; padding: 14px 18px; box-shadow: var(--shadow); display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
 
+  /* SEARCHABLE SELECT */
+  .ss-wrap { position: relative; }
+  .ss-input { width: 100%; padding: 10px 36px 10px 14px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 14px; font-family: 'Inter', sans-serif; outline: none; cursor: pointer; background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 12px center; }
+  .ss-input:focus { border-color: var(--petrol2); }
+  .ss-dropdown { position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: #fff; border: 1.5px solid var(--petrol2); border-radius: 8px; max-height: 220px; overflow-y: auto; z-index: 500; box-shadow: 0 8px 24px rgba(0,0,0,.12); display: none; }
+  .ss-dropdown.open { display: block; }
+  .ss-option { padding: 9px 14px; font-size: 13px; cursor: pointer; transition: background .1s; }
+  .ss-option:hover, .ss-option.highlighted { background: #EEF6FF; color: var(--petrol); }
+  .ss-option.selected { background: var(--petrol); color: #fff; }
+  .ss-group { padding: 6px 14px 3px; font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; background: var(--bg); }
+  .ss-empty { padding: 12px 14px; font-size: 13px; color: var(--muted); text-align: center; }
+
   /* EDIÇÃO */
   .btn-edit { background: rgba(255,255,255,.25); border: none; color: #fff; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-size: 13px; display: inline-flex; align-items: center; justify-content: center; transition: background .15s; position: absolute; top: 8px; left: 8px; }
   .btn-edit:hover { background: rgba(255,255,255,.45); }
@@ -253,109 +265,133 @@
       </div>
       <div class="form-group">
         <label>Categoria *</label>
-        <select class="form-control" id="f-cat">
-          <option value="">Selecione…</option>
-          <optgroup label="🔧 Manutenção & Reparos">
-            <option>Elétrica</option><option>Hidráulica / Encanamento</option><option>Pintura</option>
-            <option>Gesso / Drywall</option><option>Impermeabilização</option><option>Telhado / Calhas</option>
-            <option>Serralheria / Ferragem</option><option>Vidraçaria / Esquadrias</option>
-            <option>Piso / Azulejo / Revestimento</option><option>Ar Condicionado / Climatização</option>
-            <option>Elevadores</option><option>Portões / Automatização</option>
-            <option>Interfone / CFTV</option><option>Reformas Gerais / Obras</option>
-          </optgroup>
-          <optgroup label="🌿 Áreas Externas & Lazer">
-            <option>Jardinagem / Paisagismo</option><option>Piscinas / Tratamento de Água</option>
-            <option>Playground / Equipamentos</option><option>Quadras / Esportes</option>
-            <option>Churrasqueira / Área Gourmet</option><option>Iluminação Externa</option>
-          </optgroup>
-          <optgroup label="🧹 Limpeza & Conservação">
-            <option>Limpeza Geral / Faxina</option><option>Limpeza de Fachada / Lavagem</option>
-            <option>Dedetização / Controle de Pragas</option><option>Desentupimento</option>
-            <option>Limpeza de Caixa D’água</option><option>Descarte / Coleta de Entulho</option>
-          </optgroup>
-          <optgroup label="🔐 Segurança">
-            <option>Segurança / Vigilância</option><option>Câmeras / Monitoramento</option>
-            <option>Portaria Remota</option><option>Alarmes / Cerca Elétrica</option>
-            <option>Controle de Acesso / Biometria</option>
-          </optgroup>
-          <optgroup label="🏡 Casa & Decoração">
-            <option>Móveis / Marcenaria</option><option>Persianas / Cortinas</option>
-            <option>Decoração / Design de Interiores</option><option>Arquitetura / Projetos</option>
-            <option>Armários / Closets Planejados</option>
-          </optgroup>
-          <optgroup label="💻 Tecnologia & Conectividade">
-            <option>Internet / Fibra Óptica</option><option>Tecnologia / TI / Suporte</option>
-            <option>Automação Residencial / Smart Home</option><option>Antenas / TV a Cabo</option>
-          </optgroup>
-          <optgroup label="🚗 Automóveis & Mobilidade">
-            <option>Mecânica Geral</option>
-            <option>Elétrica Automotiva</option>
-            <option>Funilaria / Lataria</option>
-            <option>Pintura Automotiva</option>
-            <option>Películas / Insulfilm</option>
-            <option>Lavagem / Higienização</option>
-            <option>Martelinho de Ouro</option>
-            <option>Ar Condicionado Automotivo</option>
-            <option>Som / Acessórios Automotivos</option>
-            <option>Pneus / Alinhamento / Balanceamento</option>
-            <option>Vidros Automotivos</option>
-            <option>Motocicletas</option>
-            <option>Bicicletas / Patinetes</option>
-            <option>Despachante / Documentação</option>
-          </optgroup>
-          <optgroup label="🐾 Pet">
-            <option>Pet Care / Veterinário</option><option>Banho & Tosa</option><option>Adestramento</option>
-          </optgroup>
-          <optgroup label="🏥 Saúde & Bem-Estar">
-            <option>Clínico Geral</option>
-            <option>Pediatria</option>
-            <option>Cardiologia</option>
-            <option>Dermatologia</option>
-            <option>Ginecologia / Obstetrícia</option>
-            <option>Ortopedia</option>
-            <option>Oftalmologia</option>
-            <option>Otorrinolaringologia</option>
-            <option>Neurologia</option>
-            <option>Psiquiatria</option>
-            <option>Urologia</option>
-            <option>Endocrinologia</option>
-            <option>Nutrição / Nutricionista</option>
-            <option>Odontologia / Dentista</option>
-            <option>Fisioterapia / Pilates</option>
-            <option>Psicologia / Terapia</option>
-            <option>Personal Trainer</option>
-            <option>Enfermagem / Home Care</option>
-            <option>Farmácia / Manipulação</option>
-            <option>Laboratório / Exames</option>
-            <option>Doula / Parto</option>
-            <option>Saúde em Geral</option>
-          </optgroup>
-          <optgroup label="📦 Serviços Gerais">
-            <option>Mudanças / Fretes</option><option>Entregas / Motoboy</option>
-            <option>Montagem de Móveis</option><option>Chaveiro</option><option>Lavanderia</option>
-            <option>Costura / Customização</option><option>Contabilidade / Financeiro</option>
-            <option>Advocacia / Jurídico</option><option>Seguros</option>
-          </optgroup>
-          <optgroup label="🍽️ Alimentação & Eventos">
-            <option>Delivery / Restaurantes</option><option>Buffet / Catering</option>
-            <option>Confeitaria / Bolos</option><option>Festas / Eventos</option>
-            <option>DJ / Música ao Vivo</option><option>Fotografia / Vídeo</option>
-          </optgroup>
-          <optgroup label="📚 Educação & Bem-Estar">
-            <option>Aulas Particulares</option><option>Idiomas</option>
-            <option>Musicalização / Instrumentos</option><option>Cuidador / Babá</option>
-            <option>Cuidador de Idosos</option>
-          </optgroup>
-          <optgroup label="👗 Moda & Vestuário">
-            <option>Moda / Vestuário</option>
-            <option>Costureira / Alfaiate</option>
-            <option>Brechó / Roupas Usadas</option>
-            <option>Acessórios / Bijuterias</option>
-            <option>Calçados</option>
-            <option>Uniformes / Bordados</option>
-          </optgroup>
-          <optgroup label="🌟 Outros"><option>Outros</option></optgroup>
-        </select>
+<div class="ss-wrap" id="ss-wrap-fcat">
+          <input type="text" class="ss-input" id="f-cat-input" placeholder="🔍 Digite ou selecione a categoria…" onclick="ssToggle('fcat')" oninput="ssFilter('fcat',this.value)" autocomplete="off" readonly/>
+          <input type="hidden" id="f-cat" value=""/>
+          <div class="ss-dropdown" id="ss-dropdown-fcat">
+            <div class="ss-group">🔧 Manutenção & Reparos</div>
+            <div class="ss-option" data-value="Elétrica" onclick="ssPick('fcat',this)">Elétrica</div>
+            <div class="ss-option" data-value="Hidráulica / Encanamento" onclick="ssPick('fcat',this)">Hidráulica / Encanamento</div>
+            <div class="ss-option" data-value="Pintura" onclick="ssPick('fcat',this)">Pintura</div>
+            <div class="ss-option" data-value="Gesso / Drywall" onclick="ssPick('fcat',this)">Gesso / Drywall</div>
+            <div class="ss-option" data-value="Impermeabilização" onclick="ssPick('fcat',this)">Impermeabilização</div>
+            <div class="ss-option" data-value="Telhado / Calhas" onclick="ssPick('fcat',this)">Telhado / Calhas</div>
+            <div class="ss-option" data-value="Serralheria / Ferragem" onclick="ssPick('fcat',this)">Serralheria / Ferragem</div>
+            <div class="ss-option" data-value="Vidraçaria / Esquadrias" onclick="ssPick('fcat',this)">Vidraçaria / Esquadrias</div>
+            <div class="ss-option" data-value="Piso / Azulejo / Revestimento" onclick="ssPick('fcat',this)">Piso / Azulejo / Revestimento</div>
+            <div class="ss-option" data-value="Ar Condicionado / Climatização" onclick="ssPick('fcat',this)">Ar Condicionado / Climatização</div>
+            <div class="ss-option" data-value="Elevadores" onclick="ssPick('fcat',this)">Elevadores</div>
+            <div class="ss-option" data-value="Portões / Automatização" onclick="ssPick('fcat',this)">Portões / Automatização</div>
+            <div class="ss-option" data-value="Interfone / CFTV" onclick="ssPick('fcat',this)">Interfone / CFTV</div>
+            <div class="ss-option" data-value="Reformas Gerais / Obras" onclick="ssPick('fcat',this)">Reformas Gerais / Obras</div>
+            <div class="ss-group">🌿 Áreas Externas & Lazer</div>
+            <div class="ss-option" data-value="Jardinagem / Paisagismo" onclick="ssPick('fcat',this)">Jardinagem / Paisagismo</div>
+            <div class="ss-option" data-value="Piscinas / Tratamento de Água" onclick="ssPick('fcat',this)">Piscinas / Tratamento de Água</div>
+            <div class="ss-option" data-value="Playground / Equipamentos" onclick="ssPick('fcat',this)">Playground / Equipamentos</div>
+            <div class="ss-option" data-value="Quadras / Esportes" onclick="ssPick('fcat',this)">Quadras / Esportes</div>
+            <div class="ss-option" data-value="Churrasqueira / Área Gourmet" onclick="ssPick('fcat',this)">Churrasqueira / Área Gourmet</div>
+            <div class="ss-option" data-value="Iluminação Externa" onclick="ssPick('fcat',this)">Iluminação Externa</div>
+            <div class="ss-group">🧹 Limpeza & Conservação</div>
+            <div class="ss-option" data-value="Limpeza Geral / Faxina" onclick="ssPick('fcat',this)">Limpeza Geral / Faxina</div>
+            <div class="ss-option" data-value="Limpeza de Fachada / Lavagem" onclick="ssPick('fcat',this)">Limpeza de Fachada / Lavagem</div>
+            <div class="ss-option" data-value="Dedetização / Controle de Pragas" onclick="ssPick('fcat',this)">Dedetização / Controle de Pragas</div>
+            <div class="ss-option" data-value="Desentupimento" onclick="ssPick('fcat',this)">Desentupimento</div>
+            <div class="ss-option" data-value="Limpeza de Caixa D’água" onclick="ssPick('fcat',this)">Limpeza de Caixa D’água</div>
+            <div class="ss-option" data-value="Descarte / Coleta de Entulho" onclick="ssPick('fcat',this)">Descarte / Coleta de Entulho</div>
+            <div class="ss-group">🔐 Segurança</div>
+            <div class="ss-option" data-value="Segurança / Vigilância" onclick="ssPick('fcat',this)">Segurança / Vigilância</div>
+            <div class="ss-option" data-value="Câmeras / Monitoramento" onclick="ssPick('fcat',this)">Câmeras / Monitoramento</div>
+            <div class="ss-option" data-value="Portaria Remota" onclick="ssPick('fcat',this)">Portaria Remota</div>
+            <div class="ss-option" data-value="Alarmes / Cerca Elétrica" onclick="ssPick('fcat',this)">Alarmes / Cerca Elétrica</div>
+            <div class="ss-option" data-value="Controle de Acesso / Biometria" onclick="ssPick('fcat',this)">Controle de Acesso / Biometria</div>
+            <div class="ss-group">🏡 Casa & Decoração</div>
+            <div class="ss-option" data-value="Móveis / Marcenaria" onclick="ssPick('fcat',this)">Móveis / Marcenaria</div>
+            <div class="ss-option" data-value="Persianas / Cortinas" onclick="ssPick('fcat',this)">Persianas / Cortinas</div>
+            <div class="ss-option" data-value="Decoração / Design de Interiores" onclick="ssPick('fcat',this)">Decoração / Design de Interiores</div>
+            <div class="ss-option" data-value="Arquitetura / Projetos" onclick="ssPick('fcat',this)">Arquitetura / Projetos</div>
+            <div class="ss-option" data-value="Armários / Closets Planejados" onclick="ssPick('fcat',this)">Armários / Closets Planejados</div>
+            <div class="ss-group">💻 Tecnologia & Conectividade</div>
+            <div class="ss-option" data-value="Internet / Fibra Óptica" onclick="ssPick('fcat',this)">Internet / Fibra Óptica</div>
+            <div class="ss-option" data-value="Tecnologia / TI / Suporte" onclick="ssPick('fcat',this)">Tecnologia / TI / Suporte</div>
+            <div class="ss-option" data-value="Automação Residencial / Smart Home" onclick="ssPick('fcat',this)">Automação Residencial / Smart Home</div>
+            <div class="ss-option" data-value="Antenas / TV a Cabo" onclick="ssPick('fcat',this)">Antenas / TV a Cabo</div>
+            <div class="ss-group">🚗 Automóveis & Mobilidade</div>
+            <div class="ss-option" data-value="Mecânica Geral" onclick="ssPick('fcat',this)">Mecânica Geral</div>
+            <div class="ss-option" data-value="Elétrica Automotiva" onclick="ssPick('fcat',this)">Elétrica Automotiva</div>
+            <div class="ss-option" data-value="Funilaria / Lataria" onclick="ssPick('fcat',this)">Funilaria / Lataria</div>
+            <div class="ss-option" data-value="Pintura Automotiva" onclick="ssPick('fcat',this)">Pintura Automotiva</div>
+            <div class="ss-option" data-value="Películas / Insulfilm" onclick="ssPick('fcat',this)">Películas / Insulfilm</div>
+            <div class="ss-option" data-value="Lavagem / Higienização" onclick="ssPick('fcat',this)">Lavagem / Higienização</div>
+            <div class="ss-option" data-value="Martelinho de Ouro" onclick="ssPick('fcat',this)">Martelinho de Ouro</div>
+            <div class="ss-option" data-value="Ar Condicionado Automotivo" onclick="ssPick('fcat',this)">Ar Condicionado Automotivo</div>
+            <div class="ss-option" data-value="Som / Acessórios Automotivos" onclick="ssPick('fcat',this)">Som / Acessórios Automotivos</div>
+            <div class="ss-option" data-value="Pneus / Alinhamento / Balanceamento" onclick="ssPick('fcat',this)">Pneus / Alinhamento / Balanceamento</div>
+            <div class="ss-option" data-value="Vidros Automotivos" onclick="ssPick('fcat',this)">Vidros Automotivos</div>
+            <div class="ss-option" data-value="Motocicletas" onclick="ssPick('fcat',this)">Motocicletas</div>
+            <div class="ss-option" data-value="Bicicletas / Patinetes" onclick="ssPick('fcat',this)">Bicicletas / Patinetes</div>
+            <div class="ss-option" data-value="Despachante / Documentação" onclick="ssPick('fcat',this)">Despachante / Documentação</div>
+            <div class="ss-group">🐾 Pet</div>
+            <div class="ss-option" data-value="Pet Care / Veterinário" onclick="ssPick('fcat',this)">Pet Care / Veterinário</div>
+            <div class="ss-option" data-value="Banho & Tosa" onclick="ssPick('fcat',this)">Banho & Tosa</div>
+            <div class="ss-option" data-value="Adestramento" onclick="ssPick('fcat',this)">Adestramento</div>
+            <div class="ss-group">🏥 Saúde & Bem-Estar</div>
+            <div class="ss-option" data-value="Clínico Geral" onclick="ssPick('fcat',this)">Clínico Geral</div>
+            <div class="ss-option" data-value="Pediatria" onclick="ssPick('fcat',this)">Pediatria</div>
+            <div class="ss-option" data-value="Cardiologia" onclick="ssPick('fcat',this)">Cardiologia</div>
+            <div class="ss-option" data-value="Dermatologia" onclick="ssPick('fcat',this)">Dermatologia</div>
+            <div class="ss-option" data-value="Ginecologia / Obstetrícia" onclick="ssPick('fcat',this)">Ginecologia / Obstetrícia</div>
+            <div class="ss-option" data-value="Ortopedia" onclick="ssPick('fcat',this)">Ortopedia</div>
+            <div class="ss-option" data-value="Oftalmologia" onclick="ssPick('fcat',this)">Oftalmologia</div>
+            <div class="ss-option" data-value="Otorrinolaringologia" onclick="ssPick('fcat',this)">Otorrinolaringologia</div>
+            <div class="ss-option" data-value="Neurologia" onclick="ssPick('fcat',this)">Neurologia</div>
+            <div class="ss-option" data-value="Psiquiatria" onclick="ssPick('fcat',this)">Psiquiatria</div>
+            <div class="ss-option" data-value="Urologia" onclick="ssPick('fcat',this)">Urologia</div>
+            <div class="ss-option" data-value="Endocrinologia" onclick="ssPick('fcat',this)">Endocrinologia</div>
+            <div class="ss-option" data-value="Nutrição / Nutricionista" onclick="ssPick('fcat',this)">Nutrição / Nutricionista</div>
+            <div class="ss-option" data-value="Odontologia / Dentista" onclick="ssPick('fcat',this)">Odontologia / Dentista</div>
+            <div class="ss-option" data-value="Fisioterapia / Pilates" onclick="ssPick('fcat',this)">Fisioterapia / Pilates</div>
+            <div class="ss-option" data-value="Psicologia / Terapia" onclick="ssPick('fcat',this)">Psicologia / Terapia</div>
+            <div class="ss-option" data-value="Personal Trainer" onclick="ssPick('fcat',this)">Personal Trainer</div>
+            <div class="ss-option" data-value="Enfermagem / Home Care" onclick="ssPick('fcat',this)">Enfermagem / Home Care</div>
+            <div class="ss-option" data-value="Farmácia / Manipulação" onclick="ssPick('fcat',this)">Farmácia / Manipulação</div>
+            <div class="ss-option" data-value="Laboratório / Exames" onclick="ssPick('fcat',this)">Laboratório / Exames</div>
+            <div class="ss-option" data-value="Doula / Parto" onclick="ssPick('fcat',this)">Doula / Parto</div>
+            <div class="ss-option" data-value="Saúde em Geral" onclick="ssPick('fcat',this)">Saúde em Geral</div>
+            <div class="ss-group">📦 Serviços Gerais</div>
+            <div class="ss-option" data-value="Mudanças / Fretes" onclick="ssPick('fcat',this)">Mudanças / Fretes</div>
+            <div class="ss-option" data-value="Entregas / Motoboy" onclick="ssPick('fcat',this)">Entregas / Motoboy</div>
+            <div class="ss-option" data-value="Montagem de Móveis" onclick="ssPick('fcat',this)">Montagem de Móveis</div>
+            <div class="ss-option" data-value="Chaveiro" onclick="ssPick('fcat',this)">Chaveiro</div>
+            <div class="ss-option" data-value="Lavanderia" onclick="ssPick('fcat',this)">Lavanderia</div>
+            <div class="ss-option" data-value="Costura / Customização" onclick="ssPick('fcat',this)">Costura / Customização</div>
+            <div class="ss-option" data-value="Contabilidade / Financeiro" onclick="ssPick('fcat',this)">Contabilidade / Financeiro</div>
+            <div class="ss-option" data-value="Advocacia / Jurídico" onclick="ssPick('fcat',this)">Advocacia / Jurídico</div>
+            <div class="ss-option" data-value="Seguros" onclick="ssPick('fcat',this)">Seguros</div>
+            <div class="ss-group">🍽️ Alimentação & Eventos</div>
+            <div class="ss-option" data-value="Delivery / Restaurantes" onclick="ssPick('fcat',this)">Delivery / Restaurantes</div>
+            <div class="ss-option" data-value="Buffet / Catering" onclick="ssPick('fcat',this)">Buffet / Catering</div>
+            <div class="ss-option" data-value="Confeitaria / Bolos" onclick="ssPick('fcat',this)">Confeitaria / Bolos</div>
+            <div class="ss-option" data-value="Festas / Eventos" onclick="ssPick('fcat',this)">Festas / Eventos</div>
+            <div class="ss-option" data-value="DJ / Música ao Vivo" onclick="ssPick('fcat',this)">DJ / Música ao Vivo</div>
+            <div class="ss-option" data-value="Fotografia / Vídeo" onclick="ssPick('fcat',this)">Fotografia / Vídeo</div>
+            <div class="ss-group">📚 Educação & Bem-Estar</div>
+            <div class="ss-option" data-value="Aulas Particulares" onclick="ssPick('fcat',this)">Aulas Particulares</div>
+            <div class="ss-option" data-value="Idiomas" onclick="ssPick('fcat',this)">Idiomas</div>
+            <div class="ss-option" data-value="Musicalização / Instrumentos" onclick="ssPick('fcat',this)">Musicalização / Instrumentos</div>
+            <div class="ss-option" data-value="Cuidador / Babá" onclick="ssPick('fcat',this)">Cuidador / Babá</div>
+            <div class="ss-option" data-value="Cuidador de Idosos" onclick="ssPick('fcat',this)">Cuidador de Idosos</div>
+            <div class="ss-group">👗 Moda & Vestuário</div>
+            <div class="ss-option" data-value="Moda / Vestuário" onclick="ssPick('fcat',this)">Moda / Vestuário</div>
+            <div class="ss-option" data-value="Costureira / Alfaiate" onclick="ssPick('fcat',this)">Costureira / Alfaiate</div>
+            <div class="ss-option" data-value="Brechó / Roupas Usadas" onclick="ssPick('fcat',this)">Brechó / Roupas Usadas</div>
+            <div class="ss-option" data-value="Acessórios / Bijuterias" onclick="ssPick('fcat',this)">Acessórios / Bijuterias</div>
+            <div class="ss-option" data-value="Calçados" onclick="ssPick('fcat',this)">Calçados</div>
+            <div class="ss-option" data-value="Uniformes / Bordados" onclick="ssPick('fcat',this)">Uniformes / Bordados</div>
+            <div class="ss-group">🌟 Outros</div>
+            <div class="ss-option" data-value="Outros" onclick="ssPick('fcat',this)">Outros</div>
+            <div class="ss-empty" id="ss-empty-fcat" style="display:none">Nenhuma categoria encontrada</div>
+          </div>
+        </div>
       </div>
       <div class="form-group">
         <label>Sua avaliação *</label>
@@ -1083,6 +1119,63 @@ function renderAdminView() {
       <strong>⚠️ Para alterar a senha admin:</strong> edite a constante <code>ADMIN_PW</code> no HTML e faça commit no GitHub.
     </div>`;
 }
+
+// ── SEARCHABLE SELECT ──────────────────────────────────
+function ssToggle(id) {
+  const dd = document.getElementById('ss-dropdown-'+id);
+  const isOpen = dd.classList.contains('open');
+  // Fechar todos
+  document.querySelectorAll('.ss-dropdown.open').forEach(d => d.classList.remove('open'));
+  if (!isOpen) {
+    dd.classList.add('open');
+    // Desbloquear input para digitação
+    const inp = document.getElementById('ss-wrap-'+id)?.querySelector('.ss-input');
+    if (inp) { inp.removeAttribute('readonly'); inp.focus(); }
+  }
+}
+function ssFilter(id, q) {
+  const dd = document.getElementById('ss-dropdown-'+id);
+  if (!dd.classList.contains('open')) dd.classList.add('open');
+  const term = q.toLowerCase().trim();
+  let hasVisible = false;
+  dd.querySelectorAll('.ss-option').forEach(opt => {
+    const match = opt.dataset.value.toLowerCase().includes(term);
+    opt.style.display = match ? '' : 'none';
+    if (match) hasVisible = true;
+  });
+  dd.querySelectorAll('.ss-group').forEach(g => {
+    // Mostrar grupo só se tiver opção visível após ele
+    let next = g.nextElementSibling;
+    let show = false;
+    while (next && !next.classList.contains('ss-group')) {
+      if (next.style.display !== 'none' && next.classList.contains('ss-option')) show = true;
+      next = next.nextElementSibling;
+    }
+    g.style.display = show ? '' : 'none';
+  });
+  const empty = document.getElementById('ss-empty-'+id);
+  if (empty) empty.style.display = hasVisible ? 'none' : '';
+}
+function ssPick(id, el) {
+  const val = el.dataset.value;
+  const hidden = document.getElementById(id === 'fcat' ? 'f-cat' : 'ip-cat-hidden');
+  const input = document.getElementById('ss-wrap-'+id)?.querySelector('.ss-input');
+  if (hidden) hidden.value = val;
+  if (input) { input.value = val; input.setAttribute('readonly',''); }
+  // Marcar selecionado
+  document.querySelectorAll('#ss-dropdown-'+id+' .ss-option').forEach(o => o.classList.toggle('selected', o.dataset.value === val));
+  document.getElementById('ss-dropdown-'+id)?.classList.remove('open');
+}
+// Fechar ao clicar fora
+document.addEventListener('click', e => {
+  if (!e.target.closest('.ss-wrap')) {
+    document.querySelectorAll('.ss-dropdown.open').forEach(d => {
+      d.classList.remove('open');
+      const inp = d.previousElementSibling?.previousElementSibling || d.closest('.ss-wrap')?.querySelector('.ss-input');
+      if (inp) inp.setAttribute('readonly','');
+    });
+  }
+});
 
 // ── IMPORTAÇÃO IA ──────────────────────────────────────
 let importRating = 5;
