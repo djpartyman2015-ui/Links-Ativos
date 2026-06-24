@@ -254,7 +254,8 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
       2. Clique em "Dashboard Faturas" → copie o <strong>Access token</strong><br>
       3. No database Notion: <code style="background:var(--surface2);padding:1px 5px;border-radius:3px">···</code> → <strong>Connections</strong> → adicione a integração
     </div>
-    <div style="display:flex;gap:8px;margin-bottom:6px">
+    <label style="font-size:11px;font-weight:600;color:var(--text2);display:block;margin-bottom:4px">ACCESS TOKEN</label>
+    <div style="display:flex;gap:8px;margin-bottom:14px">
       <input type="password" id="notion-token-input" placeholder="ntn_..." autocomplete="off"
         style="flex:1;padding:8px 12px;border:1.5px solid var(--border2);border-radius:var(--r);
                font-size:12px;font-family:'JetBrains Mono',monospace;outline:none"
@@ -262,6 +263,14 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
       <button onclick="(()=>{const i=document.getElementById('notion-token-input');i.type=i.type==='password'?'text':'password'})()"
         style="border:1.5px solid var(--border2);background:var(--surface2);padding:7px 10px;border-radius:var(--r);cursor:pointer">👁</button>
     </div>
+    <label style="font-size:11px;font-weight:600;color:var(--text2);display:block;margin-bottom:4px">URL DO CLOUDFLARE WORKER <span style="font-weight:400;color:var(--text3)">(proxy CORS)</span></label>
+    <div style="font-size:11px;color:var(--text3);margin-bottom:6px;line-height:1.5">
+      Crie gratuitamente em <a href="https://dash.cloudflare.com" target="_blank" style="color:var(--accent)">dash.cloudflare.com</a> → Workers → cole o arquivo <code style="background:var(--surface2);padding:1px 4px;border-radius:3px">notion-proxy-worker.js</code>
+    </div>
+    <input type="text" id="notion-proxy-input" placeholder="https://seu-worker.workers.dev/proxy"
+      style="width:100%;padding:8px 12px;border:1.5px solid var(--border2);border-radius:var(--r);
+             font-size:12px;font-family:'JetBrains Mono',monospace;outline:none;box-sizing:border-box;margin-bottom:6px"
+      onkeydown="if(event.key==='Enter') submitNotionToken()"/>
     <div id="notion-token-status" style="font-size:11px;color:#3B6D11;min-height:16px;margin-bottom:12px"></div>
     <div class="modal-actions" style="justify-content:space-between">
       <button class="btn btn-ghost" onclick="clearNotionToken();document.getElementById('notion-token-input').value='';document.getElementById('notion-token-status').textContent='Token removido.'">🗑 Limpar</button>
@@ -2088,8 +2097,7 @@ function togglePwdVisibility(){
 // ── EXPORTAR PARA NOTION ─────────────────────────────────────────────────
 const NOTION_DS_ID = 'ffa76f3d-05d2-48f1-88fe-3c66c0e32d8f';
 const NOTION_DB_URL = 'https://www.notion.so/db6403030368494f982485dbb26dcbb1';
-// Proxy CORS público que adiciona os headers necessários
-const NOTION_PROXY = 'https://corsproxy.io/?url=https://api.notion.com/v1';
+const NOTION_PROXY_DEFAULT = 'https://notion-proxy.djpartyman2015.workers.dev/proxy';
 
 // Token salvo na sessão (memória — não persiste após fechar a aba)
 let _notionToken = sessionStorage.getItem('notion_token') || '';
@@ -2099,6 +2107,7 @@ function clearNotionToken(){ _notionToken=''; try{ sessionStorage.removeItem('no
 
 function openNotionSettings(){
   document.getElementById('notion-token-input').value = _notionToken;
+  document.getElementById('notion-proxy-input').value = sessionStorage.getItem('notion_proxy') || '';
   document.getElementById('notion-token-status').textContent = _notionToken ? '✅ Token salvo na sessão' : '';
   document.getElementById('modal-notion').classList.add('open');
   setTimeout(()=>document.getElementById('notion-token-input').focus(),100);
@@ -2106,8 +2115,10 @@ function openNotionSettings(){
 function closeNotionSettings(){ document.getElementById('modal-notion').classList.remove('open'); }
 function submitNotionToken(){
   const t = document.getElementById('notion-token-input').value.trim();
+  const p = document.getElementById('notion-proxy-input').value.trim();
   if(!t){ alert('Informe o token.'); return; }
   saveNotionToken(t);
+  if(p) try{ sessionStorage.setItem('notion_proxy', p); }catch(e){}
   document.getElementById('notion-token-status').textContent='✅ Token salvo na sessão';
   setTimeout(closeNotionSettings, 800);
 }
@@ -2119,8 +2130,9 @@ async function exportToNotion(){
   const allTxs = faturas.flatMap(f => f.txs.map(t => ({...t, bank:f.bank, cardName:f.cardName, month:f.month})));
   if(!allTxs.length){ alert('Nenhuma transação para exportar.'); return; }
 
-  // Usar token salvo ou pedir
+  // Usar token e proxy salvos (ou default hardcoded)
   let token = _notionToken;
+  const proxyUrl = sessionStorage.getItem('notion_proxy') || NOTION_PROXY_DEFAULT;
   if(!token){
     openNotionSettings();
     return;
@@ -2161,7 +2173,7 @@ async function exportToNotion(){
         if(t.note) props['Nota'] = { rich_text: [{ text: { content: t.note.slice(0,200) } }] };
         if(isoDate) props['Data'] = { date: { start: isoDate } };
 
-        const resp = await fetch(`${NOTION_PROXY}/pages`, {
+        const resp = await fetch(`${proxyUrl}/pages`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token.trim()}`,
