@@ -2307,17 +2307,15 @@ function renderValidationBanner(){
 
 // Inicialização após DOM pronto
 window.addEventListener('DOMContentLoaded', () => {
-  // Fechar modal-notion ao clicar no fundo
   const mNotion = document.getElementById('modal-notion');
   if(mNotion) mNotion.addEventListener('click', e => { if(e.target===mNotion) closeNotionSettings(); });
 
-  // Fechar modal-password ao clicar no fundo
   const mPwd = document.getElementById('modal-password');
   if(mPwd) mPwd.addEventListener('click', e => { if(e.target===mPwd) cancelPassword(); });
-  if(mAddtx) mAddtx.addEventListener('click', e => {
-    if(e.target === mAddtx) closeAddTx();
-  });
-  // Fechar modal principal ao clicar no fundo
+
+  const mAddtx = document.getElementById('modal-addtx');
+  if(mAddtx) mAddtx.addEventListener('click', e => { if(e.target===mAddtx) closeAddTx(); });
+
   const mMain = document.getElementById('modal');
   if(mMain) mMain.addEventListener('click', e => {
     if(e.target === mMain) { mMain.classList.remove('open'); setTimeout(processNextInQueue,300); }
