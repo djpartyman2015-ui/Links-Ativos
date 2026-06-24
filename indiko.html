@@ -287,14 +287,48 @@
             <option>Internet / Fibra Óptica</option><option>Tecnologia / TI / Suporte</option>
             <option>Automação Residencial / Smart Home</option><option>Antenas / TV a Cabo</option>
           </optgroup>
-          <optgroup label="🚗 Mobilidade & Garagem">
-            <option>Mecânica / Automóveis</option><option>Lavagem de Carros</option>
-            <option>Pintura Automotiva</option><option>Motocicletas</option><option>Bicicletas / Patinetes</option>
+          <optgroup label="🚗 Automóveis & Mobilidade">
+            <option>Mecânica Geral</option>
+            <option>Elétrica Automotiva</option>
+            <option>Funilaria / Lataria</option>
+            <option>Pintura Automotiva</option>
+            <option>Películas / Insulfilm</option>
+            <option>Lavagem / Higienização</option>
+            <option>Martelinho de Ouro</option>
+            <option>Ar Condicionado Automotivo</option>
+            <option>Som / Acessórios Automotivos</option>
+            <option>Pneus / Alinhamento / Balanceamento</option>
+            <option>Vidros Automotivos</option>
+            <option>Motocicletas</option>
+            <option>Bicicletas / Patinetes</option>
+            <option>Despachante / Documentação</option>
           </optgroup>
-          <optgroup label="🐾 Pet & Saúde">
+          <optgroup label="🐾 Pet">
             <option>Pet Care / Veterinário</option><option>Banho & Tosa</option><option>Adestramento</option>
-            <option>Saúde / Médicos</option><option>Fisioterapia / Pilates</option>
-            <option>Personal Trainer</option><option>Psicologia / Terapia</option>
+          </optgroup>
+          <optgroup label="🏥 Saúde & Bem-Estar">
+            <option>Clínico Geral</option>
+            <option>Pediatria</option>
+            <option>Cardiologia</option>
+            <option>Dermatologia</option>
+            <option>Ginecologia / Obstetrícia</option>
+            <option>Ortopedia</option>
+            <option>Oftalmologia</option>
+            <option>Otorrinolaringologia</option>
+            <option>Neurologia</option>
+            <option>Psiquiatria</option>
+            <option>Urologia</option>
+            <option>Endocrinologia</option>
+            <option>Nutrição / Nutricionista</option>
+            <option>Odontologia / Dentista</option>
+            <option>Fisioterapia / Pilates</option>
+            <option>Psicologia / Terapia</option>
+            <option>Personal Trainer</option>
+            <option>Enfermagem / Home Care</option>
+            <option>Farmácia / Manipulação</option>
+            <option>Laboratório / Exames</option>
+            <option>Doula / Parto</option>
+            <option>Saúde em Geral</option>
           </optgroup>
           <optgroup label="📦 Serviços Gerais">
             <option>Mudanças / Fretes</option><option>Entregas / Motoboy</option>
@@ -311,6 +345,14 @@
             <option>Aulas Particulares</option><option>Idiomas</option>
             <option>Musicalização / Instrumentos</option><option>Cuidador / Babá</option>
             <option>Cuidador de Idosos</option>
+          </optgroup>
+          <optgroup label="👗 Moda & Vestuário">
+            <option>Moda / Vestuário</option>
+            <option>Costureira / Alfaiate</option>
+            <option>Brechó / Roupas Usadas</option>
+            <option>Acessórios / Bijuterias</option>
+            <option>Calçados</option>
+            <option>Uniformes / Bordados</option>
           </optgroup>
           <optgroup label="🌟 Outros"><option>Outros</option></optgroup>
         </select>
@@ -483,13 +525,20 @@ const CATEGORIAS = [
   "Armários / Closets Planejados","Internet / Fibra Óptica","Tecnologia / TI / Suporte",
   "Automação Residencial / Smart Home","Antenas / TV a Cabo","Mecânica / Automóveis",
   "Lavagem de Carros","Pintura Automotiva","Motocicletas","Bicicletas / Patinetes",
-  "Pet Care / Veterinário","Banho & Tosa","Adestramento","Saúde / Médicos",
-  "Fisioterapia / Pilates","Personal Trainer","Psicologia / Terapia","Mudanças / Fretes",
+  "Pet Care / Veterinário","Banho & Tosa","Adestramento",
+  "Clínico Geral","Pediatria","Cardiologia","Dermatologia","Ginecologia / Obstetrícia",
+  "Ortopedia","Oftalmologia","Otorrinolaringologia","Neurologia","Psiquiatria",
+  "Urologia","Endocrinologia","Nutrição / Nutricionista","Odontologia / Dentista",
+  "Fisioterapia / Pilates","Psicologia / Terapia","Personal Trainer",
+  "Enfermagem / Home Care","Farmácia / Manipulação","Laboratório / Exames","Saúde em Geral","Mudanças / Fretes",
   "Entregas / Motoboy","Montagem de Móveis","Chaveiro","Lavanderia","Costura / Customização",
   "Contabilidade / Financeiro","Advocacia / Jurídico","Seguros","Delivery / Restaurantes",
   "Buffet / Catering","Confeitaria / Bolos","Festas / Eventos","DJ / Música ao Vivo",
   "Fotografia / Vídeo","Aulas Particulares","Idiomas","Musicalização / Instrumentos",
-  "Cuidador / Babá","Cuidador de Idosos","Outros"
+  "Cuidador / Babá","Cuidador de Idosos",
+  "Doula / Parto","Saúde em Geral",
+  "Moda / Vestuário","Costureira / Alfaiate","Brechó / Roupas Usadas","Acessórios / Bijuterias","Calçados","Uniformes / Bordados",
+  "Outros"
 ];
 
 // Capturar IP do usuário
@@ -857,14 +906,30 @@ function renderAdminView() {
               <option>Internet / Fibra Óptica</option><option>Tecnologia / TI / Suporte</option>
               <option>Automação Residencial / Smart Home</option><option>Antenas / TV a Cabo</option>
             </optgroup>
-            <optgroup label="🚗 Mobilidade & Garagem">
-              <option>Mecânica / Automóveis</option><option>Lavagem de Carros</option>
-              <option>Pintura Automotiva</option><option>Motocicletas</option><option>Bicicletas / Patinetes</option>
+            <optgroup label="🚗 Automóveis & Mobilidade">
+              <option>Mecânica Geral</option><option>Elétrica Automotiva</option>
+              <option>Funilaria / Lataria</option><option>Pintura Automotiva</option>
+              <option>Películas / Insulfilm</option><option>Lavagem / Higienização</option>
+              <option>Martelinho de Ouro</option><option>Ar Condicionado Automotivo</option>
+              <option>Som / Acessórios Automotivos</option>
+              <option>Pneus / Alinhamento / Balanceamento</option>
+              <option>Vidros Automotivos</option><option>Motocicletas</option>
+              <option>Bicicletas / Patinetes</option><option>Despachante / Documentação</option>
             </optgroup>
-            <optgroup label="🐾 Pet & Saúde">
+            <optgroup label="🐾 Pet">
               <option>Pet Care / Veterinário</option><option>Banho & Tosa</option><option>Adestramento</option>
-              <option>Saúde / Médicos</option><option>Fisioterapia / Pilates</option>
-              <option>Personal Trainer</option><option>Psicologia / Terapia</option>
+            </optgroup>
+            <optgroup label="🏥 Saúde & Bem-Estar">
+              <option>Clínico Geral</option><option>Pediatria</option><option>Cardiologia</option>
+              <option>Dermatologia</option><option>Ginecologia / Obstetrícia</option><option>Ortopedia</option>
+              <option>Oftalmologia</option><option>Otorrinolaringologia</option><option>Neurologia</option>
+              <option>Psiquiatria</option><option>Urologia</option><option>Endocrinologia</option>
+              <option>Nutrição / Nutricionista</option><option>Odontologia / Dentista</option>
+              <option>Fisioterapia / Pilates</option><option>Psicologia / Terapia</option>
+              <option>Personal Trainer</option><option>Enfermagem / Home Care</option>
+              <option>Farmácia / Manipulação</option><option>Laboratório / Exames</option>
+              <option>Doula / Parto</option>
+              <option>Saúde em Geral</option>
             </optgroup>
             <optgroup label="📦 Serviços Gerais">
               <option>Mudanças / Fretes</option><option>Entregas / Motoboy</option>
@@ -882,7 +947,15 @@ function renderAdminView() {
               <option>Musicalização / Instrumentos</option><option>Cuidador / Babá</option>
               <option>Cuidador de Idosos</option>
             </optgroup>
-            <optgroup label="🌟 Outros"><option>Outros</option></optgroup>
+            <optgroup label="👗 Moda & Vestuário">
+            <option>Moda / Vestuário</option>
+            <option>Costureira / Alfaiate</option>
+            <option>Brechó / Roupas Usadas</option>
+            <option>Acessórios / Bijuterias</option>
+            <option>Calçados</option>
+            <option>Uniformes / Bordados</option>
+          </optgroup>
+          <optgroup label="🌟 Outros"><option>Outros</option></optgroup>
           </select>
         </div>
         <div class="import-field">
@@ -1088,6 +1161,18 @@ window.processarImportacao = function() {
         { cat: 'Segurança / Vigilância', keys: ['segurança','vigilância','câmera','cftv','alarme','portão','portao'] },
         { cat: 'Pet Care / Veterinário', keys: ['veterinário','veterinario','pet','animal','cachorro','gato','cão'] },
         { cat: 'Banho & Tosa', keys: ['banho','tosa','grooming'] },
+        { cat: 'Odontologia / Dentista', keys: ['dentista','odontolog','dente','ortodontia','implante'] },
+        { cat: 'Clínico Geral', keys: ['clínico geral','clinico geral','médico de família','médico geral'] },
+        { cat: 'Pediatria', keys: ['pediatra','pediatria','criança médico'] },
+        { cat: 'Cardiologia', keys: ['cardiolog','coração médico','cardíaco'] },
+        { cat: 'Dermatologia', keys: ['dermatolog','pele médico','dermatologista'] },
+        { cat: 'Nutrição / Nutricionista', keys: ['nutricion','nutrição','dieta','nutrólogo'] },
+        { cat: 'Fisioterapia / Pilates', keys: ['fisioter','pilates','reabilitação'] },
+        { cat: 'Psicologia / Terapia', keys: ['psicolog','terapia','terapeuta','psicanalise'] },
+        { cat: 'Doula / Parto', keys: ['doula','parto','maternidade','gestante','obstetriz'] },
+        { cat: 'Saúde em Geral', keys: ['médico','medico','saúde','clínica','hospital','consulta'] },
+        { cat: 'Moda / Vestuário', keys: ['moda','roupa','vestuário','vestuario','boutique','loja de roupa'] },
+        { cat: 'Uniformes / Bordados', keys: ['uniform','bordado','bordadora','personaliz roupa'] },
         { cat: 'Mudanças / Fretes', keys: ['mudança','mudanca','frete','carreto'] },
         { cat: 'Pintura Automotiva', keys: ['funilaria','funileiro','lataria','pintura automotiva'] },
         { cat: 'Mecânica / Automóveis', keys: ['mecâni','mecani','automóvel','carro','veículo','motor'] },
