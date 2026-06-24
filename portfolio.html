@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Andrey Cappa · Labs</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:      #07070F;
+      --card:    #16162A;
+      --border:  rgba(255,255,255,0.07);
+      --text:    #E8E8F0;
+      --muted:   #6B6B8A;
+      --cyan:    #00D4FF;
+      --purple:  #7B2FBE;
+      --green:   #00E5A0;
+      --orange:  #FF7B2F;
+      --pink:    #FF2FB0;
+      --yellow:  #FFD700;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+      user-select: none;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: -20%; left: -10%;
+      width: 60vw; height: 60vw;
+      background: radial-gradient(circle, rgba(123,47,190,0.12) 0%, transparent 70%);
+      pointer-events: none; z-index: 0;
+    }
+    body::after {
+      content: '';
+      position: fixed;
+      bottom: -20%; right: -10%;
+      width: 50vw; height: 50vw;
+      background: radial-gradient(circle, rgba(0,212,255,0.08) 0%, transparent 70%);
+      pointer-events: none; z-index: 0;
+    }
+
+    .page {
+      position: relative; z-index: 1;
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 60px 24px 80px;
+    }
+
+    /* ── HERO ── */
+    .hero { text-align: center; margin-bottom: 64px; }
+
+    .hero-avatar {
+      width: 72px; height: 72px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--purple), var(--cyan));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 32px;
+      margin: 0 auto 20px;
+      box-shadow: 0 0 40px rgba(123,47,190,0.4);
+      overflow: hidden;
+    }
+
+    .hero-label {
+      font-size: 11px; font-weight: 600;
+      letter-spacing: 0.2em; text-transform: uppercase;
+      color: var(--cyan); margin-bottom: 10px;
+    }
+
+    .hero-name {
+      font-size: clamp(28px, 5vw, 42px);
+      font-weight: 800; line-height: 1.1;
+      background: linear-gradient(135deg, #fff 30%, var(--cyan) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 12px;
+    }
+
+    .hero-bio {
+      font-size: 15px; color: var(--muted);
+      max-width: 440px; margin: 0 auto; line-height: 1.6;
+    }
+
+    .hero-dots {
+      display: flex; gap: 6px; justify-content: center; margin-top: 24px;
+    }
+    .hero-dots span { width: 6px; height: 6px; border-radius: 50%; background: var(--border); }
+    .hero-dots span:nth-child(2) { background: var(--purple); opacity: 0.6; }
+
+    /* ── SECTION HEADER ── */
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .section-label {
+      font-size: 11px; font-weight: 600;
+      letter-spacing: 0.18em; text-transform: uppercase;
+      color: var(--muted);
+      padding-left: 4px;
+    }
+
+    /* drag mode toggle hint */
+    .drag-hint {
+      font-size: 11px;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      padding: 4px 10px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      transition: border-color 0.2s, color 0.2s;
+    }
+    .drag-hint:hover { border-color: var(--cyan); color: var(--cyan); }
+    .drag-hint.active { border-color: var(--cyan); color: var(--cyan); background: rgba(0,212,255,0.06); }
+    .drag-hint .dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--muted);
+      transition: background 0.2s;
+    }
+    .drag-hint.active .dot { background: var(--cyan); }
+
+    /* ── GRID ── */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 48px;
+    }
+
+    /* ── CARD ── */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 24px 20px 20px;
+      text-decoration: none;
+      color: inherit;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
+      -webkit-tap-highlight-color: transparent;
+      cursor: grab;
+    }
+
+    .card[data-color="cyan"]   { --ac: var(--cyan);   }
+    .card[data-color="purple"] { --ac: var(--purple); }
+    .card[data-color="green"]  { --ac: var(--green);  }
+    .card[data-color="orange"] { --ac: var(--orange); }
+    .card[data-color="pink"]   { --ac: var(--pink);   }
+    .card[data-color="yellow"] { --ac: var(--yellow); }
+
+    /* hover only when NOT dragging */
+    .grid:not(.drag-mode) .card:not(.wip):hover {
+      transform: translateY(-4px) scale(1.01);
+      border-color: var(--ac);
+      box-shadow: 0 8px 40px -8px color-mix(in srgb, var(--ac) 40%, transparent);
+    }
+
+    /* drag mode: cursor + wiggle hint */
+    .grid.drag-mode .card:not(.wip) {
+      cursor: grab;
+      animation: wiggle 0.3s ease;
+    }
+    .grid.drag-mode .card:not(.wip):hover {
+      border-color: var(--ac);
+      box-shadow: 0 4px 20px -4px color-mix(in srgb, var(--ac) 30%, transparent);
+    }
+
+    @keyframes wiggle {
+      0%   { transform: rotate(0deg); }
+      25%  { transform: rotate(-1deg); }
+      75%  { transform: rotate(1deg); }
+      100% { transform: rotate(0deg); }
+    }
+
+    /* dragging state */
+    .card.dragging {
+      opacity: 0.35;
+      transform: scale(0.97);
+      cursor: grabbing !important;
+    }
+
+    /* drag-over placeholder */
+    .card.drag-over {
+      border-color: var(--ac) !important;
+      background: color-mix(in srgb, var(--ac) 8%, var(--card)) !important;
+      box-shadow: 0 0 0 2px var(--ac) !important;
+    }
+
+    /* icon */
+    .card-icon {
+      font-size: 36px; line-height: 1;
+      filter: drop-shadow(0 2px 8px rgba(0,0,0,0.4));
+      display: block;
+      pointer-events: none;
+    }
+
+    /* tag */
+    .card-tag {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 10px; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      padding: 3px 8px; border-radius: 20px; width: fit-content;
+      color: var(--ac);
+      background: color-mix(in srgb, var(--ac) 12%, transparent);
+      border: 1px solid color-mix(in srgb, var(--ac) 25%, transparent);
+      pointer-events: none;
+    }
+
+    .card-body {
+      flex: 1; display: flex; flex-direction: column; gap: 4px;
+      pointer-events: none;
+    }
+
+    .card-title { font-size: 16px; font-weight: 700; color: #fff; line-height: 1.2; }
+    .card-desc  { font-size: 12px; color: var(--muted); line-height: 1.5; }
+
+    /* arrow */
+    .card-arrow {
+      font-size: 12px; color: var(--muted);
+      align-self: flex-end;
+      transition: color 0.2s ease, transform 0.2s ease;
+      pointer-events: none;
+    }
+    .grid:not(.drag-mode) .card:not(.wip):hover .card-arrow {
+      color: var(--ac);
+      transform: translate(2px, -2px);
+    }
+
+    /* drag handle icon shown in drag mode */
+    .drag-handle {
+      position: absolute;
+      top: 12px; right: 14px;
+      font-size: 14px;
+      color: var(--muted);
+      opacity: 0;
+      transition: opacity 0.2s;
+      pointer-events: none;
+    }
+    .grid.drag-mode .card:not(.wip) .drag-handle { opacity: 0.5; }
+    .grid.drag-mode .card:not(.wip):hover .drag-handle { opacity: 1; }
+
+    /* WIP */
+    .card.wip { opacity: 0.5; cursor: not-allowed; }
+    .card.wip:hover { transform: none; box-shadow: none; border-color: var(--border); }
+
+    .wip-badge {
+      position: absolute; top: 14px; right: 14px;
+      font-size: 9px; font-weight: 700;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      background: rgba(255,255,255,0.07); color: var(--muted);
+      padding: 2px 7px; border-radius: 20px;
+    }
+
+    /* active press */
+    .card:active:not(.wip):not(.dragging) { transform: scale(0.97); }
+
+    /* ── FOOTER ── */
+    .footer { text-align: center; color: var(--muted); font-size: 12px; margin-top: 24px; }
+    .footer a { color: var(--cyan); text-decoration: none; }
+    .footer a:hover { text-decoration: underline; }
+
+    /* ── MOBILE ── */
+    @media (max-width: 480px) {
+      .grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+      .page { padding: 40px 16px 60px; }
+      .card { padding: 18px 16px 16px; border-radius: 18px; }
+      .card-icon { font-size: 30px; }
+      .card-title { font-size: 14px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .card, .card-arrow { transition: none; animation: none; }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <!-- HERO -->
+  <header class="hero">
+    <!-- ══════════════════════════════════════════════
+         FOTO DE PERFIL
+         Troque o valor de MINHA_FOTO abaixo pelo
+         nome do arquivo (ex: "foto.jpg") ou uma URL.
+         ══════════════════════════════════════════════ -->
+    <div class="hero-avatar" id="avatar-wrap">
+      <img id="avatar-img" src="" alt="Andrey Cappa"
+        style="display:none; width:100%; height:100%; object-fit:cover; border-radius:50%;"
+        onload="this.style.display='block'; document.getElementById('avatar-fallback').style.display='none';" />
+      <span id="avatar-fallback">🧑‍💻</span>
+    </div>
+    <script>
+      const MINHA_FOTO = ""; // ← "foto.jpg" ou URL
+      if (MINHA_FOTO) document.getElementById("avatar-img").src = MINHA_FOTO;
+    </script>
+
+    <p class="hero-label">Andrey Cappa · Labs</p>
+    <h1 class="hero-name">Minhas Soluções</h1>
+    <p class="hero-bio">Apps, dashboards e ferramentas construídos do zero para resolver problemas reais — do bolão da família à gestão de projetos.</p>
+    <div class="hero-dots">
+      <span></span><span></span><span></span><span></span><span></span>
+    </div>
+  </header>
+
+  <!-- ── APPS ATIVOS ── -->
+  <div class="section-header">
+    <p class="section-label">Apps ativos</p>
+    <button class="drag-hint" id="drag-toggle" onclick="toggleDragMode()" aria-label="Ativar modo arrastar">
+      <span class="dot"></span> Organizar
+    </button>
+  </div>
+
+  <div class="grid" id="main-grid">
+
+    <a class="card" data-color="orange" data-id="indiko"
+       href="https://djpartyman2015-ui.github.io/Links-Ativos/indiko/index.html"
+       target="_blank" rel="noopener">
+      <span class="drag-handle">⠿</span>
+      <span class="card-icon">📍</span>
+      <span class="card-tag">Comunidade</span>
+      <div class="card-body">
+        <span class="card-title">Indiko</span>
+        <span class="card-desc">Recomendações de prestadores de serviço no bairro</span>
+      </div>
+      <span class="card-arrow">↗</span>
+    </a>
+
+    <a class="card" data-color="green" data-id="bolao"
+       href="https://djpartyman2015-ui.github.io/Links-Ativos/bolao/index.html"
+       target="_blank" rel="noopener">
+      <span class="drag-handle">⠿</span>
+      <span class="card-icon">⚽</span>
+      <span class="card-tag">Esporte</span>
+      <div class="card-body">
+        <span class="card-title">Coppa dos Cappa</span>
+        <span class="card-desc">Bolão da família com placar ao vivo e ranking</span>
+      </div>
+      <span class="card-arrow">↗</span>
+    </a>
+
+    <a class="card" data-color="cyan" data-id="cotacao"
+       href="https://djpartyman2015-ui.github.io/Links-Ativos/cotacao/index.html"
+       target="_blank" rel="noopener">
+      <span class="drag-handle">⠿</span>
+      <span class="card-icon">💱</span>
+      <span class="card-tag">Finanças</span>
+      <div class="card-body">
+        <span class="card-title">Cotação do Dia</span>
+        <span class="card-desc">Monitor de câmbio com calculadora em BRL</span>
+      </div>
+      <span class="card-arrow">↗</span>
+    </a>
+
+    <!-- Para adicionar novo app: copie um bloco <a class="card"> acima e ajuste:
+         data-id (único), data-color, href, card-icon, card-tag, card-title, card-desc -->
+
+  </div>
+
+  <!-- ── EM DESENVOLVIMENTO ── -->
+  <div class="section-header">
+    <p class="section-label">Em desenvolvimento</p>
+  </div>
+  <div class="grid">
+
+    <div class="card wip" data-color="purple">
+      <span class="wip-badge">Em breve</span>
+      <span class="card-icon">📊</span>
+      <span class="card-tag">Gestão</span>
+      <div class="card-body">
+        <span class="card-title">Dashboard PTP</span>
+        <span class="card-desc">Painel executivo de transição de sistemas</span>
+      </div>
+    </div>
+
+    <div class="card wip" data-color="pink">
+      <span class="wip-badge">Em breve</span>
+      <span class="card-icon">💡</span>
+      <span class="card-tag">Produtividade</span>
+      <div class="card-body">
+        <span class="card-title">Próximo app</span>
+        <span class="card-desc">Adicione sua próxima ideia aqui</span>
+      </div>
+    </div>
+
+  </div>
+
+  <footer class="footer">
+    Feito à mão por Andrey Cappa ·
+    <a href="https://github.com/djpartyman2015-ui" target="_blank" rel="noopener">GitHub</a>
+    · 2025–2026
+  </footer>
+
+</div>
+
+<script>
+  /* ══════════════════════════════════════════
+     DRAG & DROP — ordem salva no localStorage
+     ══════════════════════════════════════════ */
+
+  const STORAGE_KEY = 'cappa-labs-order';
+  const grid        = document.getElementById('main-grid');
+  const toggleBtn   = document.getElementById('drag-toggle');
+
+  let dragMode   = false;
+  let dragSrc    = null;
+  let clickLocked = false; // prevent click after drag
+
+  /* ── Restore saved order ── */
+  function restoreOrder() {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (!saved) return;
+    const ids = JSON.parse(saved);
+    ids.forEach(id => {
+      const card = grid.querySelector(`[data-id="${id}"]`);
+      if (card) grid.appendChild(card);
+    });
+  }
+
+  function saveOrder() {
+    const cards = [...grid.querySelectorAll('.card[data-id]')];
+    const ids   = cards.map(c => c.dataset.id);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(ids));
+  }
+
+  /* ── Toggle drag mode ── */
+  function toggleDragMode() {
+    dragMode = !dragMode;
+    grid.classList.toggle('drag-mode', dragMode);
+    toggleBtn.classList.toggle('active', dragMode);
+    toggleBtn.innerHTML = dragMode
+      ? '<span class="dot"></span> Pronto'
+      : '<span class="dot"></span> Organizar';
+
+    const cards = grid.querySelectorAll('.card:not(.wip)');
+    cards.forEach(card => {
+      card.draggable = dragMode;
+    });
+  }
+
+  /* ── Drag events ── */
+  grid.addEventListener('dragstart', e => {
+    const card = e.target.closest('.card:not(.wip)');
+    if (!card || !dragMode) { e.preventDefault(); return; }
+    dragSrc = card;
+    clickLocked = true;
+    setTimeout(() => card.classList.add('dragging'), 0);
+    e.dataTransfer.effectAllowed = 'move';
+  });
+
+  grid.addEventListener('dragend', e => {
+    const card = e.target.closest('.card');
+    if (card) card.classList.remove('dragging');
+    grid.querySelectorAll('.drag-over').forEach(c => c.classList.remove('drag-over'));
+    saveOrder();
+    // release click lock after a tick
+    setTimeout(() => { clickLocked = false; }, 50);
+  });
+
+  grid.addEventListener('dragover', e => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    const card = e.target.closest('.card:not(.wip)');
+    if (!card || card === dragSrc) return;
+    grid.querySelectorAll('.drag-over').forEach(c => c.classList.remove('drag-over'));
+    card.classList.add('drag-over');
+  });
+
+  grid.addEventListener('dragleave', e => {
+    const card = e.target.closest('.card');
+    if (card) card.classList.remove('drag-over');
+  });
+
+  grid.addEventListener('drop', e => {
+    e.preventDefault();
+    const target = e.target.closest('.card:not(.wip)');
+    if (!target || target === dragSrc || !dragSrc) return;
+    target.classList.remove('drag-over');
+
+    // insert before or after based on pointer position
+    const rect   = target.getBoundingClientRect();
+    const midX   = rect.left + rect.width / 2;
+    const after  = e.clientX > midX;
+
+    if (after) {
+      target.after(dragSrc);
+    } else {
+      target.before(dragSrc);
+    }
+    saveOrder();
+  });
+
+  /* Prevent navigation on click after drag */
+  grid.addEventListener('click', e => {
+    if (clickLocked) { e.preventDefault(); return; }
+    if (dragMode) { e.preventDefault(); } // in drag mode, clicks don't navigate
+  }, true);
+
+  /* ── Touch drag (mobile) ── */
+  let touchCard = null, touchClone = null, touchOrigin = null;
+
+  grid.addEventListener('touchstart', e => {
+    if (!dragMode) return;
+    const card = e.target.closest('.card:not(.wip)');
+    if (!card) return;
+    touchCard = card;
+    touchOrigin = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+
+    // create a floating ghost
+    touchClone = card.cloneNode(true);
+    const r = card.getBoundingClientRect();
+    Object.assign(touchClone.style, {
+      position: 'fixed',
+      top:      r.top + 'px',
+      left:     r.left + 'px',
+      width:    r.width + 'px',
+      height:   r.height + 'px',
+      opacity:  '0.75',
+      zIndex:   '9999',
+      pointerEvents: 'none',
+      transition: 'none',
+      transform: 'scale(1.05)',
+      boxShadow: '0 16px 48px rgba(0,0,0,0.6)',
+    });
+    document.body.appendChild(touchClone);
+    card.classList.add('dragging');
+  }, { passive: true });
+
+  grid.addEventListener('touchmove', e => {
+    if (!touchClone) return;
+    e.preventDefault();
+    const t = e.touches[0];
+    const r = touchCard.getBoundingClientRect();
+    const dx = t.clientX - touchOrigin.x;
+    const dy = t.clientY - touchOrigin.y;
+    touchClone.style.transform = `translate(${dx}px, ${dy}px) scale(1.05)`;
+
+    // find card under finger
+    touchClone.style.display = 'none';
+    const el = document.elementFromPoint(t.clientX, t.clientY);
+    touchClone.style.display = '';
+    const over = el && el.closest('.card:not(.wip)');
+
+    grid.querySelectorAll('.drag-over').forEach(c => c.classList.remove('drag-over'));
+    if (over && over !== touchCard) over.classList.add('drag-over');
+  }, { passive: false });
+
+  grid.addEventListener('touchend', e => {
+    if (!touchClone) return;
+    const t = e.changedTouches[0];
+    touchClone.remove();
+    touchClone = null;
+    touchCard.classList.remove('dragging');
+
+    const el = document.elementFromPoint(t.clientX, t.clientY);
+    const target = el && el.closest('.card:not(.wip)');
+    grid.querySelectorAll('.drag-over').forEach(c => c.classList.remove('drag-over'));
+
+    if (target && target !== touchCard) {
+      const rect  = target.getBoundingClientRect();
+      const after = t.clientX > rect.left + rect.width / 2;
+      if (after) target.after(touchCard);
+      else        target.before(touchCard);
+      saveOrder();
+    }
+    touchCard = null;
+  });
+
+  /* ── Init ── */
+  restoreOrder();
+</script>
+</body>
+</html>
