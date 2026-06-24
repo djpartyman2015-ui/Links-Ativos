@@ -21,6 +21,8 @@
       --orange:  #FF7B2F;
       --pink:    #FF2FB0;
       --yellow:  #FFD700;
+      --teal:    #00C9A7;
+      --red:     #FF4D6D;
     }
 
     html { scroll-behavior: smooth; }
@@ -36,16 +38,14 @@
 
     body::before {
       content: '';
-      position: fixed;
-      top: -20%; left: -10%;
+      position: fixed; top: -20%; left: -10%;
       width: 60vw; height: 60vw;
       background: radial-gradient(circle, rgba(123,47,190,0.12) 0%, transparent 70%);
       pointer-events: none; z-index: 0;
     }
     body::after {
       content: '';
-      position: fixed;
-      bottom: -20%; right: -10%;
+      position: fixed; bottom: -20%; right: -10%;
       width: 50vw; height: 50vw;
       background: radial-gradient(circle, rgba(0,212,255,0.08) 0%, transparent 70%);
       pointer-events: none; z-index: 0;
@@ -53,8 +53,7 @@
 
     .page {
       position: relative; z-index: 1;
-      max-width: 960px;
-      margin: 0 auto;
+      max-width: 960px; margin: 0 auto;
       padding: 60px 24px 80px;
     }
 
@@ -62,12 +61,10 @@
     .hero { text-align: center; margin-bottom: 64px; }
 
     .hero-avatar {
-      width: 72px; height: 72px;
-      border-radius: 50%;
+      width: 72px; height: 72px; border-radius: 50%;
       background: linear-gradient(135deg, var(--purple), var(--cyan));
       display: flex; align-items: center; justify-content: center;
-      font-size: 32px;
-      margin: 0 auto 20px;
+      font-size: 32px; margin: 0 auto 20px;
       box-shadow: 0 0 40px rgba(123,47,190,0.4);
       overflow: hidden;
     }
@@ -101,8 +98,7 @@
 
     /* ── SECTION HEADER ── */
     .section-header {
-      display: flex;
-      align-items: center;
+      display: flex; align-items: center;
       justify-content: space-between;
       margin-bottom: 20px;
     }
@@ -110,29 +106,22 @@
     .section-label {
       font-size: 11px; font-weight: 600;
       letter-spacing: 0.18em; text-transform: uppercase;
-      color: var(--muted);
-      padding-left: 4px;
+      color: var(--muted); padding-left: 4px;
     }
 
-    /* drag mode toggle hint */
     .drag-hint {
-      font-size: 11px;
-      color: var(--muted);
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      cursor: pointer;
-      padding: 4px 10px;
-      border-radius: 20px;
-      border: 1px solid var(--border);
+      font-size: 11px; color: var(--muted);
+      display: flex; align-items: center; gap: 6px;
+      cursor: pointer; padding: 4px 10px;
+      border-radius: 20px; border: 1px solid var(--border);
+      background: none;
       transition: border-color 0.2s, color 0.2s;
     }
     .drag-hint:hover { border-color: var(--cyan); color: var(--cyan); }
     .drag-hint.active { border-color: var(--cyan); color: var(--cyan); background: rgba(0,212,255,0.06); }
     .drag-hint .dot {
       width: 6px; height: 6px; border-radius: 50%;
-      background: var(--muted);
-      transition: background 0.2s;
+      background: var(--muted); transition: background 0.2s;
     }
     .drag-hint.active .dot { background: var(--cyan); }
 
@@ -140,8 +129,7 @@
     .grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: 16px;
-      margin-bottom: 48px;
+      gap: 16px; margin-bottom: 48px;
     }
 
     /* ── CARD ── */
@@ -150,16 +138,12 @@
       border: 1px solid var(--border);
       border-radius: 20px;
       padding: 24px 20px 20px;
-      text-decoration: none;
-      color: inherit;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      position: relative;
-      overflow: hidden;
+      text-decoration: none; color: inherit;
+      display: flex; flex-direction: column; gap: 12px;
+      position: relative; overflow: hidden;
       transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
       -webkit-tap-highlight-color: transparent;
-      cursor: grab;
+      cursor: pointer;
     }
 
     .card[data-color="cyan"]   { --ac: var(--cyan);   }
@@ -168,15 +152,15 @@
     .card[data-color="orange"] { --ac: var(--orange); }
     .card[data-color="pink"]   { --ac: var(--pink);   }
     .card[data-color="yellow"] { --ac: var(--yellow); }
+    .card[data-color="teal"]   { --ac: var(--teal);   }
+    .card[data-color="red"]    { --ac: var(--red);    }
 
-    /* hover only when NOT dragging */
     .grid:not(.drag-mode) .card:not(.wip):hover {
       transform: translateY(-4px) scale(1.01);
       border-color: var(--ac);
       box-shadow: 0 8px 40px -8px color-mix(in srgb, var(--ac) 40%, transparent);
     }
 
-    /* drag mode: cursor + wiggle hint */
     .grid.drag-mode .card:not(.wip) {
       cursor: grab;
       animation: wiggle 0.3s ease;
@@ -188,34 +172,26 @@
 
     @keyframes wiggle {
       0%   { transform: rotate(0deg); }
-      25%  { transform: rotate(-1deg); }
-      75%  { transform: rotate(1deg); }
+      25%  { transform: rotate(-1.2deg); }
+      75%  { transform: rotate(1.2deg); }
       100% { transform: rotate(0deg); }
     }
 
-    /* dragging state */
-    .card.dragging {
-      opacity: 0.35;
-      transform: scale(0.97);
-      cursor: grabbing !important;
-    }
+    .card.dragging { opacity: 0.35; transform: scale(0.97); cursor: grabbing !important; }
 
-    /* drag-over placeholder */
     .card.drag-over {
       border-color: var(--ac) !important;
       background: color-mix(in srgb, var(--ac) 8%, var(--card)) !important;
       box-shadow: 0 0 0 2px var(--ac) !important;
     }
 
-    /* icon */
+    /* card content */
     .card-icon {
       font-size: 36px; line-height: 1;
       filter: drop-shadow(0 2px 8px rgba(0,0,0,0.4));
-      display: block;
-      pointer-events: none;
+      display: block; pointer-events: none;
     }
 
-    /* tag */
     .card-tag {
       display: inline-flex; align-items: center; gap: 5px;
       font-size: 10px; font-weight: 600;
@@ -235,7 +211,6 @@
     .card-title { font-size: 16px; font-weight: 700; color: #fff; line-height: 1.2; }
     .card-desc  { font-size: 12px; color: var(--muted); line-height: 1.5; }
 
-    /* arrow */
     .card-arrow {
       font-size: 12px; color: var(--muted);
       align-self: flex-end;
@@ -243,22 +218,99 @@
       pointer-events: none;
     }
     .grid:not(.drag-mode) .card:not(.wip):hover .card-arrow {
-      color: var(--ac);
-      transform: translate(2px, -2px);
+      color: var(--ac); transform: translate(2px, -2px);
     }
 
-    /* drag handle icon shown in drag mode */
+    /* ── DRAG HANDLE (top-right in drag mode) ── */
     .drag-handle {
-      position: absolute;
-      top: 12px; right: 14px;
-      font-size: 14px;
-      color: var(--muted);
-      opacity: 0;
-      transition: opacity 0.2s;
-      pointer-events: none;
+      position: absolute; top: 10px; right: 38px;
+      font-size: 13px; color: var(--muted);
+      opacity: 0; transition: opacity 0.2s; pointer-events: none;
     }
-    .grid.drag-mode .card:not(.wip) .drag-handle { opacity: 0.5; }
-    .grid.drag-mode .card:not(.wip):hover .drag-handle { opacity: 1; }
+    .grid.drag-mode .card:not(.wip) .drag-handle { opacity: 0.45; }
+    .grid.drag-mode .card:not(.wip):hover .drag-handle { opacity: 0.9; }
+
+    /* ── EDIT PENCIL BUTTON ── */
+    .edit-btn {
+      position: absolute; top: 8px; right: 10px;
+      width: 24px; height: 24px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: var(--muted);
+      font-size: 12px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity 0.2s, background 0.2s, color 0.2s;
+      z-index: 10;
+      line-height: 1;
+    }
+    /* show pencil only in drag/edit mode */
+    .grid.drag-mode .card:not(.wip) .edit-btn { opacity: 1; }
+    .edit-btn:hover { background: rgba(0,212,255,0.15); color: var(--cyan); border-color: var(--cyan); }
+
+    /* ── INLINE EDIT PANEL ── */
+    .edit-panel {
+      display: none;
+      position: absolute;
+      inset: 0;
+      background: rgba(10,10,25,0.97);
+      border-radius: 20px;
+      padding: 14px;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 20;
+    }
+    .edit-panel.open { display: flex; }
+
+    .edit-panel label {
+      font-size: 9px; font-weight: 700;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 2px;
+      display: block;
+    }
+
+    .edit-panel input {
+      width: 100%;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      font-size: 12px;
+      padding: 5px 8px;
+      outline: none;
+      transition: border-color 0.2s;
+      user-select: text;
+    }
+    .edit-panel input:focus { border-color: var(--cyan); }
+
+    .edit-panel-row { display: flex; gap: 6px; }
+
+    .edit-panel-emoji {
+      width: 48px; flex-shrink: 0;
+      font-size: 20px; text-align: center;
+      padding: 4px 2px;
+    }
+
+    .edit-actions {
+      display: flex; gap: 6px; margin-top: auto;
+    }
+
+    .btn-save, .btn-cancel {
+      flex: 1; border: none; border-radius: 8px;
+      font-size: 11px; font-weight: 600;
+      padding: 6px 4px;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      transition: opacity 0.15s;
+    }
+    .btn-save   { background: var(--cyan); color: #000; }
+    .btn-cancel { background: rgba(255,255,255,0.07); color: var(--muted); }
+    .btn-save:hover   { opacity: 0.85; }
+    .btn-cancel:hover { opacity: 0.7; }
 
     /* WIP */
     .card.wip { opacity: 0.5; cursor: not-allowed; }
@@ -272,7 +324,6 @@
       padding: 2px 7px; border-radius: 20px;
     }
 
-    /* active press */
     .card:active:not(.wip):not(.dragging) { transform: scale(0.97); }
 
     /* ── FOOTER ── */
@@ -301,8 +352,8 @@
   <header class="hero">
     <!-- ══════════════════════════════════════════════
          FOTO DE PERFIL
-         Troque o valor de MINHA_FOTO abaixo pelo
-         nome do arquivo (ex: "foto.jpg") ou uma URL.
+         Troque o valor de MINHA_FOTO pelo nome do
+         arquivo (ex: "foto.jpg") ou uma URL completa.
          ══════════════════════════════════════════════ -->
     <div class="hero-avatar" id="avatar-wrap">
       <img id="avatar-img" src="" alt="Andrey Cappa"
@@ -326,7 +377,7 @@
   <!-- ── APPS ATIVOS ── -->
   <div class="section-header">
     <p class="section-label">Apps ativos</p>
-    <button class="drag-hint" id="drag-toggle" onclick="toggleDragMode()" aria-label="Ativar modo arrastar">
+    <button class="drag-hint" id="drag-toggle" onclick="toggleDragMode()">
       <span class="dot"></span> Organizar
     </button>
   </div>
@@ -334,9 +385,10 @@
   <div class="grid" id="main-grid">
 
     <a class="card" data-color="orange" data-id="indiko"
-       href="https://djpartyman2015-ui.github.io/Links-Ativos/indiko/index.html"
+       href="https://djpartyman2015-ui.github.io/Links-Ativos/indiko.html"
        target="_blank" rel="noopener">
       <span class="drag-handle">⠿</span>
+      <button class="edit-btn" title="Editar card">✏️</button>
       <span class="card-icon">📍</span>
       <span class="card-tag">Comunidade</span>
       <div class="card-body">
@@ -344,25 +396,104 @@
         <span class="card-desc">Recomendações de prestadores de serviço no bairro</span>
       </div>
       <span class="card-arrow">↗</span>
+      <div class="edit-panel">
+        <div>
+          <label>Emoji</label>
+          <div class="edit-panel-row">
+            <input class="edit-panel-emoji" type="text" data-field="icon" maxlength="4" value="📍" />
+            <input style="flex:1" type="text" data-field="tag" placeholder="Categoria" value="Comunidade" />
+          </div>
+        </div>
+        <div>
+          <label>Título</label>
+          <input type="text" data-field="title" value="Indiko" />
+        </div>
+        <div>
+          <label>Descrição</label>
+          <input type="text" data-field="desc" value="Recomendações de prestadores de serviço no bairro" />
+        </div>
+        <div class="edit-actions">
+          <button class="btn-cancel">Cancelar</button>
+          <button class="btn-save">Salvar</button>
+        </div>
+      </div>
     </a>
 
-    <a class="card" data-color="green" data-id="bolao"
-       href="https://djpartyman2015-ui.github.io/Links-Ativos/bolao/index.html"
+    <a class="card" data-color="green" data-id="bolao-escocia"
+       href="https://djpartyman2015-ui.github.io/Links-Ativos/bolao-brasil-escocia.html"
        target="_blank" rel="noopener">
       <span class="drag-handle">⠿</span>
+      <button class="edit-btn" title="Editar card">✏️</button>
       <span class="card-icon">⚽</span>
       <span class="card-tag">Esporte</span>
       <div class="card-body">
-        <span class="card-title">Coppa dos Cappa</span>
-        <span class="card-desc">Bolão da família com placar ao vivo e ranking</span>
+        <span class="card-title">Bolão Brasil x Escócia</span>
+        <span class="card-desc">Palpites e placar do confronto</span>
       </div>
       <span class="card-arrow">↗</span>
+      <div class="edit-panel">
+        <div>
+          <label>Emoji</label>
+          <div class="edit-panel-row">
+            <input class="edit-panel-emoji" type="text" data-field="icon" maxlength="4" value="⚽" />
+            <input style="flex:1" type="text" data-field="tag" placeholder="Categoria" value="Esporte" />
+          </div>
+        </div>
+        <div>
+          <label>Título</label>
+          <input type="text" data-field="title" value="Bolão Brasil x Escócia" />
+        </div>
+        <div>
+          <label>Descrição</label>
+          <input type="text" data-field="desc" value="Palpites e placar do confronto" />
+        </div>
+        <div class="edit-actions">
+          <button class="btn-cancel">Cancelar</button>
+          <button class="btn-save">Salvar</button>
+        </div>
+      </div>
+    </a>
+
+    <a class="card" data-color="yellow" data-id="bolao-marrocos"
+       href="https://djpartyman2015-ui.github.io/Links-Ativos/bolao-brasil-marrocos.html"
+       target="_blank" rel="noopener">
+      <span class="drag-handle">⠿</span>
+      <button class="edit-btn" title="Editar card">✏️</button>
+      <span class="card-icon">🏆</span>
+      <span class="card-tag">Esporte</span>
+      <div class="card-body">
+        <span class="card-title">Bolão Brasil x Marrocos</span>
+        <span class="card-desc">Palpites e placar do confronto</span>
+      </div>
+      <span class="card-arrow">↗</span>
+      <div class="edit-panel">
+        <div>
+          <label>Emoji</label>
+          <div class="edit-panel-row">
+            <input class="edit-panel-emoji" type="text" data-field="icon" maxlength="4" value="🏆" />
+            <input style="flex:1" type="text" data-field="tag" placeholder="Categoria" value="Esporte" />
+          </div>
+        </div>
+        <div>
+          <label>Título</label>
+          <input type="text" data-field="title" value="Bolão Brasil x Marrocos" />
+        </div>
+        <div>
+          <label>Descrição</label>
+          <input type="text" data-field="desc" value="Palpites e placar do confronto" />
+        </div>
+        <div class="edit-actions">
+          <button class="btn-cancel">Cancelar</button>
+          <button class="btn-save">Salvar</button>
+        </div>
+      </div>
     </a>
 
     <a class="card" data-color="cyan" data-id="cotacao"
-       href="https://djpartyman2015-ui.github.io/Links-Ativos/cotacao/index.html"
+       href="https://djpartyman2015-ui.github.io/Links-Ativos/monitor-cotacoes.html"
        target="_blank" rel="noopener">
       <span class="drag-handle">⠿</span>
+      <button class="edit-btn" title="Editar card">✏️</button>
       <span class="card-icon">💱</span>
       <span class="card-tag">Finanças</span>
       <div class="card-body">
@@ -370,10 +501,98 @@
         <span class="card-desc">Monitor de câmbio com calculadora em BRL</span>
       </div>
       <span class="card-arrow">↗</span>
+      <div class="edit-panel">
+        <div>
+          <label>Emoji</label>
+          <div class="edit-panel-row">
+            <input class="edit-panel-emoji" type="text" data-field="icon" maxlength="4" value="💱" />
+            <input style="flex:1" type="text" data-field="tag" placeholder="Categoria" value="Finanças" />
+          </div>
+        </div>
+        <div>
+          <label>Título</label>
+          <input type="text" data-field="title" value="Cotação do Dia" />
+        </div>
+        <div>
+          <label>Descrição</label>
+          <input type="text" data-field="desc" value="Monitor de câmbio com calculadora em BRL" />
+        </div>
+        <div class="edit-actions">
+          <button class="btn-cancel">Cancelar</button>
+          <button class="btn-save">Salvar</button>
+        </div>
+      </div>
     </a>
 
-    <!-- Para adicionar novo app: copie um bloco <a class="card"> acima e ajuste:
-         data-id (único), data-color, href, card-icon, card-tag, card-title, card-desc -->
+    <a class="card" data-color="teal" data-id="checklist"
+       href="https://djpartyman2015-ui.github.io/Links-Ativos/checklist-viagem.html"
+       target="_blank" rel="noopener">
+      <span class="drag-handle">⠿</span>
+      <button class="edit-btn" title="Editar card">✏️</button>
+      <span class="card-icon">🧳</span>
+      <span class="card-tag">Viagem</span>
+      <div class="card-body">
+        <span class="card-title">Checklist de Viagem</span>
+        <span class="card-desc">Lista interativa de itens para não esquecer nada</span>
+      </div>
+      <span class="card-arrow">↗</span>
+      <div class="edit-panel">
+        <div>
+          <label>Emoji</label>
+          <div class="edit-panel-row">
+            <input class="edit-panel-emoji" type="text" data-field="icon" maxlength="4" value="🧳" />
+            <input style="flex:1" type="text" data-field="tag" placeholder="Categoria" value="Viagem" />
+          </div>
+        </div>
+        <div>
+          <label>Título</label>
+          <input type="text" data-field="title" value="Checklist de Viagem" />
+        </div>
+        <div>
+          <label>Descrição</label>
+          <input type="text" data-field="desc" value="Lista interativa de itens para não esquecer nada" />
+        </div>
+        <div class="edit-actions">
+          <button class="btn-cancel">Cancelar</button>
+          <button class="btn-save">Salvar</button>
+        </div>
+      </div>
+    </a>
+
+    <a class="card" data-color="pink" data-id="noronha"
+       href="https://djpartyman2015-ui.github.io/Links-Ativos/noronha-gastos.html"
+       target="_blank" rel="noopener">
+      <span class="drag-handle">⠿</span>
+      <button class="edit-btn" title="Editar card">✏️</button>
+      <span class="card-icon">🏝️</span>
+      <span class="card-tag">Viagem</span>
+      <div class="card-body">
+        <span class="card-title">Noronha · Gastos</span>
+        <span class="card-desc">Controle de despesas da viagem a Fernando de Noronha</span>
+      </div>
+      <span class="card-arrow">↗</span>
+      <div class="edit-panel">
+        <div>
+          <label>Emoji</label>
+          <div class="edit-panel-row">
+            <input class="edit-panel-emoji" type="text" data-field="icon" maxlength="4" value="🏝️" />
+            <input style="flex:1" type="text" data-field="tag" placeholder="Categoria" value="Viagem" />
+          </div>
+        </div>
+        <div>
+          <label>Título</label>
+          <input type="text" data-field="title" value="Noronha · Gastos" />
+        </div>
+        <div>
+          <label>Descrição</label>
+          <input type="text" data-field="desc" value="Controle de despesas da viagem a Fernando de Noronha" />
+        </div>
+        <div class="edit-actions">
+          <button class="btn-cancel">Cancelar</button>
+          <button class="btn-save">Salvar</button>
+        </div>
+      </div>
+    </a>
 
   </div>
 
@@ -382,7 +601,6 @@
     <p class="section-label">Em desenvolvimento</p>
   </div>
   <div class="grid">
-
     <div class="card wip" data-color="purple">
       <span class="wip-badge">Em breve</span>
       <span class="card-icon">📊</span>
@@ -392,8 +610,7 @@
         <span class="card-desc">Painel executivo de transição de sistemas</span>
       </div>
     </div>
-
-    <div class="card wip" data-color="pink">
+    <div class="card wip" data-color="red">
       <span class="wip-badge">Em breve</span>
       <span class="card-icon">💡</span>
       <span class="card-tag">Produtividade</span>
@@ -402,7 +619,6 @@
         <span class="card-desc">Adicione sua próxima ideia aqui</span>
       </div>
     </div>
-
   </div>
 
   <footer class="footer">
@@ -414,36 +630,119 @@
 </div>
 
 <script>
-  /* ══════════════════════════════════════════
-     DRAG & DROP — ordem salva no localStorage
-     ══════════════════════════════════════════ */
+  /* ════════════════════════════════════════════════
+     STORAGE KEYS
+     ════════════════════════════════════════════════ */
+  const ORDER_KEY  = 'cappa-labs-order';
+  const EDITS_KEY  = 'cappa-labs-edits';
+  const grid       = document.getElementById('main-grid');
+  const toggleBtn  = document.getElementById('drag-toggle');
 
-  const STORAGE_KEY = 'cappa-labs-order';
-  const grid        = document.getElementById('main-grid');
-  const toggleBtn   = document.getElementById('drag-toggle');
+  let dragMode    = false;
+  let dragSrc     = null;
+  let clickLocked = false;
 
-  let dragMode   = false;
-  let dragSrc    = null;
-  let clickLocked = false; // prevent click after drag
+  /* ── Restore saved card text edits ── */
+  function restoreEdits() {
+    const saved = localStorage.getItem(EDITS_KEY);
+    if (!saved) return;
+    try {
+      const edits = JSON.parse(saved);
+      Object.entries(edits).forEach(([id, data]) => {
+        const card = grid.querySelector(`[data-id="${id}"]`);
+        if (!card) return;
+        if (data.icon)  card.querySelector('.card-icon').textContent = data.icon;
+        if (data.tag)   card.querySelector('.card-tag').textContent  = data.tag;
+        if (data.title) card.querySelector('.card-title').textContent = data.title;
+        if (data.desc)  card.querySelector('.card-desc').textContent  = data.desc;
+        // sync inputs in edit panel
+        if (data.icon)  card.querySelector('[data-field="icon"]').value  = data.icon;
+        if (data.tag)   card.querySelector('[data-field="tag"]').value   = data.tag;
+        if (data.title) card.querySelector('[data-field="title"]').value = data.title;
+        if (data.desc)  card.querySelector('[data-field="desc"]').value  = data.desc;
+      });
+    } catch(e) {}
+  }
+
+  function saveEdit(card) {
+    const id = card.dataset.id;
+    const saved = JSON.parse(localStorage.getItem(EDITS_KEY) || '{}');
+    saved[id] = {
+      icon:  card.querySelector('[data-field="icon"]').value,
+      tag:   card.querySelector('[data-field="tag"]').value,
+      title: card.querySelector('[data-field="title"]').value,
+      desc:  card.querySelector('[data-field="desc"]').value,
+    };
+    localStorage.setItem(EDITS_KEY, JSON.stringify(saved));
+  }
 
   /* ── Restore saved order ── */
   function restoreOrder() {
-    const saved = localStorage.getItem(STORAGE_KEY);
+    const saved = localStorage.getItem(ORDER_KEY);
     if (!saved) return;
-    const ids = JSON.parse(saved);
-    ids.forEach(id => {
-      const card = grid.querySelector(`[data-id="${id}"]`);
-      if (card) grid.appendChild(card);
-    });
+    try {
+      JSON.parse(saved).forEach(id => {
+        const card = grid.querySelector(`[data-id="${id}"]`);
+        if (card) grid.appendChild(card);
+      });
+    } catch(e) {}
   }
 
   function saveOrder() {
-    const cards = [...grid.querySelectorAll('.card[data-id]')];
-    const ids   = cards.map(c => c.dataset.id);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(ids));
+    const ids = [...grid.querySelectorAll('.card[data-id]')].map(c => c.dataset.id);
+    localStorage.setItem(ORDER_KEY, JSON.stringify(ids));
   }
 
-  /* ── Toggle drag mode ── */
+  /* ── Edit panel logic ── */
+  function openPanel(card) {
+    card.querySelector('.edit-panel').classList.add('open');
+  }
+
+  function closePanel(card) {
+    card.querySelector('.edit-panel').classList.remove('open');
+  }
+
+  // Wire up all edit buttons & panels
+  grid.querySelectorAll('.card:not(.wip)').forEach(card => {
+    const btn    = card.querySelector('.edit-btn');
+    const panel  = card.querySelector('.edit-panel');
+    const saveB  = panel.querySelector('.btn-save');
+    const cancelB= panel.querySelector('.btn-cancel');
+
+    btn.addEventListener('click', e => {
+      e.preventDefault(); e.stopPropagation();
+      openPanel(card);
+    });
+
+    cancelB.addEventListener('click', e => {
+      e.preventDefault(); e.stopPropagation();
+      closePanel(card);
+    });
+
+    saveB.addEventListener('click', e => {
+      e.preventDefault(); e.stopPropagation();
+      const icon  = panel.querySelector('[data-field="icon"]').value.trim()  || card.querySelector('.card-icon').textContent;
+      const tag   = panel.querySelector('[data-field="tag"]').value.trim()   || card.querySelector('.card-tag').textContent;
+      const title = panel.querySelector('[data-field="title"]').value.trim() || card.querySelector('.card-title').textContent;
+      const desc  = panel.querySelector('[data-field="desc"]').value.trim()  || card.querySelector('.card-desc').textContent;
+
+      card.querySelector('.card-icon').textContent  = icon;
+      card.querySelector('.card-tag').textContent   = tag;
+      card.querySelector('.card-title').textContent = title;
+      card.querySelector('.card-desc').textContent  = desc;
+
+      saveEdit(card);
+      closePanel(card);
+    });
+
+    // prevent inputs from triggering drag
+    panel.querySelectorAll('input').forEach(inp => {
+      inp.addEventListener('mousedown', e => e.stopPropagation());
+      inp.addEventListener('touchstart', e => e.stopPropagation(), { passive: true });
+    });
+  });
+
+  /* ── Toggle drag/edit mode ── */
   function toggleDragMode() {
     dragMode = !dragMode;
     grid.classList.toggle('drag-mode', dragMode);
@@ -451,17 +750,19 @@
     toggleBtn.innerHTML = dragMode
       ? '<span class="dot"></span> Pronto'
       : '<span class="dot"></span> Organizar';
-
-    const cards = grid.querySelectorAll('.card:not(.wip)');
-    cards.forEach(card => {
-      card.draggable = dragMode;
+    grid.querySelectorAll('.card:not(.wip)').forEach(c => {
+      c.draggable = dragMode;
+      // close any open panels when leaving edit mode
+      if (!dragMode) closePanel(c);
     });
   }
 
-  /* ── Drag events ── */
+  /* ── Desktop drag ── */
   grid.addEventListener('dragstart', e => {
     const card = e.target.closest('.card:not(.wip)');
     if (!card || !dragMode) { e.preventDefault(); return; }
+    // don't drag if edit panel is open
+    if (card.querySelector('.edit-panel.open')) { e.preventDefault(); return; }
     dragSrc = card;
     clickLocked = true;
     setTimeout(() => card.classList.add('dragging'), 0);
@@ -473,7 +774,6 @@
     if (card) card.classList.remove('dragging');
     grid.querySelectorAll('.drag-over').forEach(c => c.classList.remove('drag-over'));
     saveOrder();
-    // release click lock after a tick
     setTimeout(() => { clickLocked = false; }, 50);
   });
 
@@ -496,24 +796,18 @@
     const target = e.target.closest('.card:not(.wip)');
     if (!target || target === dragSrc || !dragSrc) return;
     target.classList.remove('drag-over');
-
-    // insert before or after based on pointer position
-    const rect   = target.getBoundingClientRect();
-    const midX   = rect.left + rect.width / 2;
-    const after  = e.clientX > midX;
-
-    if (after) {
-      target.after(dragSrc);
-    } else {
-      target.before(dragSrc);
-    }
+    const rect = target.getBoundingClientRect();
+    const after = e.clientX > rect.left + rect.width / 2;
+    if (after) target.after(dragSrc);
+    else       target.before(dragSrc);
     saveOrder();
   });
 
-  /* Prevent navigation on click after drag */
   grid.addEventListener('click', e => {
     if (clickLocked) { e.preventDefault(); return; }
-    if (dragMode) { e.preventDefault(); } // in drag mode, clicks don't navigate
+    if (dragMode && !e.target.closest('.edit-btn') && !e.target.closest('.edit-panel')) {
+      e.preventDefault();
+    }
   }, true);
 
   /* ── Touch drag (mobile) ── */
@@ -523,23 +817,17 @@
     if (!dragMode) return;
     const card = e.target.closest('.card:not(.wip)');
     if (!card) return;
+    if (card.querySelector('.edit-panel.open')) return;
+    if (e.target.closest('.edit-btn') || e.target.closest('.edit-panel')) return;
     touchCard = card;
     touchOrigin = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-
-    // create a floating ghost
-    touchClone = card.cloneNode(true);
     const r = card.getBoundingClientRect();
+    touchClone = card.cloneNode(true);
     Object.assign(touchClone.style, {
-      position: 'fixed',
-      top:      r.top + 'px',
-      left:     r.left + 'px',
-      width:    r.width + 'px',
-      height:   r.height + 'px',
-      opacity:  '0.75',
-      zIndex:   '9999',
-      pointerEvents: 'none',
-      transition: 'none',
-      transform: 'scale(1.05)',
+      position: 'fixed', top: r.top + 'px', left: r.left + 'px',
+      width: r.width + 'px', height: r.height + 'px',
+      opacity: '0.75', zIndex: '9999', pointerEvents: 'none',
+      transition: 'none', transform: 'scale(1.05)',
       boxShadow: '0 16px 48px rgba(0,0,0,0.6)',
     });
     document.body.appendChild(touchClone);
@@ -550,17 +838,13 @@
     if (!touchClone) return;
     e.preventDefault();
     const t = e.touches[0];
-    const r = touchCard.getBoundingClientRect();
     const dx = t.clientX - touchOrigin.x;
     const dy = t.clientY - touchOrigin.y;
     touchClone.style.transform = `translate(${dx}px, ${dy}px) scale(1.05)`;
-
-    // find card under finger
     touchClone.style.display = 'none';
     const el = document.elementFromPoint(t.clientX, t.clientY);
     touchClone.style.display = '';
     const over = el && el.closest('.card:not(.wip)');
-
     grid.querySelectorAll('.drag-over').forEach(c => c.classList.remove('drag-over'));
     if (over && over !== touchCard) over.classList.add('drag-over');
   }, { passive: false });
@@ -568,19 +852,15 @@
   grid.addEventListener('touchend', e => {
     if (!touchClone) return;
     const t = e.changedTouches[0];
-    touchClone.remove();
-    touchClone = null;
+    touchClone.remove(); touchClone = null;
     touchCard.classList.remove('dragging');
-
     const el = document.elementFromPoint(t.clientX, t.clientY);
     const target = el && el.closest('.card:not(.wip)');
     grid.querySelectorAll('.drag-over').forEach(c => c.classList.remove('drag-over'));
-
     if (target && target !== touchCard) {
-      const rect  = target.getBoundingClientRect();
-      const after = t.clientX > rect.left + rect.width / 2;
-      if (after) target.after(touchCard);
-      else        target.before(touchCard);
+      const rect = target.getBoundingClientRect();
+      if (t.clientX > rect.left + rect.width / 2) target.after(touchCard);
+      else target.before(touchCard);
       saveOrder();
     }
     touchCard = null;
@@ -588,6 +868,7 @@
 
   /* ── Init ── */
   restoreOrder();
+  restoreEdits();
 </script>
 </body>
 </html>
