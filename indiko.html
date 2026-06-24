@@ -511,35 +511,57 @@ function toast(msg, err=false) {
 // ── FIRESTORE LISTENER (tempo real) ──
 // Lista de categorias (evita apóstrofos dentro de template literals)
 const CATEGORIAS = [
+  // Manutenção & Reparos
   "Elétrica","Hidráulica / Encanamento","Pintura","Gesso / Drywall","Impermeabilização",
   "Telhado / Calhas","Serralheria / Ferragem","Vidraçaria / Esquadrias",
   "Piso / Azulejo / Revestimento","Ar Condicionado / Climatização","Elevadores",
   "Portões / Automatização","Interfone / CFTV","Reformas Gerais / Obras",
+  // Áreas Externas & Lazer
   "Jardinagem / Paisagismo","Piscinas / Tratamento de Água","Playground / Equipamentos",
   "Quadras / Esportes","Churrasqueira / Área Gourmet","Iluminação Externa",
+  // Limpeza & Conservação
   "Limpeza Geral / Faxina","Limpeza de Fachada / Lavagem","Dedetização / Controle de Pragas",
   "Desentupimento","Limpeza de Caixa D’água","Descarte / Coleta de Entulho",
+  // Segurança
   "Segurança / Vigilância","Câmeras / Monitoramento","Portaria Remota",
-  "Alarmes / Cerca Elétrica","Controle de Acesso / Biometria","Móveis / Marcenaria",
-  "Persianas / Cortinas","Decoração / Design de Interiores","Arquitetura / Projetos",
-  "Armários / Closets Planejados","Internet / Fibra Óptica","Tecnologia / TI / Suporte",
-  "Automação Residencial / Smart Home","Antenas / TV a Cabo","Mecânica / Automóveis",
-  "Lavagem de Carros","Pintura Automotiva","Motocicletas","Bicicletas / Patinetes",
+  "Alarmes / Cerca Elétrica","Controle de Acesso / Biometria",
+  // Casa & Decoração
+  "Móveis / Marcenaria","Persianas / Cortinas","Decoração / Design de Interiores",
+  "Arquitetura / Projetos","Armários / Closets Planejados",
+  // Tecnologia & Conectividade
+  "Internet / Fibra Óptica","Tecnologia / TI / Suporte",
+  "Automação Residencial / Smart Home","Antenas / TV a Cabo",
+  // Automóveis & Mobilidade
+  "Mecânica Geral","Elétrica Automotiva","Funilaria / Lataria","Pintura Automotiva",
+  "Películas / Insulfilm","Lavagem / Higienização","Martelinho de Ouro",
+  "Ar Condicionado Automotivo","Som / Acessórios Automotivos",
+  "Pneus / Alinhamento / Balanceamento","Vidros Automotivos",
+  "Motocicletas","Bicicletas / Patinetes","Despachante / Documentação",
+  // Pet
   "Pet Care / Veterinário","Banho & Tosa","Adestramento",
+  // Saúde & Bem-Estar
   "Clínico Geral","Pediatria","Cardiologia","Dermatologia","Ginecologia / Obstetrícia",
   "Ortopedia","Oftalmologia","Otorrinolaringologia","Neurologia","Psiquiatria",
   "Urologia","Endocrinologia","Nutrição / Nutricionista","Odontologia / Dentista",
   "Fisioterapia / Pilates","Psicologia / Terapia","Personal Trainer",
-  "Enfermagem / Home Care","Farmácia / Manipulação","Laboratório / Exames","Saúde em Geral","Mudanças / Fretes",
-  "Entregas / Motoboy","Montagem de Móveis","Chaveiro","Lavanderia","Costura / Customização",
-  "Contabilidade / Financeiro","Advocacia / Jurídico","Seguros","Delivery / Restaurantes",
-  "Buffet / Catering","Confeitaria / Bolos","Festas / Eventos","DJ / Música ao Vivo",
-  "Fotografia / Vídeo","Aulas Particulares","Idiomas","Musicalização / Instrumentos",
-  "Cuidador / Babá","Cuidador de Idosos",
+  "Enfermagem / Home Care","Farmácia / Manipulação","Laboratório / Exames",
   "Doula / Parto","Saúde em Geral",
-  "Moda / Vestuário","Costureira / Alfaiate","Brechó / Roupas Usadas","Acessórios / Bijuterias","Calçados","Uniformes / Bordados",
+  // Serviços Gerais
+  "Mudanças / Fretes","Entregas / Motoboy","Montagem de Móveis","Chaveiro",
+  "Lavanderia","Costura / Customização","Contabilidade / Financeiro",
+  "Advocacia / Jurídico","Seguros",
+  // Alimentação & Eventos
+  "Delivery / Restaurantes","Buffet / Catering","Confeitaria / Bolos",
+  "Festas / Eventos","DJ / Música ao Vivo","Fotografia / Vídeo",
+  // Educação & Bem-Estar
+  "Aulas Particulares","Idiomas","Musicalização / Instrumentos",
+  "Cuidador / Babá","Cuidador de Idosos",
+  // Moda & Vestuário
+  "Moda / Vestuário","Costureira / Alfaiate","Brechó / Roupas Usadas",
+  "Acessórios / Bijuterias","Calçados","Uniformes / Bordados",
+  // Outros
   "Outros"
-];
+]
 
 // Capturar IP do usuário
 async function getIP() {
