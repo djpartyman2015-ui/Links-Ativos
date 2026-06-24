@@ -1,0 +1,2315 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Dashboard de Faturas</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap');
+:root{
+  --bg:#f5f4f0;--surface:#fff;--surface2:#f0efe9;
+  --border:rgba(0,0,0,.07);--border2:rgba(0,0,0,.13);
+  --text:#1a1916;--text2:#6b6a65;--text3:#9e9d98;
+  --accent:#185FA5;--accent-bg:#E6F1FB;
+  --r:10px;--rl:14px;
+  --shadow:0 1px 3px rgba(0,0,0,.07),0 1px 2px rgba(0,0,0,.04);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.5}
+.shell{display:flex;min-height:100vh}
+.sidebar{width:260px;flex-shrink:0;background:var(--surface);border-right:.5px solid var(--border2);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto}
+.sb-logo{padding:22px 20px 14px;border-bottom:.5px solid var(--border)}
+.sb-logo h1{font-size:15px;font-weight:600}
+.sb-logo p{font-size:11px;color:var(--text3);margin-top:2px}
+.sb-sec{padding:14px 20px 8px}
+.sb-sec-title{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px}
+.chip{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:var(--r);margin-bottom:4px;transition:background .15s;position:relative}
+.chip:hover{background:var(--surface2)}
+.chip-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.chip-info{flex:1;min-width:0}
+.chip-name{font-size:12px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chip-meta{font-size:10px;color:var(--text3)}
+.chip-rm{opacity:0;font-size:13px;color:var(--text3);cursor:pointer;padding:2px 5px;border-radius:4px;border:none;background:none;transition:opacity .15s}
+.chip:hover .chip-rm{opacity:1}
+.add-btn{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:var(--r);border:1.5px dashed var(--border2);color:var(--text2);font-size:12px;cursor:pointer;background:none;width:100%;transition:all .15s;margin-top:4px;font-family:'Inter',sans-serif}
+.add-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-bg)}
+.sb-footer{margin-top:auto;padding:16px 20px;border-top:.5px solid var(--border)}
+.sb-footer p{font-size:11px;color:var(--text3);line-height:1.5}
+.sb-footer strong{color:var(--text2)}
+.main{flex:1;min-width:0;padding:28px 32px}
+/* UPLOAD */
+.drop-zone{width:100%;max-width:520px;border:2px dashed var(--border2);border-radius:var(--rl);padding:52px 32px;text-align:center;cursor:pointer;transition:all .2s;background:var(--surface);position:relative}
+.drop-zone.over{border-color:var(--accent);background:var(--accent-bg)}
+.drop-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.drop-fmts{display:flex;gap:8px;justify-content:center;margin-top:16px;flex-wrap:wrap}
+.fmt-pill{font-size:11px;padding:3px 10px;border-radius:20px;background:var(--surface2);color:var(--text2);border:.5px solid var(--border)}
+.queue{width:100%;max-width:520px;margin-top:20px}
+.q-item{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--surface);border-radius:var(--r);border:.5px solid var(--border);margin-bottom:8px;box-shadow:var(--shadow)}
+.q-item.done{border-left:3px solid #1D9E75}
+.q-item.error{border-left:3px solid #E24B4A}
+.q-item.warn{border-left:3px solid #BA7517}
+.q-fname{font-size:13px;font-weight:500;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.q-status{font-size:11px;color:var(--text3);margin-top:2px}
+.q-badge{font-size:10px;font-weight:600;padding:3px 9px;border-radius:20px;white-space:nowrap}
+.spin{display:inline-block;width:16px;height:16px;border:2px solid #ddd;border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+/* MODAL */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:100;align-items:center;justify-content:center}
+.modal-bg.open{display:flex}
+.modal{background:var(--surface);border-radius:var(--rl);padding:28px;width:100%;max-width:440px;box-shadow:0 20px 60px rgba(0,0,0,.18)}
+.modal h2{font-size:16px;font-weight:600;margin-bottom:6px}
+.modal-fname{font-size:11px;color:var(--text2);margin-bottom:14px;padding:6px 10px;background:var(--surface2);border-radius:6px;font-family:'JetBrains Mono',monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+.form-group label{display:block;font-size:11px;color:var(--text2);margin-bottom:5px;font-weight:500}
+.form-group select,.form-group input{width:100%;padding:8px 10px;border:.5px solid var(--border2);border-radius:var(--r);font-size:13px;font-family:'Inter',sans-serif;background:var(--surface2);color:var(--text);outline:none;transition:border .15s}
+.form-group select:focus,.form-group input:focus{border-color:var(--accent);background:#fff}
+.modal-note{font-size:11px;color:var(--text3);margin-bottom:16px;padding:8px 10px;background:#EAF3DE;border-radius:6px;line-height:1.5}
+.modal-actions{display:flex;gap:10px;justify-content:flex-end}
+.btn{padding:9px 20px;border-radius:var(--r);font-size:13px;font-weight:500;cursor:pointer;border:none;transition:all .15s;font-family:'Inter',sans-serif}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{background:#0f4a85}
+.btn-ghost{background:transparent;border:.5px solid var(--border2);color:var(--text)}
+.btn-ghost:hover{background:var(--surface2)}
+/* DASHBOARD */
+.dash-header{margin-bottom:24px;display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.dash-title{font-size:22px;font-weight:600}
+.dash-sub{font-size:13px;color:var(--text2);margin-top:3px}
+/* TABS */
+.tab-bar{display:flex;gap:4px;background:var(--surface2);border-radius:var(--r);padding:4px}
+.tab{padding:6px 16px;border-radius:8px;font-size:13px;cursor:pointer;border:none;background:transparent;color:var(--text2);font-family:'Inter',sans-serif;transition:all .15s;font-weight:500}
+.tab.active{background:var(--surface);color:var(--text);box-shadow:var(--shadow)}
+/* METRICS */
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:24px}
+.mc{background:var(--surface);border-radius:var(--rl);padding:16px 18px;border:.5px solid var(--border);box-shadow:var(--shadow)}
+.mc-label{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
+.mc-val{font-size:26px;font-weight:600;line-height:1}
+.mc-sub{font-size:11px;color:var(--text3);margin-top:5px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.panel{background:var(--surface);border-radius:var(--rl);padding:20px;border:.5px solid var(--border);box-shadow:var(--shadow)}
+.panel-title{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:16px}
+.cat-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:.5px solid var(--border)}
+.cat-row:last-child{border-bottom:none}
+.cat-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+.cat-bar-bg{width:80px;height:5px;background:var(--surface2);border-radius:3px;overflow:hidden;flex-shrink:0}
+.cat-bar-fill{height:100%;border-radius:3px}
+.card-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:.5px solid var(--border)}
+.card-row:last-child{border-bottom:none}
+.insight-row{display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-bottom:.5px solid var(--border)}
+.insight-row:last-child{border-bottom:none}
+.ins-icon{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px}
+.tx-filters{display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.tx-fi{padding:7px 11px;border:.5px solid var(--border2);border-radius:var(--r);font-size:12px;background:var(--surface2);color:var(--text);outline:none;font-family:'Inter',sans-serif}
+.tx-fi:focus{border-color:var(--accent)}
+.tx-table{max-height:340px;overflow-y:auto}
+.tx-row{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:.5px solid var(--border)}
+.tx-row:last-child{border-bottom:none}
+/* Per-card view */
+.card-detail-panel{background:var(--surface);border-radius:var(--rl);padding:20px;border:.5px solid var(--border);box-shadow:var(--shadow);margin-bottom:16px}
+.card-detail-header{display:flex;align-items:center;gap:10px;margin-bottom:16px;padding-bottom:12px;border-bottom:.5px solid var(--border)}
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+@media(max-width:900px){.sidebar{display:none}.main{padding:20px 16px}.grid2{grid-template-columns:1fr}}
+/* Categoria pending badge */
+.cat-pending{font-size:9px;padding:1px 5px;border-radius:4px;background:#FFF3CD;color:#856404;margin-left:4px;vertical-align:middle}
+</style>
+</head>
+<body>
+<div class="shell">
+<aside class="sidebar">
+  <div class="sb-logo"><h1>💳 Dashboard de Faturas</h1><p>100% local · Sem API · Gratuito</p></div>
+  <div class="sb-sec">
+    <div class="sb-sec-title">Cartões adicionados</div>
+    <div id="sb-cards"><p style="font-size:12px;color:var(--text3);font-style:italic">Nenhuma fatura ainda</p></div>
+    <button class="add-btn" onclick="goUpload()">＋ Adicionar fatura</button>
+  </div>
+  <div class="sb-footer">
+    <p><strong>Como funciona:</strong> texto extraído do PDF direto no navegador. Nenhum dado sai do seu computador.</p>
+    <p style="margin-top:8px">⚠️ Melhor com PDFs digitais (app do banco). PDFs escaneados podem ter extração parcial.</p>
+  </div>
+</aside>
+<main class="main">
+  <!-- UPLOAD -->
+  <div id="scr-up" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:70vh">
+    <div class="drop-zone" id="dz">
+      <input type="file" id="fi" accept=".pdf" multiple/>
+      <div style="font-size:44px;margin-bottom:16px">📂</div>
+      <div style="font-size:17px;font-weight:600;margin-bottom:6px">Arraste suas faturas aqui</div>
+      <div style="font-size:13px;color:var(--text2)">PDF da fatura — texto extraído localmente, sem envio de dados</div>
+      <div class="drop-fmts">
+        <span class="fmt-pill">PDF</span><span class="fmt-pill">✅ Gratuito</span>
+        <span class="fmt-pill">✅ Sem API Key</span><span class="fmt-pill">✅ 100% local</span>
+      </div>
+    </div>
+    <div class="queue" id="queue"></div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="scr-dash" style="display:none">
+    <div class="dash-header" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+      <div>
+        <div class="dash-title">Dashboard de gastos</div>
+        <div class="dash-sub" id="dash-sub">—</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <div class="tab-bar" style="margin:0">
+          <button class="tab active" id="tab-consolidated" onclick="switchView('consolidated')">Consolidado</button>
+          <button class="tab" id="tab-bycard" onclick="switchView('bycard')">Por cartão</button>
+          <button class="tab" id="tab-bymonth" onclick="switchView('bymonth')">Por mês</button>
+        </div>
+        <button id="notion-btn" onclick="exportToNotion()"
+          style="display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:var(--r);
+                 border:1.5px solid var(--border2);background:var(--surface);cursor:pointer;
+                 font-size:12px;font-weight:500;color:var(--text);transition:all .15s;white-space:nowrap"
+          onmouseenter="this.style.background='#000';this.style.color='#fff';this.style.borderColor='#000'"
+          onmouseleave="this.style.background='var(--surface)';this.style.color='var(--text)';this.style.borderColor='var(--border2)'">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M4.459 4.208c.746.606 1.026.56 2.428.466l13.215-.793c.28 0 .047-.28-.046-.326L17.86 1.968c-.42-.326-.981-.7-2.055-.607L3.01 2.295c-.466.046-.56.28-.374.466zm.793 3.08v13.904c0 .747.373 1.027 1.214.98l14.523-.84c.841-.046.935-.56.935-1.167V6.354c0-.606-.233-.933-.748-.887l-15.177.887c-.56.047-.747.327-.747.933zm14.337.745c.093.42 0 .84-.42.888l-.7.14v10.264c-.608.327-1.168.514-1.635.514-.748 0-.935-.234-1.495-.933l-4.577-7.186v6.952L12.21 19s0 .84-1.168.84l-3.222.186c-.093-.186 0-.653.327-.746l.84-.233V9.854L7.822 9.76c-.094-.42.14-1.026.793-1.073l3.456-.233 4.764 7.279v-6.44l-1.215-.14c-.093-.514.28-.887.747-.933zM1.936 1.035l13.31-.98c1.634-.14 2.055-.047 3.082.7l4.249 2.986c.7.513.934.653.934 1.213v16.378c0 1.026-.373 1.634-1.68 1.726l-15.458.934c-.98.047-1.448-.093-1.962-.747l-3.129-4.06c-.56-.747-.793-1.306-.793-1.96V2.667c0-.839.374-1.54 1.447-1.632z"/></svg>
+          Exportar para Notion
+        </button>
+        <button onclick="openNotionSettings()" title="Configurar token Notion"
+          style="padding:6px 9px;border-radius:var(--r);border:1.5px solid var(--border2);
+                 background:var(--surface);cursor:pointer;font-size:14px;line-height:1;
+                 color:var(--text2);transition:all .15s"
+          onmouseenter="this.style.background='var(--surface2)'"
+          onmouseleave="this.style.background='var(--surface)'">⚙</button>
+      </div>
+    </div>
+
+    <!-- CONSOLIDATED VIEW -->
+    <div id="view-consolidated">
+      <div id="validation-banner" style="display:none;margin-bottom:16px;padding:12px 16px;border-radius:var(--rl);border:1.5px solid #BA7517;background:#FAEEDA;color:#633806;font-size:13px;display:none;align-items:center;gap:12px;flex-wrap:wrap">
+        <span style="font-size:18px">⚠️</span>
+        <div style="flex:1;min-width:200px" id="validation-text"></div>
+        <button onclick="openAddTx()" style="background:#BA7517;color:#fff;border:none;padding:7px 14px;border-radius:var(--r);font-size:12px;font-weight:500;cursor:pointer;white-space:nowrap">＋ Adicionar transação</button>
+      </div>
+      <div class="metrics" id="metrics-row"></div>
+      <div class="grid2">
+        <div class="panel"><div class="panel-title">Por categoria</div><div id="cat-list"></div></div>
+        <div class="panel">
+          <div class="panel-title">Distribuição</div>
+          <div style="position:relative;height:220px"><canvas id="pieChart" role="img" aria-label="Distribuição por categoria"></canvas></div>
+          <div id="pie-legend" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:12px;font-size:11px;color:var(--text2)"></div>
+        </div>
+      </div>
+      <div class="grid2">
+        <div class="panel"><div class="panel-title">Por cartão</div><div id="per-card-list"></div></div>
+        <div class="panel">
+          <div class="panel-title">Comparativo entre cartões</div>
+          <div style="position:relative;height:200px"><canvas id="barChart" role="img" aria-label="Comparativo por cartão"></canvas></div>
+        </div>
+      </div>
+      <div class="panel" style="margin-bottom:16px">
+        <div class="panel-title">💡 Insights e sugestões de economia</div>
+        <div id="insights-list"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-title" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0">
+          <span>Todas as transações</span>
+          <button onclick="openAddTx()" style="font-size:11px;padding:5px 12px;border-radius:var(--r);background:var(--accent);color:#fff;border:none;cursor:pointer;font-weight:500">＋ Adicionar</button>
+        </div>
+        <div style="height:12px"></div>
+        <div class="tx-filters">
+          <input class="tx-fi" type="text" id="tx-search" placeholder="🔍 Buscar..." oninput="filterTx()" style="flex:1;min-width:160px"/>
+          <select class="tx-fi" id="tx-cat" onchange="filterTx()"><option value="">Todas categorias</option></select>
+          <select class="tx-fi" id="tx-bank" onchange="filterTx()"><option value="">Todos cartões</option></select>
+        </div>
+        <!-- Cabeçalho das colunas -->
+        <div style="display:flex;align-items:center;gap:8px;padding:6px 4px 4px;border-bottom:1.5px solid var(--border2);margin-top:4px">
+          <span style="font-size:10px;font-weight:600;color:var(--text3);min-width:42px;text-transform:uppercase;letter-spacing:.04em">Data</span>
+          <span style="flex:1;font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.04em">Descrição</span>
+          <span style="font-size:10px;font-weight:600;color:var(--text3);min-width:140px;text-transform:uppercase;letter-spacing:.04em">Nota</span>
+          <span style="font-size:10px;font-weight:600;color:var(--text3);width:44px;text-align:center;text-transform:uppercase;letter-spacing:.04em">Tipo</span>
+          <span style="font-size:10px;font-weight:600;color:var(--text3);min-width:52px;text-transform:uppercase;letter-spacing:.04em">Cartão</span>
+          <span style="font-size:10px;font-weight:600;color:var(--text3);min-width:140px;text-transform:uppercase;letter-spacing:.04em">Categoria</span>
+          <span style="font-size:10px;font-weight:600;color:var(--text3);min-width:82px;text-align:right;text-transform:uppercase;letter-spacing:.04em">Valor</span>
+          <span style="width:28px"></span>
+        </div>
+        <div class="tx-table" id="tx-table"></div>
+      </div>
+    </div>
+
+    <!-- BY CARD VIEW -->
+    <div id="view-bycard" style="display:none">
+      <div id="bycard-container"></div>
+    </div>
+
+    <!-- BY MONTH VIEW -->
+    <div id="view-bymonth" style="display:none">
+      <div id="bymonth-container"></div>
+    </div>
+  </div>
+</main>
+</div>
+
+<!-- NOTION SETTINGS MODAL -->
+<div class="modal-bg" id="modal-notion">
+  <div class="modal" style="max-width:420px">
+    <h2>⚙ Configuração Notion</h2>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.6">
+      Token da sua integração Notion. Salvo na <strong>memória da aba</strong> — apaga ao fechar o browser.<br><br>
+      <strong>Como obter:</strong><br>
+      1. Acesse <a href="https://notion.so/my-integrations" target="_blank" style="color:var(--accent)">notion.so/my-integrations</a><br>
+      2. Clique em "Dashboard Faturas" → copie o <strong>Access token</strong><br>
+      3. No database Notion: <code style="background:var(--surface2);padding:1px 5px;border-radius:3px">···</code> → <strong>Connections</strong> → adicione a integração
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:6px">
+      <input type="password" id="notion-token-input" placeholder="ntn_..." autocomplete="off"
+        style="flex:1;padding:8px 12px;border:1.5px solid var(--border2);border-radius:var(--r);
+               font-size:12px;font-family:'JetBrains Mono',monospace;outline:none"
+        onkeydown="if(event.key==='Enter') submitNotionToken()"/>
+      <button onclick="(()=>{const i=document.getElementById('notion-token-input');i.type=i.type==='password'?'text':'password'})()"
+        style="border:1.5px solid var(--border2);background:var(--surface2);padding:7px 10px;border-radius:var(--r);cursor:pointer">👁</button>
+    </div>
+    <div id="notion-token-status" style="font-size:11px;color:#3B6D11;min-height:16px;margin-bottom:12px"></div>
+    <div class="modal-actions" style="justify-content:space-between">
+      <button class="btn btn-ghost" onclick="clearNotionToken();document.getElementById('notion-token-input').value='';document.getElementById('notion-token-status').textContent='Token removido.'">🗑 Limpar</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-ghost" onclick="closeNotionSettings()">Cancelar</button>
+        <button class="btn btn-primary" onclick="submitNotionToken()">Salvar →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PASSWORD MODAL -->
+<div class="modal-bg" id="modal-password">
+  <div class="modal" style="max-width:380px">
+    <h2>🔒 PDF protegido por senha</h2>
+    <div id="pwd-fname" style="font-size:12px;color:var(--text2);margin-bottom:12px;padding:6px 10px;background:var(--surface2);border-radius:6px;word-break:break-all"></div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.5">
+      Informe a senha do PDF.<br>
+      <strong>Itaú / Bradesco / Santander:</strong> geralmente é o seu <strong>CPF</strong> (só números, ex: <code style="background:var(--surface2);padding:1px 4px;border-radius:3px">12345678901</code>)
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px">
+      <input type="password" id="pwd-input" placeholder="Digite a senha..." autocomplete="off"
+        style="flex:1;padding:8px 12px;border:1.5px solid var(--border2);border-radius:var(--r);font-size:13px;font-family:'Inter',sans-serif;outline:none"
+        onkeydown="if(event.key==='Enter') submitPassword()"/>
+      <button onclick="togglePwdVisibility()" style="border:1.5px solid var(--border2);background:var(--surface2);padding:7px 10px;border-radius:var(--r);cursor:pointer;font-size:13px" title="Mostrar/ocultar senha">👁</button>
+    </div>
+    <div id="pwd-error" style="display:none;font-size:11px;color:#E24B4A;margin-bottom:8px">❌ Senha incorreta. Tente novamente.</div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="cancelPassword()">Cancelar</button>
+      <button class="btn btn-primary" onclick="submitPassword()">Desbloquear →</button>
+    </div>
+  </div>
+</div>
+
+<!-- MANUAL TX MODAL -->
+<div class="modal-bg" id="modal-addtx">
+  <div class="modal">
+    <h2>Adicionar transação manual</h2>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:16px;padding:8px 10px;background:var(--surface2);border-radius:6px">
+      Use para complementar faturas com OCR parcial ou adicionar gastos avulsos.
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Cartão</label>
+        <select id="atx-card" style="width:100%"></select>
+      </div>
+      <div class="form-group">
+        <label>Data (DD/MM)</label>
+        <input type="text" id="atx-date" placeholder="Ex: 15/03" style="width:100%" maxlength="5"/>
+      </div>
+    </div>
+    <div class="form-group" style="margin-bottom:12px">
+      <label>Descrição</label>
+      <input type="text" id="atx-desc" placeholder="Ex: SUPERMERCADO EXTRA" style="width:100%"/>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Valor (R$)</label>
+        <input type="number" id="atx-val" placeholder="0,00" step="0.01" min="0.01" style="width:100%"/>
+      </div>
+      <div class="form-group">
+        <label>Categoria</label>
+        <select id="atx-cat" style="width:100%"></select>
+      </div>
+    </div>
+    <div id="atx-diff-banner" style="display:none;margin-bottom:12px;padding:8px 12px;border-radius:6px;font-size:12px;background:#FAEEDA;color:#633806;border:1px solid #BA7517"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeAddTx()">Cancelar</button>
+      <button class="btn btn-primary" onclick="submitAddTx()">Adicionar transação</button>
+    </div>
+  </div>
+</div>
+  <div class="modal-bg" id="modal">
+    <div class="modal">
+      <h2>Identificar cartão</h2>
+      <div class="modal-fname" id="modal-fname"></div>
+    <div class="modal-note">✅ O PDF é lido localmente no seu navegador. Nenhum dado sai do seu computador.</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Banco</label>
+        <select id="sel-bank">
+          <option value="Nubank">Nubank</option>
+          <option value="Itaú">Itaú</option>
+          <option value="Bradesco">Bradesco</option>
+          <option value="Santander">Santander</option>
+          <option value="Banco do Brasil">Banco do Brasil</option>
+          <option value="Caixa">Caixa</option>
+          <option value="Inter">Inter</option>
+          <option value="C6 Bank">C6 Bank</option>
+          <option value="XP">XP</option>
+          <option value="BTG">BTG Pactual</option>
+          <option value="Mercado Pago">Mercado Pago</option>
+          <option value="C&A Pay">C&A Pay</option>
+          <option value="Porto Bank">Porto Bank</option>
+          <option value="Outro">Outro</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Apelido (opcional)</label>
+        <input type="text" id="sel-name" placeholder="Ex: Itaú Gold"/>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="skipBank()">Usar nome do arquivo</button>
+      <button class="btn btn-primary" onclick="confirmBank()">Processar →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// Global error catcher
+window.onerror = function(msg, src, line, col, err) {
+  console.error('ERRO GLOBAL:', msg, 'linha:', line, err);
+  return false;
+};
+window.addEventListener('unhandledrejection', e => {
+  console.error('PROMISE ERROR:', e.reason);
+});
+
+pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+// Quando aberto via file://, o worker externo é bloqueado — usar modo sem worker
+if(location.protocol==='file:') pdfjsLib.GlobalWorkerOptions.workerSrc='';
+
+// ── Categories ────────────────────────────────────────────────────────────
+const CATS = {
+  'Alimentação':       {color:'#378ADD',kw:['supermercado','mercado ','padaria','hortifruti','extra ','carrefour','pao de acucar','atacadao','feira ','acougue','sacolao','mercearia','minimercado','sonda','zaffari','bistek','quitanda','emporio','varejao','atacarejo','ecoville']},
+  'Restaurantes':      {color:'#1D9E75',kw:['restaurante','lanchonete','hamburger','pizza','sushi','churrasco','madero','mcdonalds','burger','subway','ifood','rappi','delivery','bar ','boteco','cantina','cafe ','coffee','coco bambu','outback','giraffas','bobs','habib','grill','steakhouse','porcao','katia christina','carolina daniela']},
+  'Transporte':        {color:'#D85A30',kw:['uber','99pop','99 ','cabify','taxi','posto ','combustivel','gasolina','etanol','pedagio','estacionamento','autopass','metro ','onibus','sem parar','veloe','shell ','ipiranga','br dist','ale ','auto posto','sr estacionamento']},
+  'Streaming/Digital': {color:'#9B7EDE',kw:['netflix','spotify','amazon prime','disney','hbo','youtube','apple ','google play','steam','playstation','xbox','deezer','globoplay','telecine','paramount','max ','prime video','twitch','adobe','microsoft 365','dropbox','icloud','canva','chatgpt','openai','tiktok','ebn *tiktok','ebn*tiktok']},
+  'Saúde/Farmácia':    {color:'#BA7517',kw:['farmacia','droga','drogaleve','drogaria','laboratorio','clinica','hospital','medico','dentista','otica','academia','smart fit','biolab','panvel','nissei','pague menos','fleury','delboni','unimed','rdsaude','drogalindaiatuba','drogaria_sp']},
+  'Viagem/Lazer':      {color:'#639922',kw:['hotel','pousada','airbnb','booking','latam','gol ','azul ','tam ','passagem','parque','show ','cinema','teatro','clube','decathlon','ingresso','sympla','eventbrite','resort','hostel','trivago','expedia','artesanato']},
+  'Compras/Vestuário': {color:'#D4537E',kw:['renner','riachuelo','c&a','zara','h&m','arezzo','shein','americanas','shopee','mercado livre','mercadolivre','magazine','casas bahia','lojas ','amaro','farm ','amazon','kabum','fast shop','ponto frio','modernize','rigema','ncopay','zelooberdan','zelo oberdan','marbellac','parc*marbellac','parc*simplesen','parc*mercadoli','parc*autoposto','itaushop','mp *samsung','iphone pra sem']},
+  'Educação':          {color:'#5DCAA5',kw:['escola','colegio','faculdade','universidade','curso','udemy','alura','duolingo','livro','papelaria','descomplica','stoodi','wizard','ccaa','livraria','saraiva']},
+  'Casa':              {color:'#7C6F5B',kw:['leroy merlin','leroy','ikea','tok stok','mobly','etna','havan','telhanorte','c&c','balaroti','construção','materiais de construção','eletrica','hidraulica','condominio','aluguel','imobiliaria','zelooberdan','ferplas','tramontina','madeira','tinta','ferragem','loja do mecânico']},
+  'Pet':               {color:'#8DBE6C',kw:['petshop','pet shop','petz','cobasi','petlove','agropet','veterinario','veterinária','clinica vet','animal','racao','ração','banho e tosa','tosa','castracao','petisco']},
+  'Juros/Multas':      {color:'#E24B4A',kw:['juros','multa','mora ','iof ','encargo','rotativo','cet ','financiamento','atraso']},
+  'Outros':            {color:'#888780',kw:[]},
+};
+
+// Extended lookup for common establishments that need smarter matching
+const SMART_CAT = [
+  {re:/itaushop/i,             cat:'Compras/Vestuário'},
+  {re:/msc\s*cruzeiros?/i,     cat:'Viagem/Lazer'},
+  {re:/c&a\s*-?\s*polo|c&a\s*shop/i, cat:'Compras/Vestuário'},
+  {re:/porto\s*seguro\s*r\s*e|porto\s*seguro\s*seg/i, cat:'Saúde/Farmácia'},
+  {re:/barbearia/i,            cat:'Saúde/Farmácia'},
+  {re:/balilla\s*veiculos/i,   cat:'Transporte'},
+  {re:/pneustore/i,            cat:'Transporte'},
+  {re:/sem\s*parar/i,          cat:'Transporte'},
+  {re:/decolar/i,              cat:'Viagem/Lazer'},
+  {re:/airbnb/i,               cat:'Viagem/Lazer'},
+  {re:/kurenai|tem\s*sushi|temakeria|sushi|my\s*sushi/i, cat:'Restaurantes'},
+  {re:/raia\s*drogasil|drogasil|drogaria\s*carrefour/i, cat:'Saúde/Farmácia'},
+  {re:/polo\s*comercio/i,      cat:'Compras/Vestuário'},
+  {re:/rede\s*p5|esplanada/i,  cat:'Compras/Vestuário'},
+  {re:/fruitty|sorvetao|sorvetão/i, cat:'Restaurantes'},
+  {re:/pex.onr/i,              cat:'Outros'},
+  {re:/hna\b/i,                cat:'Saúde/Farmácia'},
+  // Nubank specifics
+  {re:/petpet|petlove|mp\s*\*dog|dogdo/i,    cat:'Pet'},
+  {re:/applecombill|apple.*bill/i,            cat:'Streaming/Digital'},
+  {re:/google.*youtube|youtubepremium/i,      cat:'Streaming/Digital'},
+  {re:/ora\s*pois|orapois/i,                  cat:'Restaurantes'},
+  {re:/beauty\s*hub|beautyhub/i,              cat:'Saúde/Farmácia'},
+  {re:/e.lens|elens/i,                        cat:'Saúde/Farmácia'},
+  {re:/maravilhas\s*do\s*lar/i,               cat:'Casa'},
+  {re:/sodimac/i,                             cat:'Casa'},
+  {re:/tabacana/i,                            cat:'Outros'},
+  {re:/stark\s*bank|starkbank/i,              cat:'Saúde/Farmácia'},
+  {re:/idea.*vida|ideavida/i,                 cat:'Saúde/Farmácia'},
+  {re:/bandeira\s*casa\s*de\s*carne/i,        cat:'Alimentação'},
+  {re:/ec\s*\*dennis|dennisbeumo/i,           cat:'Outros'},
+  {re:/mp\s*\*lfmen|lfmen/i,                  cat:'Outros'},
+  {re:/mp\s*\*samsung/i,       cat:'Compras/Vestuário'},
+  {re:/iphone\s*pra\s*sem/i,   cat:'Compras/Vestuário'},
+  {re:/mercadolivre|mercado\s*livre/i, cat:'Compras/Vestuário'},
+  {re:/ncopay/i,               cat:'Outros'},
+  {re:/rdsaude|rd\s*saude/i,   cat:'Saúde/Farmácia'},
+  {re:/drogaleve|drogal/i,     cat:'Saúde/Farmácia'},
+  {re:/drogaria_sp|drogaria\s*sp/i, cat:'Saúde/Farmácia'},
+  {re:/ecoville/i,             cat:'Alimentação'},
+  {re:/tiktok|ebn\s*\*/i,      cat:'Streaming/Digital'},
+  {re:/rigema/i,               cat:'Compras/Vestuário'},
+  {re:/sr\s*estacion/i,        cat:'Transporte'},
+  {re:/simplesen/i,            cat:'Compras/Vestuário'},
+  {re:/marbellac/i,            cat:'Compras/Vestuário'},
+  {re:/autoposto/i,            cat:'Transporte'},
+  {re:/zelooberdan|zelo\s*oberdan/i, cat:'Compras/Vestuário'},
+  {re:/artesanato/i,           cat:'Viagem/Lazer'},
+  {re:/poointdosisra|mp\s*\*poo/i, cat:'Alimentação'},
+  {re:/modernize/i,            cat:'Compras/Vestuário'},
+];
+
+const BANK_COLORS={
+  'Nubank':'#820AD1','Itaú':'#EC7000','Bradesco':'#CC092F','Santander':'#EC0000',
+  'Banco do Brasil':'#FCBF00','Caixa':'#005CA9','Inter':'#FF7A00','C6 Bank':'#2C2C2C',
+  'XP':'#1A1A2E','BTG':'#00743E','Mercado Pago':'#009EE3',
+  'C&A Pay':'#E91E8C','Porto Bank':'#003DA5','Outro':'#888780'
+};
+
+// ── State ─────────────────────────────────────────────────────────────────
+let faturas=[], pendingFile=null, pendingQueue=[];
+let pieInst=null, barInst=null, currentView='consolidated';
+
+// ── Helpers ───────────────────────────────────────────────────────────────
+const catOf = desc => {
+  const d=(desc||'').toLowerCase();
+  // Smart patterns first
+  for(const {re,cat} of SMART_CAT) if(re.test(d)) return cat;
+  // Keyword match
+  for(const [cat,cfg] of Object.entries(CATS)){
+    if(cat==='Outros') continue;
+    if(cfg.kw.some(k=>d.includes(k))) return cat;
+  }
+  return 'Outros';
+};
+
+const fmt  = n => Math.round(n).toLocaleString('pt-BR');
+const fmtR = n => 'R$ '+n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+const pct  = (a,b) => b?Math.round(a/b*100):0;
+const goUpload = () => {document.getElementById('scr-up').style.display='flex';document.getElementById('scr-dash').style.display='none';};
+const goDash   = () => {document.getElementById('scr-up').style.display='none';document.getElementById('scr-dash').style.display='block';};
+
+function switchView(v){
+  currentView=v;
+  document.getElementById('view-consolidated').style.display = v==='consolidated'?'block':'none';
+  document.getElementById('view-bycard').style.display       = v==='bycard'?'block':'none';
+  document.getElementById('view-bymonth').style.display      = v==='bymonth'?'block':'none';
+  document.getElementById('tab-consolidated').classList.toggle('active',v==='consolidated');
+  document.getElementById('tab-bycard').classList.toggle('active',v==='bycard');
+  document.getElementById('tab-bymonth').classList.toggle('active',v==='bymonth');
+  if(v==='bycard')   renderByCard();
+  if(v==='bymonth')  renderByMonth();
+}
+
+// ── Drop zone ─────────────────────────────────────────────────────────────
+const dz=document.getElementById('dz');
+dz.addEventListener('dragover', e=>{e.preventDefault();dz.classList.add('over');});
+dz.addEventListener('dragleave',()=>dz.classList.remove('over'));
+dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('over');handleFiles([...e.dataTransfer.files]);});
+document.getElementById('fi').addEventListener('change',e=>{handleFiles([...e.target.files]);e.target.value='';});
+
+function handleFiles(files){
+  const valid=files.filter(f=>f.type==='application/pdf');
+  if(!valid.length){alert('Por favor, envie arquivos PDF.');return;}
+  pendingQueue=[...valid];
+  processNextInQueue();
+}
+
+// ── Modal ─────────────────────────────────────────────────────────────────
+function processNextInQueue(){
+  if(!pendingQueue.length) return;
+  pendingFile=pendingQueue.shift();
+  document.getElementById('modal-fname').textContent=pendingFile.name;
+  document.getElementById('sel-bank').value=detectBank(pendingFile.name);
+  document.getElementById('sel-name').value='';
+  document.getElementById('modal').classList.add('open');
+}
+
+function detectBank(n){
+  n=n.toLowerCase();
+  if(n.includes('nubank'))                   return 'Nubank';
+  if(n.includes('itau')||n.includes('itaú')) return 'Itaú';
+  if(n.includes('bradesco'))                 return 'Bradesco';
+  if(n.includes('santander'))                return 'Santander';
+  if(n.includes('inter'))                    return 'Inter';
+  if(n.includes('c6'))                       return 'C6 Bank';
+  if(n.includes('bb')||n.includes('brasil')) return 'Banco do Brasil';
+  if(n.includes('caixa'))                    return 'Caixa';
+  if(n.includes('xp'))                        return 'XP';
+  if(n.includes('btg'))                       return 'BTG';
+  if(n.includes('mercado')||n.includes('mp ')) return 'Mercado Pago';
+  if(n.includes('c&a')||n.includes('cea'))    return 'C&A Pay';
+  if(n.includes('porto'))                     return 'Porto Bank';
+  return 'Outro';
+}
+
+function confirmBank(){
+  const bank=document.getElementById('sel-bank').value;
+  const name=document.getElementById('sel-name').value.trim()||bank;
+  document.getElementById('modal').classList.remove('open');
+  processFile(pendingFile,bank,name);
+  pendingFile=null;
+  setTimeout(processNextInQueue,300);
+}
+function skipBank(){
+  const bank=document.getElementById('sel-bank').value;
+  const name=pendingFile.name.replace(/\.pdf$/i,'');
+  document.getElementById('modal').classList.remove('open');
+  processFile(pendingFile,bank,name);
+  pendingFile=null;
+  setTimeout(processNextInQueue,300);
+}
+
+// ── PDF extraction ────────────────────────────────────────────────────────
+async function extractText(file, password=''){
+  const ab=await file.arrayBuffer();
+  const loadParams={data:new Uint8Array(ab)};
+  if(password) loadParams.password=password;
+
+  let pdf;
+  try{
+    pdf=await pdfjsLib.getDocument(loadParams).promise;
+  }catch(err){
+    const msg=(err.message||'').toLowerCase();
+    if(err.name==='PasswordException'||msg.includes('password')||msg.includes('no password')){
+      throw Object.assign(new Error('PDF protegido por senha'), {type:'password'});
+    }
+    throw err;
+  }
+
+  const pages=[];
+  for(let i=1;i<=pdf.numPages;i++){
+    const page=await pdf.getPage(i);
+    const content=await page.getTextContent();
+    const lines={};
+    for(const item of content.items){
+      const y=Math.round(item.transform[5]);
+      if(!lines[y]) lines[y]=[];
+      lines[y].push({x:item.transform[4],str:item.str});
+    }
+    const sorted=Object.keys(lines).map(Number).sort((a,b)=>b-a);
+    pages.push(sorted.map(y=>lines[y].sort((a,b)=>a.x-b.x).map(i=>i.str).join(' ')).join('\n'));
+  }
+  const text=pages.join('\n');
+  if(text.trim().length<100&&typeof Tesseract!=='undefined'){
+    return await extractTextOCR(pdf);
+  }
+  return text;
+}
+
+// OCR para PDFs escaneados (ex: Santander impresso)
+async function extractTextOCR(pdf){
+  const statusEl=document.querySelector('.q-item:last-child .q-status');
+  const setStatus=msg=>{ if(statusEl) statusEl.textContent=msg; };
+  setStatus('PDF escaneado — iniciando OCR...');
+  let fullText='';
+  for(let i=1;i<=pdf.numPages;i++){
+    const page=await pdf.getPage(i);
+    const scale=2.5; // alta resolução para melhor precisão
+    const vp=page.getViewport({scale});
+    const canvas=document.createElement('canvas');
+    canvas.width=vp.width; canvas.height=vp.height;
+    await page.render({canvasContext:canvas.getContext('2d'),viewport:vp}).promise;
+    setStatus(`OCR: processando página ${i} de ${pdf.numPages}...`);
+    const {data:{text}}=await Tesseract.recognize(canvas,'por',{
+      logger:m=>{ if(m.status==='recognizing text') setStatus(`OCR pág ${i}/${pdf.numPages}: ${Math.round(m.progress*100)}%`); }
+    });
+    fullText+=text+'\n';
+  }
+  setStatus('OCR concluído — extraindo transações...');
+  return fullText;
+}
+
+// ── Parser ────────────────────────────────────────────────────────────────
+function parseTransactions(text, bank){
+  const monthLabels=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  let month='—';
+
+  // Detectar mês pelo vencimento
+  const mV=text.match(/[Vv]encimento[:\s]*(\d{2})\/(\d{2})\/(20\d{2})/);
+  if(mV) month=`${monthLabels[parseInt(mV[2])-1]}/${mV[3]}`;
+  if(month==='—'){
+    // MP usa "Vence em DD/MM/YYYY"
+    const mV2=text.match(/[Vv]ence\s+em\s+(\d{2})\/(\d{2})\/(20\d{2})/);
+    if(mV2) month=`${monthLabels[parseInt(mV2[2])-1]}/${mV2[3]}`;
+  }
+  if(month==='—'){
+    const mN=text.match(/(?:vencimento|per[ií]odo|fatura)[^0-9]{0,20}(\d{1,2})[\/\-](\d{2,4})/i);
+    if(mN){const m=parseInt(mN[1])-1,y=mN[2].length===2?'20'+mN[2]:mN[2];if(m>=0&&m<12)month=`${monthLabels[m]}/${y}`;}
+  }
+  if(month==='—'){
+    const monthNames=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+    for(let i=0;i<monthNames.length;i++){
+      const m=text.match(new RegExp(monthNames[i]+'[a-z]*\\s*(?:de\\s*)?(20\\d{2})','i'));
+      if(m){month=`${monthLabels[i]}/${m[1]}`;break;}
+    }
+  }
+
+  // ── Roteamento por banco ──────────────────────────────────────────────
+  // Mercado Pago tem estrutura completamente diferente do Itaú
+  const isMercadoPago = /mercado\s*pago|mercadopago/i.test(text) ||
+                        /movimenta[cç][oõ]es na fatura/i.test(text);
+  if(isMercadoPago) return parseMercadoPago(text, month);
+
+  // C&A Pay — usa seção DEMONSTRATIVO com datas DD/MM/YYYY
+  const isCA = /c&a\s*pay|ceapayfundo|c&a\s*-\s*polo|compra parcelada sem juros/i.test(text);
+  if(isCA) return parseCeA(text, month);
+
+  // Santander — usa seções "Parcelamentos" e "Despesas" dentro de "Detalhamento da Fatura"
+  const isSantander = /santander/i.test(text) &&
+                      /detalhamento da fatura/i.test(text);
+  if(isSantander) return parseSantander(text, month);
+
+  // Nubank — seção "TRANSAÇÕES DE DD MMM A DD MMM" com formato "DD MMM •••• XXXX Desc R$ valor"
+  const isNubank = /nu\s*pagamentos|nubank/i.test(text) ||
+                   /transa[cç][oõ]es de \d{2} [A-Z]{3} a \d{2} [A-Z]{3}/i.test(text);
+  if(isNubank) return parseNubank(text, '—'); // Nubank detecta o mês por conta própria
+
+  // Porto Bank / Porto Seguro — usa o mesmo formato Itaú (Lançamentos: compras e saques)
+  // Já funciona com o parser Itaú, só precisa passar por ele normalmente
+  // (sem roteamento especial — cai no fluxo padrão abaixo)
+
+  const lines=text.split('\n').map(l=>l.trim()).filter(l=>l.length>2);
+
+  // Seções que ativam captura
+  const SEC_START=[/lan[cç]amentos[:\s]*compras/i,/compras e saques/i];
+  // Seções que PARAM captura — inclui "limites de crédito" que causava problema no 7949
+  const SEC_STOP=[
+    /compras parceladas/i,/pr[oó]ximas? faturas?/i,/pagamentos efetuados/i,
+    /total dos lan[cç]amentos/i,/lan[cç]amentos no cart[aã]o/i,
+    /limites de cr[eé]dito/i,/encargos cobrados/i,/novo teto de juros/i,
+    /simulaç[aã]o de compras/i,/resumo da fatura/i,/fique atento/i,
+    /demais taxas/i,/simulaç[aã]o saque/i,/somente para correntistas/i,
+    /detalhamento geral/i,       // Porto Bank
+    /total de despesas parceladas/i,  // Porto Bank
+    /confira nossos canais/i,    // Porto Bank rodapé
+  ];
+
+  // Linhas a ignorar dentro da seção
+  const NOISE=[
+    'pagamento','pagamento efetuado','pagamento recebido','total dos pagamentos',
+    'total da fatura','total desta fatura','total a pagar','total parcelado',
+    'total financiado','valor total financiado','valor financiado','saldo financiado',
+    'saldo devedor','saldo anterior','fatura anterior',
+    'lançamentos atuais','lançamentos no cartão','lan no cart',
+    'desc antecipa','antecipa parcelas',
+    'credito ','crédito ',         // linha de crédito/estorno
+    'principal (r$','+ juros (r$', // detalhe de parcelamento
+    'encargos','encargo ','mora ','multa ',
+    'iof ','i.o.f','tarifa','anuidade',
+    'juros ','encargo financeiro','cet ',
+    'limite total','limite disponível','limite disponivel','limite de crédito','limite utilizado',
+    'limite máximo','limite maximo','limite m','limite p',
+    'para saque','saque no brasil','saque no exterior',
+    'crédito disponível','credito disponivel',
+    'vencimento:','data de vencimento','melhor dia',
+    'cpf','cnpj','agência','agencia','conta ',
+    'titular','portador','bandeira',
+    'central de atendimento','sac ','ouvidoria','www.','http','@',
+    'política','termos de','fale conosco','obrigado',
+    'período de','periodo de','emissão:','emissao:',
+    'previsão','previsao','fechamento:','postagem:',
+    'próxima fatura','proxima fatura','demais faturas',
+    'próximo período','proximo periodo',
+    '% a.m','% a.a','% ao mes',
+    'número do cartão','numero do cartao',
+    'resumo da fatura','resumo do período',
+    'data estabelecimento valor','data valor em r$','valor em reais',
+    'diversos .','diversos.',   // Itaú placeholder para estabelecimento desconhecido
+  ];
+
+  const isNoise=l=>{
+    const lo=l.toLowerCase();
+    if(NOISE.some(k=>lo.includes(k))) return true;
+    if(/-\s*\d{1,3}(?:\.\d{3})*,\d{2}/.test(l)) return true;  // valor negativo = crédito
+    if(l.length>3&&!/\d/.test(l)) return true;                  // só texto = título
+    if(/\d+[,.]\d+\s*%/.test(l)) return true;                  // percentual = taxa
+    if(/R\$[\s\d.,]+%/.test(l)) return true;
+    return false;
+  };
+
+  // Subcategorias Itaú abaixo da linha de transação (não são transações)
+  const SUBCAT=/^(restaurante|saúde|saude|casa|eletronicos|eletrônicos|outros|supermercado|vestuário|vestuario|servicos|serviços|viagem|lazer|educacao|educação|farmacia|farmácia|posto|combustivel|diversos)\s+/i;
+
+  const dateRe=/^\s*(\d{2}\/\d{2})\s/;
+  // Itaú: valor sempre aparece no final da parte de transação
+  // Mas às vezes o PDF cola texto de outra seção na mesma linha (ex: "132,20 LIMITE MÁXIMO...")
+  // Estratégia: usar o PRIMEIRO valor monetário quando a linha contém palavras de ruído após ele
+  const valRe     = /(\d{1,3}(?:\.\d{3})*,\d{2})/g;
+  const valReLast = /(\d{1,3}(?:\.\d{3})*,\d{2})$/;
+  // Palavras que indicam texto de outra seção colado após o valor
+  const SUFFIX_NOISE = /limite|saque|disponível|disponivel|financiado|máximo|maximo|encargo|juros|período|proximo|próximo/i;
+
+  const txs=[],seen=new Set();
+  let inSection=false;
+
+  for(const line of lines){
+    if(SEC_START.some(r=>r.test(line))){inSection=true;continue;}
+    if(SEC_STOP.some(r=>r.test(line))) {inSection=false;continue;}
+    if(!inSection) continue;
+    if(SUBCAT.test(line)) continue;
+    if(isNoise(line)) continue;
+
+    const datMatch=line.match(dateRe);
+    if(!datMatch) continue;
+    const date=datMatch[1];
+
+    // Encontrar todos os valores monetários da linha
+    const allVals=[...line.matchAll(valRe)];
+    if(!allVals.length) continue;
+
+    // Se após o 1º valor houver texto de seção colado (ex: "LIMITE MÁXIMO PARA SAQUE"),
+    // usar o 1º valor (= valor da compra). Caso contrário usar o último (padrão Itaú).
+    const firstEnd=(allVals[0].index||0)+allVals[0][0].length;
+    const afterFirst=line.slice(firstEnd);
+    const valStr=SUFFIX_NOISE.test(afterFirst) ? allVals[0][1] : allVals[allVals.length-1][1];
+
+    const val=parseFloat(valStr.replace(/\./g,'').replace(',','.'));
+    if(isNaN(val)||val<=0||val>30000) continue;
+
+    // Descrição: tudo entre a data e o valStr escolhido, sem o texto que vier depois
+    let lineClean=line;
+    // Se usamos o primeiro valor, truncar a linha nele (descarta ruído da seção seguinte)
+    if(SUFFIX_NOISE.test(afterFirst)){
+      lineClean=line.slice(0, firstEnd);
+    }
+
+    let desc=lineClean
+      .replace(dateRe,'')
+      .replace(valStr,'')
+      .replace(/R\$/gi,'')
+      .replace(/[*•|#_]/g,' ')
+      .replace(/\s+/g,' ')
+      .trim();
+
+    // Detectar parcela ANTES de remover — qualquer padrão "XX/YY" no final da desc
+    const isParcel = /\s+\d{2}\/\d{2}$/.test(desc) || /^parc\s/i.test(desc);
+
+    // Remover indicador de parcela Itaú: "15/18", "02/06" solto no final
+    desc=desc.replace(/\s+\d{2}\/\d{2}$/, '').trim();
+    // Remover prefixo "parc " do Itaú
+    desc=desc.replace(/^parc\s*/i,'').trim();
+    // Remover sufixos de cidade em maiúsculas (Itaú inclui cidade em alguns casos)
+    desc=desc.replace(/\s+[A-ZÁÉÍÓÚÂÊÎÔÛÃÕÇ\s]{4,20}$/, d => /\d/.test(d)?d:'').trim();
+
+    if(desc.length<2) continue;
+    if(/^[\d\s.,\/\-]+$/.test(desc)) continue;
+
+    const key=desc.slice(0,30).toUpperCase()+'|'+val.toFixed(2);
+    if(seen.has(key)) continue;
+    seen.add(key);
+
+    txs.push({date,desc:desc.toUpperCase(),value:val,category:catOf(desc),isParcel});
+  }
+
+  // Fallback genérico se nada foi capturado
+  if(txs.length===0) return parseGeneric(text,month,monthLabels);
+  return {txs,month};
+}
+
+// ── Parser dedicado Mercado Pago ──────────────────────────────────────────
+// Formato: "DD/MM NOME ESTABELECIMENTO Parcela X de Y R$ valor"
+// Seção de transações fica sob "Movimentações na fatura" / "Cartão Visa"
+// IGNORA: pagamentos, parcelamento de fatura, compras parceladas futuras
+function parseMercadoPago(text, month){
+  const lines=text.split('\n').map(l=>l.trim()).filter(l=>l.length>2);
+
+  // Detectar mês pelo vencimento
+  if(month==='—'){
+    const mV=text.match(/[Vv]ence[^\d]*(\d{2})\/(\d{2})\/(20\d{2})/);
+    if(mV){
+      const monthLabels=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+      month=`${monthLabels[parseInt(mV[2])-1]}/${mV[3]}`;
+    }
+  }
+
+  // Seções que ativam captura de transações no MP
+  const SEC_START=[
+    /movimenta[cç][oõ]es na fatura/i,
+    /cart[aã]o visa/i,
+    /cart[aã]o mastercard/i,
+    /detalhes de consumo/i,
+  ];
+  // Seções que param captura
+  const SEC_STOP=[
+    /compras parceladas/i,
+    /lan[cç]amentos futuros/i,
+    /fatura parcelada/i,
+    /op[cç][oõ]es de pagamento/i,
+    /parcele a fatura/i,
+    /seu cart[aã]o de cr[eé]dito/i,
+    /datas importantes/i,
+    /informa[cç][oõ]es complementares/i,
+    /cobran[cç]as/i,
+    /fale com a gente/i,
+    /teto de juros/i,
+  ];
+
+  // Ruído dentro da seção MP
+  const MPNOISE=[
+    'pagamento da fatura','pagamento recebido','total r$','total:',
+    'tarifas e encargos','multas por atraso','juros do m','consumos de',
+    'pagamentos e cr','data movimenta','movimenta','valor em r$',
+    'saldo','limite','vencimento','emitido','fatura de ',
+  ];
+
+  // Regex: linha de transação MP começa com DD/MM
+  const dateRe=/^(\d{2}\/\d{2})\s+(.+?)\s+R\$\s*([\d.,]+)$/;
+  // Alternativa sem "R$" explícito — valor só no final
+  const dateRe2=/^(\d{2}\/\d{2})\s+(.+?)\s+([\d]{1,3}(?:\.[\d]{3})*,[\d]{2})$/;
+
+  const txs=[],seen=new Set();
+  let inSection=false;
+
+  for(const line of lines){
+    if(SEC_START.some(r=>r.test(line))){inSection=true;continue;}
+    if(SEC_STOP.some(r=>r.test(line))){inSection=false;continue;}
+    if(!inSection) continue;
+
+    const lo=line.toLowerCase();
+    if(MPNOISE.some(k=>lo.includes(k))) continue;
+    if(/-\s*R\$/.test(line)||/\([-+]/.test(line)) continue; // créditos/estornos
+
+    // Tentar match com R$
+    let m=line.match(dateRe);
+    // Tentar sem R$
+    if(!m) m=line.match(dateRe2);
+    if(!m) continue;
+
+    const date=m[1];
+    let desc=m[2].trim();
+    const valStr=m[3].replace(/\./g,'').replace(',','.');
+    const val=parseFloat(valStr);
+    if(isNaN(val)||val<=0||val>30000) continue;
+
+    // Limpar desc: remover "Parcela X de Y" do final
+    const isParcel = /[Pp]arcela\s+\d+\s+de\s+\d+/.test(desc);
+    desc=desc.replace(/\s*[Pp]arcela\s+\d+\s+de\s+\d+\s*$/,'').trim();
+    // Remover "R$" soltos
+    desc=desc.replace(/R\$/gi,'').trim();
+
+    if(desc.length<2) continue;
+    const key=desc.slice(0,30).toUpperCase()+'|'+val.toFixed(2);
+    if(seen.has(key)) continue;
+    seen.add(key);
+
+    txs.push({date,desc:desc.toUpperCase(),value:val,category:catOf(desc),isParcel});
+  }
+
+  return {txs,month};
+}
+
+// ── Parser dedicado C&A Pay ───────────────────────────────────────────────
+// Formato: seção DEMONSTRATIVO com linhas "DD/MM/YYYY Descrição Valor"
+// Ignora: Pagamento Efetuado, totais de fatura anterior
+function parseCeA(text, month){
+  const monthLabels=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+
+  // Mês pelo vencimento — C&A usa "VENCIMENTO DD/MM/YYYY" ou "15/05/2026"
+  if(month==='—'){
+    const mV=text.match(/[Vv]enc[ie]\w*[:\s]+(\d{2})\/(\d{2})\/(20\d{2})/);
+    if(mV) month=`${monthLabels[parseInt(mV[2])-1]}/${mV[3]}`;
+  }
+
+  const lines=text.split('\n').map(l=>l.trim()).filter(l=>l.length>2);
+
+  // Ativar captura na seção DEMONSTRATIVO
+  const SEC_START=[/demonstrativo/i];
+  const SEC_STOP=[
+    /encargos\s+%\s+a\.m/i,  // tabela de encargos vem depois
+    /mensagem importante/i,
+    /parcele sua fatura/i,
+    /linha de cr[eé]dito/i,
+    /total de despesas/i,
+    /parcelamento da fatura/i,
+  ];
+
+  // Ruído dentro da seção C&A
+  const CANOISE=[
+    'pagamento efetuado','total fatura anterior','crédito/','débito r$',
+    'data descrição','andrey h cappa',
+  ];
+
+  // C&A usa DD/MM/YYYY no início da linha de transação
+  const dateReFull=/^(\d{2}\/\d{2})(?:\/\d{4})?\s+(.+?)\s+([\d]{1,3}(?:\.[\d]{3})*,[\d]{2})-?$/;
+
+  const txs=[],seen=new Set();
+  let inSection=false;
+
+  for(const line of lines){
+    if(SEC_START.some(r=>r.test(line))){inSection=true;continue;}
+    if(SEC_STOP.some(r=>r.test(line))){inSection=false;continue;}
+    if(!inSection) continue;
+
+    const lo=line.toLowerCase();
+    if(CANOISE.some(k=>lo.includes(k))) continue;
+    if(/-\s*\d/.test(line.replace(/^.*\s/,''))) continue; // valor negativo no fim = pagamento
+
+    const m=line.match(dateReFull);
+    if(!m) continue;
+
+    const date=m[1];
+    let desc=m[2].trim();
+    const valStr=m[3].replace(/\./g,'').replace(',','.');
+    const val=parseFloat(valStr);
+    if(isNaN(val)||val<=0||val>30000) continue;
+
+    // Remover "Parc.X/Y" ou "Parcela X/Y" do final da descrição C&A
+    const isParcel = /[Pp]arc\.?\s*\d+\/\d+/.test(desc) || /[Cc]ompra [Pp]arcelada/.test(desc);
+    desc=desc.replace(/\s*[Pp]arc\.?\s*\d+\/\d+\s*$/,'').trim();
+    // Remover prefixo "Compra Parcelada sem Juros" — manter só o estabelecimento
+    desc=desc.replace(/^[Cc]ompra\s+[Pp]arcelada\s+sem\s+[Jj]uros\s*/,'').trim();
+
+    if(desc.length<2) continue;
+
+    const key=desc.slice(0,30).toUpperCase()+'|'+val.toFixed(2);
+    if(seen.has(key)) continue;
+    seen.add(key);
+
+    txs.push({date,desc:desc.toUpperCase(),value:val,category:catOf(desc),isParcel});
+  }
+
+  // Fallback: se não entrou na seção (PDF sem "DEMONSTRATIVO" claro), busca por padrão de data
+  if(!txs.length){
+    for(const line of lines){
+      const lo=line.toLowerCase();
+      if(['pagamento efetuado','total fatura','encargos','limite','vencimento',
+          'parcele','parcelamento','mensagem','linha de cr'].some(k=>lo.includes(k))) continue;
+      if(/-\d/.test(line)) continue;
+      const m=line.match(dateReFull);
+      if(!m) continue;
+      const date=m[1];
+      const isParcel2=/[Pp]arc\.?\s*\d+\/\d+/.test(m[2])||/[Cc]ompra [Pp]arcelada/.test(m[2]);
+      let desc=m[2].replace(/[Pp]arc\.?\s*\d+\/\d+/,'').replace(/[Cc]ompra\s+[Pp]arcelada\s+sem\s+[Jj]uros\s*/,'').trim();
+      const val=parseFloat(m[3].replace(/\./g,'').replace(',','.'));
+      if(isNaN(val)||val<=0||val>30000||desc.length<2) continue;
+      const key=desc.slice(0,30).toUpperCase()+'|'+val.toFixed(2);
+      if(seen.has(key)) continue;
+      seen.add(key);
+      txs.push({date,desc:desc.toUpperCase(),value:val,category:catOf(desc),isParcel:isParcel2});
+    }
+  }
+
+  return {txs,month};
+}
+
+// ── Parser dedicado Santander ─────────────────────────────────────────────
+// Formato: "Detalhamento da Fatura" → blocos "Parcelamentos" e "Despesas"
+// Cada cartão adicional tem seu próprio bloco. Ignorar "Pagamento e Demais Créditos".
+// Linhas de transação: "DD/MM DESCRIÇÃO [PARCELA] VALOR"
+// Linhas de juros/IOF: "*Juros = X / IOF = Y" — devem ser ignoradas
+function parseSantander(text, month){
+  const monthLabels=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+
+  if(month==='—'){
+    const mV=text.match(/[Vv]encimento\s*[\n\r\s]*(\d{2})\/(\d{2})\/(20\d{2})/);
+    if(mV) month=`${monthLabels[parseInt(mV[2])-1]}/${mV[3]}`;
+  }
+
+  const lines=text.split('\n').map(l=>l.trim()).filter(l=>l.length>1);
+
+  // Santander tem 3 blocos por cartão dentro de "Detalhamento da Fatura":
+  //   1. "Pagamento e Demais Créditos" → IGNORAR (são pagamentos recebidos, não compras)
+  //   2. "Parcelamentos" → CAPTURAR
+  //   3. "Despesas" → CAPTURAR
+  // Fora dessas seções ou em "Resumo da Fatura" → parar
+
+  const SEC_PARC   = /^[Pp]arcelamentos\s*$/;
+  const SEC_DESP   = /^[Dd]espesas\s*$/;
+  const SEC_PAG    = /pagamento e demais cr[eé]ditos/i;
+  const SEC_STOP   = /resumo da fatura|saldo total consolidado|juros e custo efetivo|central de atendimento|^3\/3$/i;
+  const SEC_HEADER = /^compra\s+data\s+descri/i; // cabeçalho de coluna
+
+  // Ruído dentro das seções
+  const SANTNOISE=[
+    '*juros','* juros','iof =','valor total',
+    'pagamento e demais','detalhamento da fatura',
+    'andrey h cappa','andrey henrique',
+  ];
+
+  // Santander: linha de transação tem formato variável com colunas:
+  // [ícone?] [DD/MM] [DESCRIÇÃO] [PARCELA DD/DD?] [VALOR]
+  // O valor monetário sempre vem no final, sem "R$"
+  // A data pode vir precedida de um ícone (símbolo wifi, @, número)
+  // Regex para capturar: data DD/MM + texto + valor no final
+  const txRe=/(?:^|[\s@\d])\s*(\d{2}\/\d{2})\s+(.+?)\s+(\d{1,3}(?:\.\d{3})*,\d{2})\s*$/;
+  // Parcela no formato "XX/YY" solto no meio da descrição
+  const parcelRe=/\s+\d{2}\/\d{2}\s*$/;
+
+  const txs=[],seen=new Set();
+  // 0=fora, 1=pagamentos(ignorar), 2=parcelamentos(capturar), 3=despesas(capturar)
+  let mode=0;
+
+  for(const line of lines){
+    // Controle de modo
+    if(SEC_STOP.test(line)){mode=0;continue;}
+    if(SEC_HEADER.test(line)) continue;
+    if(SEC_PAG.test(line)){mode=1;continue;}
+    if(SEC_PARC.test(line)){mode=2;continue;}
+    if(SEC_DESP.test(line)){mode=3;continue;}
+
+    // Só capturar em modo 2 ou 3
+    if(mode!==2&&mode!==3) continue;
+
+    const lo=line.toLowerCase();
+    if(SANTNOISE.some(k=>lo.includes(k))) continue;
+    // Valores negativos = créditos/estornos dentro das seções
+    if(/-\s*\d{1,3}(?:\.\d{3})*,\d{2}/.test(line)) continue;
+    // Linha só de juros/IOF
+    if(/^\*/.test(line)) continue;
+    // Linhas de % (taxas)
+    if(/\d+,\d{2}\s*%/.test(line)) continue;
+
+    const m=line.match(txRe);
+    if(!m) continue;
+
+    const date=m[1];
+    let desc=m[2].trim();
+    const val=parseFloat(m[3].replace(/\./g,'').replace(',','.'));
+    if(isNaN(val)||val<=0||val>30000) continue;
+
+    // Remover indicador de parcela do final da descrição: "07/10", "03/06" etc.
+    const isParcel = mode===2 || parcelRe.test(desc);
+    desc=desc.replace(parcelRe,'').trim();
+    // Remover número de parcela que pode vir no início (Santander coloca "2", "3" antes da data às vezes)
+    desc=desc.replace(/^\d+\s*/,'').trim();
+    if(desc.length<2) continue;
+
+    const key=desc.slice(0,30).toUpperCase()+'|'+val.toFixed(2);
+    if(seen.has(key)) continue;
+    seen.add(key);
+
+    txs.push({date,desc:desc.toUpperCase(),value:val,category:catOf(desc),isParcel});
+  }
+
+  return {txs,month};
+}
+
+// ── Parser dedicado Nubank ────────────────────────────────────────────────
+// Usa regex diretamente no texto bruto — independente de como PDF.js quebra as linhas
+function parseNubank(text, month){
+  const monthLabels=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  const NU_MONTHS={JAN:0,FEV:1,MAR:2,ABR:3,MAI:4,JUN:5,JUL:6,AGO:7,SET:8,OUT:9,NOV:10,DEZ:11};
+
+  // Detectar mês da fatura Nubank — múltiplas estratégias
+  if(month==='—'){
+    // Estratégia 1: "FATURA 04 MAI 2026" ou "vencimento: 04 MAI 2026"
+    const p1=text.match(/(?:fatura|vencimento)[^\d\n]{0,10}(\d{2})\s+(JAN|FEV|MAR|ABR|MAI|JUN|JUL|AGO|SET|OUT|NOV|DEZ)\s+(20\d{2})/i);
+    if(p1){ const mi=NU_MONTHS[p1[2].toUpperCase()]; if(mi!==undefined) month=`${monthLabels[mi]}/${p1[3]}`; }
+  }
+  if(month==='—'){
+    // Estratégia 2: qualquer "DD MMM YYYY" no texto (ex: "04 MAI 2026")
+    const p2=text.match(/\b(\d{2})\s+(JAN|FEV|MAR|ABR|MAI|JUN|JUL|AGO|SET|OUT|NOV|DEZ)\s+(20\d{2})\b/i);
+    if(p2){ const mi=NU_MONTHS[p2[2].toUpperCase()]; if(mi!==undefined) month=`${monthLabels[mi]}/${p2[3]}`; }
+  }
+  if(month==='—'){
+    // Estratégia 3: "fatura de maio" (página 1 do Nubank) + ano em qualquer lugar próximo
+    const ML_MAP={janeiro:0,fevereiro:1,'março':2,marco:2,abril:3,maio:4,junho:5,julho:6,agosto:7,setembro:8,outubro:9,novembro:10,dezembro:11};
+    for(const [name,idx] of Object.entries(ML_MAP)){
+      const re=new RegExp('fatura de '+name+'[\\s\\S]{0,300}(20\\d{2})','i');
+      const m=text.match(re);
+      if(m){ month=`${monthLabels[idx]}/${m[1]}`; break; }
+    }
+  }
+
+  // Extrair só o bloco de transações
+  // Start: logo após "TRANSAÇÕES DE DD MMM A DD MMM"
+  // Stop: "Pagamentos e Financiamentos" OU "RESUMO DA FATURA" OU "PRÓXIMAS FATURAS"
+  const startRe = /TRANSA[CÇ][OÕ]ES(?:\s+DE\s+\d{2}\s+[A-Z]{3}\s+A\s+\d{2}\s+[A-Z]{3})?/i;
+  const startMatch = text.match(startRe);
+  if(!startMatch){ return {txs:[], month}; }
+  const startIdx = text.indexOf(startMatch[0]) + startMatch[0].length;
+
+  // Encontrar o primeiro marcador de parada após startIdx
+  const STOP_MARKERS = ['Pagamentos e Financiamentos','RESUMO DA FATURA','PRÓXIMAS FATURAS','LIMITES DISPONÍVEIS'];
+  let stopIdx = text.length;
+  for(const marker of STOP_MARKERS){
+    const idx = text.indexOf(marker, startIdx);
+    if(idx > startIdx && idx < stopIdx) stopIdx = idx;
+  }
+  const block = text.slice(startIdx, stopIdx);
+
+  // Filtrar linhas de ruído antes de tokenizar
+  const BLOCK_NOISE = [
+    /tiago seccatto/i, /\d+\s+de\s+\d+/i,
+    /total de compras/i, /total a pagar/i,
+    /pagamento m[ií]nimo/i, /saldo em aberto/i,
+    /fatura anterior/i, /fechamento/i,
+    /r\$\s*1\.\d{3},\d{2}\s*$/,  // linhas que são só um valor grande (totais)
+  ];
+  const cleanBlock = block.split('\n')
+    .filter(l => !BLOCK_NOISE.some(r => r.test(l.trim())))
+    .join('\n');
+
+  const tokens = cleanBlock.split(/\s+/).filter(t=>t.length>0);
+
+  const MONTHS_SET = new Set(Object.keys(NU_MONTHS));
+  const txs=[], seen=new Set();
+
+  const [fatMonthStr, fatYearStr]=month.split('/');
+  const fatMonthIdx=monthLabels.indexOf(fatMonthStr);
+  const fatYear=parseInt(fatYearStr)||new Date().getFullYear();
+
+  let i=0;
+  while(i < tokens.length){
+    // Procurar "DD MMM" — dois tokens: número 01-31 + mês em maiúsculo
+    const t0=tokens[i];
+    const t1=tokens[i+1];
+    if(!t0 || !t1){ i++; continue; }
+
+    const day = parseInt(t0);
+    const mon = t1?.toUpperCase();
+
+    if(isNaN(day) || day<1 || day>31 || !MONTHS_SET.has(mon)){
+      i++; continue;
+    }
+
+    // Encontrou "DD MMM" — avançar pelos tokens até achar o valor "R$" + número
+    // Ignorar tokens de cartão (•••• ou ****) e número de 4 dígitos
+    let descTokens=[];
+    let j=i+2;
+    let foundVal=false;
+
+    while(j < tokens.length){
+      const tk=tokens[j];
+
+      // Token é "R$" → próximo é o valor
+      if(tk==='R$'){
+        const valRaw=tokens[j+1];
+        if(valRaw){
+          const val=parseFloat(valRaw.replace(/\./g,'').replace(',','.'));
+          if(!isNaN(val)&&val>0&&val<=30000){
+            // Filtrar tokens de cartão da descrição
+            const desc=descTokens
+              .filter(t=>!/^[•\*]+$/.test(t) && !/^\d{4}$/.test(t))
+              .join(' ')
+              .replace(/\s*-\s*Parcela\s+\d+\/\d+\s*/gi,'')
+              .trim();
+
+            const isParcel=/Parcela\s+\d+\/\d+/i.test(descTokens.join(' '));
+
+            if(desc.length>2 && !/^(total|saldo|valor|compras|cartões|MAR a|ABR a)/i.test(desc)){
+              const monIdx=NU_MONTHS[mon];
+              const date=`${String(day).padStart(2,'0')}/${String(monIdx+1).padStart(2,'0')}`;
+
+              // Nubank: sempre usar o mês da fatura como monthKey.
+              // A data da compra original (27 MAR, 19 NOV etc.) é informativa,
+              // mas o que importa para o fluxo de caixa é quando você paga — o mês da fatura.
+              const monthKey = month;
+
+              const key=desc.slice(0,30).toUpperCase()+'|'+val.toFixed(2);
+              if(!seen.has(key)){
+                seen.add(key);
+                txs.push({date, desc:desc.toUpperCase(), value:val, category:catOf(desc), isParcel, monthKey});
+              }
+            }
+            i=j+2; foundVal=true; break;
+          }
+        }
+        j+=2; continue;
+      }
+
+      // Se encontrar novo "DD MMM" antes de valor, a transação anterior é inválida
+      const nextDay=parseInt(tk);
+      const nextMon=tokens[j+1]?.toUpperCase();
+      if(!isNaN(nextDay)&&nextDay>=1&&nextDay<=31&&nextMon&&MONTHS_SET.has(nextMon)){
+        break; // não avança i, vai processar esse DD MMM na próxima iteração
+      }
+
+      descTokens.push(tk);
+      j++;
+    }
+
+    if(!foundVal) i++;
+  }
+
+  return {txs, month};
+}
+
+function parseGeneric(text,month,monthLabels){
+  const lines=text.split('\n').map(l=>l.trim()).filter(l=>l.length>4);
+  const GNOISE=['pagamento','credito','crédito','estorno','iof ','tarifa','encargo','juros ','mora ','anuidade','saldo','limite','total','subtotal','vencimento','anterior','disponível','obrigado','central','atendimento','telefone','www.','http','@','cpf','cnpj','agência','conta ','próxima','extrato','período','emissão','titular','bandeira','% a.','resumo','diversos'];
+  const valRe=/\b(\d{1,3}(?:\.\d{3})*,\d{2})\b/g;
+  const dateRe=/\b(\d{2}\/\d{2}(?:\/\d{2,4})?)\b/;
+  const txs=[],seen=new Set();
+  for(const line of lines){
+    const lo=line.toLowerCase();
+    if(GNOISE.some(n=>lo.includes(n))) continue;
+    if(/-\s*\d{1,3}(?:\.\d{3})*,\d{2}/.test(line)) continue;
+    if(!/\d/.test(line)) continue;
+    const vals=[...line.matchAll(valRe)];
+    if(!vals.length) continue;
+    const valStr=vals[vals.length-1][0];
+    const val=parseFloat(valStr.replace(/\./g,'').replace(',','.'));
+    if(isNaN(val)||val<=0||val>30000) continue;
+    const dm=line.match(dateRe);
+    const date=dm?dm[1]:'—';
+    let desc=line;
+    if(dm) desc=desc.replace(dm[0],'');
+    for(const v of vals) desc=desc.replace(v[0],'');
+    desc=desc.replace(/R\$/gi,'').replace(/[*•|#_]/g,' ').replace(/\s+/g,' ').trim();
+    desc=desc.replace(/^[\s\-–—\/\\:,;.()\[\]]+|[\s\-–—\/\\:,;.()\[\]]+$/g,'').trim();
+    if(desc.length<3||/^[\d\s.,\/\-]+$/.test(desc)) continue;
+    const key=desc.slice(0,30).toUpperCase()+'|'+val.toFixed(2);
+    if(seen.has(key)) continue;
+    seen.add(key);
+    txs.push({date,desc:desc.toUpperCase(),value:val,category:catOf(desc)});
+  }
+  return {txs,month};
+}
+
+// ── Process file ──────────────────────────────────────────────────────────
+async function processFile(file,bank,cardName){
+  const id='f'+Date.now()+Math.random().toString(36).slice(2,5);
+  addQueueItem(id,file.name,bank,cardName);
+  try{
+    const text=await extractText(file);
+    if(!text.trim()){
+      updateQueueItem(id,'warn','⚠️ PDF sem texto (escaneado?). Use o PDF digital do app do banco.');
+      return;
+    }
+    const {txs,month}=parseTransactions(text,bank);
+    if(!txs.length){
+      updateQueueItem(id,'warn',`⚠️ Nenhuma transação encontrada (${text.length} caracteres extraídos).`);
+      return;
+    }
+
+    // Atribuir monthKey a cada transação:
+    // - Parceladas → mês da FATURA (quando o débito ocorre no cartão)
+    // - À vista    → mês real da DATA da transação (quando o gasto foi feito)
+    const ML=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+    const [fatMonthStr, fatYearStr] = month.split('/');
+    const fatMonthIdx = ML.indexOf(fatMonthStr); // 0-11
+    const fatYear = parseInt(fatYearStr) || new Date().getFullYear();
+
+    txs.forEach(t => {
+      // Se o parser já calculou monthKey (ex: Nubank), preservar
+      if (t.monthKey) return;
+
+      // Parceladas: o custo é no mês da fatura (quando sai do bolso)
+      if (t.isParcel) { t.monthKey = month; return; }
+
+      // À vista: usar a data real da transação
+      if (!t.date || t.date === '—') { t.monthKey = month; return; }
+      const parts = t.date.split('/');
+      const txMonthIdx = parseInt(parts[1]) - 1; // 0-11
+      if (isNaN(txMonthIdx)) { t.monthKey = month; return; }
+      // Se o mês da transação é muito posterior ao da fatura → ano anterior
+      // Usa margem de 3 meses para evitar falsos positivos
+      let txYear = fatYear;
+      if (txMonthIdx > fatMonthIdx + 3) txYear = fatYear - 1;
+      t.monthKey = `${ML[txMonthIdx]}/${txYear}`;
+    });
+    const color=BANK_COLORS[bank]||'#378ADD';
+    faturas=faturas.filter(f=>!(f.cardName===cardName&&f.month===month));
+
+    // Tentar extrair o total esperado da fatura para validação
+    let expectedTotal=null;
+    const totalPatterns=[
+      /total\s+(?:da\s+fatura|desta\s+fatura|a\s+pagar)[^\d]*R?\$?\s*([\d.,]+)/i,
+      /total\s+a\s+pagar\s*R?\$?\s*([\d.,]+)/i,
+      /valor\s+total\s+(?:da\s+fatura)?\s*R?\$?\s*([\d.,]+)/i,
+    ];
+    for(const pat of totalPatterns){
+      const m=text.match(pat);
+      if(m){
+        const v=parseFloat(m[1].replace(/\./g,'').replace(',','.'));
+        if(!isNaN(v)&&v>0&&v<100000){ expectedTotal=v; break; }
+      }
+    }
+
+    faturas.push({id,bank,cardName,month,txs,color,expectedTotal});
+    const extracted=txs.reduce((s,t)=>s+t.value,0);
+    const diffMsg=expectedTotal&&Math.abs(expectedTotal-extracted)>0.5
+      ? ` · total fatura R$ ${expectedTotal.toLocaleString('pt-BR',{minimumFractionDigits:2})} (extraído R$ ${fmt(extracted)})`
+      : '';
+    updateQueueItem(id,'done',`✓ ${txs.length} transações extraídas · ${month}${diffMsg}`);
+    renderSidebar();
+    renderDashboard();
+    renderValidationBanner();
+  }catch(err){
+    console.error(err);
+    if(err.type==='password'){
+      // Mostrar modal de senha
+      updateQueueItem(id,'warn','🔒 PDF protegido — informe a senha para continuar.');
+      showPasswordModal(file, bank, cardName, id);
+    } else {
+      updateQueueItem(id,'error','✗ Erro: '+(err.message||'verifique o arquivo'));
+    }
+  }
+}
+
+// ── Queue UI ──────────────────────────────────────────────────────────────
+function addQueueItem(id,filename,bank,cardName){
+  const q=document.getElementById('queue');
+  const div=document.createElement('div');
+  div.className='q-item';div.id='qi-'+id;
+  const bc=BANK_COLORS[bank]||'#888';
+  div.innerHTML=`<div class="spin"></div>
+    <div style="flex:1;min-width:0"><div class="q-fname">${filename}</div><div class="q-status" id="qi-msg-${id}">Extraindo texto do PDF...</div></div>
+    <span class="q-badge" style="background:${bc}20;color:${bc}">${cardName}</span>`;
+  q.appendChild(div);
+}
+
+function updateQueueItem(id,status,msg){
+  const div=document.getElementById('qi-'+id);if(!div) return;
+  div.classList.add(status);
+  const spin=div.querySelector('.spin');
+  if(spin) spin.outerHTML=`<span style="font-size:18px;flex-shrink:0">${{done:'✅',error:'❌',warn:'⚠️'}[status]||'ℹ️'}</span>`;
+  const msgEl=document.getElementById('qi-msg-'+id);if(msgEl) msgEl.textContent=msg;
+  if(status==='done'){
+    const btn=document.createElement('button');
+    btn.className='btn btn-primary';btn.style.cssText='font-size:11px;padding:5px 12px;flex-shrink:0';
+    btn.textContent='Ver dashboard →';btn.onclick=goDash;div.appendChild(btn);
+  }
+}
+
+// ── Sidebar ───────────────────────────────────────────────────────────────
+function renderSidebar(){
+  const el=document.getElementById('sb-cards');
+  if(!faturas.length){el.innerHTML='<p style="font-size:12px;color:var(--text3);font-style:italic">Nenhuma fatura ainda</p>';return;}
+  el.innerHTML=faturas.map(f=>`
+    <div class="chip">
+      <span class="chip-dot" style="background:${f.color}"></span>
+      <div class="chip-info"><div class="chip-name">${f.cardName}</div><div class="chip-meta">${f.txs.length} transações · ${f.month}</div></div>
+      <button class="chip-rm" onclick="removeFatura('${f.id}')" title="Remover">✕</button>
+    </div>`).join('');
+}
+
+// ── Dashboard ─────────────────────────────────────────────────────────────
+function removeFatura(id){
+  faturas=faturas.filter(f=>f.id!==id);
+  renderSidebar();
+  if(!faturas.length){goUpload();return;}
+  renderDashboard();
+}
+
+const catTotals=txs=>{const ct={};for(const t of txs)ct[t.category]=(ct[t.category]||0)+t.value;return ct;};
+
+function renderDashboard(){
+  goDash();
+  const allTxs=faturas.flatMap(f=>f.txs.map(t=>({...t,bank:f.cardName,bankColor:f.color,monthKey:t.monthKey||f.month})));
+  const total=allTxs.reduce((s,t)=>s+t.value,0);
+  const months=[...new Set(faturas.map(f=>f.month))].join(', ');
+  document.getElementById('dash-sub').textContent=`${faturas.length} cartão(ões) · ${allTxs.length} transações · ${months}`;
+
+  const avg=allTxs.length?total/allTxs.length:0;
+  const ct=catTotals(allTxs);
+  const topCat=Object.entries(ct).sort((a,b)=>b[1]-a[1])[0]||['—',0];
+
+  document.getElementById('metrics-row').innerHTML=`
+    <div class="mc"><div class="mc-label">Total consolidado</div><div class="mc-val">R$ ${fmt(total)}</div><div class="mc-sub">${faturas.length} cartão(ões)</div></div>
+    <div class="mc"><div class="mc-label">Maior categoria</div><div class="mc-val" style="font-size:18px">${topCat[0]}</div><div class="mc-sub">${pct(topCat[1],total)}% do total</div></div>
+    <div class="mc"><div class="mc-label">Transações</div><div class="mc-val">${allTxs.length}</div><div class="mc-sub">lançamentos</div></div>
+    <div class="mc"><div class="mc-label">Ticket médio</div><div class="mc-val">R$ ${fmt(avg)}</div><div class="mc-sub">por transação</div></div>`;
+
+  renderCats(allTxs,total);
+  renderPerCard();
+  renderBar();
+  renderInsights(allTxs,total);
+  renderTxTable(allTxs);
+  renderValidationBanner();
+  if(currentView==='bycard')  renderByCard();
+  if(currentView==='bymonth') renderByMonth();
+}
+
+function renderCats(txs,total){
+  const ct=Object.entries(catTotals(txs)).sort((a,b)=>b[1]-a[1]);
+  document.getElementById('cat-list').innerHTML=ct.map(([cat,val])=>{
+    const c=CATS[cat]?.color||'#888';
+    return `<div class="cat-row">
+      <span class="cat-dot" style="background:${c}"></span>
+      <span style="flex:1;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${cat}</span>
+      <div class="cat-bar-bg"><div class="cat-bar-fill" style="width:${pct(val,total)}%;background:${c}"></div></div>
+      <span style="font-size:11px;color:var(--text2);min-width:28px;text-align:right">${pct(val,total)}%</span>
+      <span style="font-size:12px;font-weight:600;min-width:80px;text-align:right">R$ ${fmt(val)}</span>
+    </div>`;
+  }).join('');
+  if(pieInst) pieInst.destroy();
+  pieInst=new Chart(document.getElementById('pieChart').getContext('2d'),{
+    type:'doughnut',
+    data:{labels:ct.map(e=>e[0]),datasets:[{data:ct.map(e=>Math.round(e[1])),backgroundColor:ct.map(([c])=>CATS[c]?.color||'#888'),borderWidth:2,borderColor:'#fff'}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` R$ ${ctx.parsed.toLocaleString('pt-BR')}`}}}}
+  });
+  document.getElementById('pie-legend').innerHTML=ct.slice(0,6).map(([cat])=>
+    `<span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:${CATS[cat]?.color||'#888'};flex-shrink:0"></span>${cat}</span>`).join('');
+}
+
+function renderPerCard(){
+  const allTotal=faturas.reduce((s,f)=>s+f.txs.reduce((a,t)=>a+t.value,0),0);
+  document.getElementById('per-card-list').innerHTML=faturas.map(f=>{
+    const ft=f.txs.reduce((s,t)=>s+t.value,0);
+    return `<div class="card-row">
+      <span style="width:10px;height:10px;border-radius:50%;background:${f.color};flex-shrink:0"></span>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${f.cardName}</div>
+        <div style="font-size:11px;color:var(--text3)">${f.txs.length} transações · ${f.month}</div>
+      </div>
+      <div style="text-align:right;flex-shrink:0;margin-left:8px">
+        <div style="font-size:13px;font-weight:600">R$ ${fmt(ft)}</div>
+        <div style="font-size:11px;color:var(--text3)">${pct(ft,allTotal)}%</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderBar(){
+  if(barInst) barInst.destroy();
+  barInst=new Chart(document.getElementById('barChart').getContext('2d'),{
+    type:'bar',
+    data:{labels:faturas.map(f=>f.cardName.length>16?f.cardName.slice(0,16)+'…':f.cardName),datasets:[{data:faturas.map(f=>Math.round(f.txs.reduce((s,t)=>s+t.value,0))),backgroundColor:faturas.map(f=>f.color),borderRadius:6}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` R$ ${c.parsed.y.toLocaleString('pt-BR')}`}}},scales:{y:{ticks:{callback:v=>'R$'+fmt(v)},grid:{color:'rgba(0,0,0,0.04)'}},x:{grid:{display:false}}}}
+  });
+}
+
+// ── BY CARD VIEW ──────────────────────────────────────────────────────────
+function renderByCard(){
+  const container=document.getElementById('bycard-container');
+  container.innerHTML=faturas.map(f=>{
+    const ft=f.txs.reduce((s,t)=>s+t.value,0);
+    const ct=Object.entries(catTotals(f.txs)).sort((a,b)=>b[1]-a[1]);
+
+    // Banner de validação por cartão
+    let validBanner='';
+    if(f.expectedTotal && Math.abs(f.expectedTotal-ft)>0.5){
+      const diff=f.expectedTotal-ft;
+      const diffFmt=Math.abs(diff).toLocaleString('pt-BR',{minimumFractionDigits:2});
+      const totalFmt=f.expectedTotal.toLocaleString('pt-BR',{minimumFractionDigits:2});
+      validBanner=`<div style="margin-bottom:14px;padding:10px 14px;border-radius:8px;
+        background:#FAEEDA;border:1.5px solid #BA7517;color:#633806;font-size:12px;
+        display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+        <span>⚠️ Total da fatura: <strong>R$ ${totalFmt}</strong> · Extraído: <strong>R$ ${fmt(ft)}</strong> · <strong style="color:#993C1D">Faltam R$ ${diffFmt}</strong></span>
+        <button onclick="openAddTx('${f.id}')" style="font-size:11px;padding:4px 10px;border-radius:6px;background:#BA7517;color:#fff;border:none;cursor:pointer;white-space:nowrap">＋ Adicionar</button>
+      </div>`;
+    }
+
+    const txRows=f.txs.map((t,i)=>{
+      const c=CATS[t.category]?.color||'#888';
+      let badge='';
+      if(t.isParcel) badge=`<span style="font-size:9px;padding:1px 5px;border-radius:8px;background:#E6F1FB;color:#185FA5;white-space:nowrap;margin-right:4px">PARC</span>`;
+      else if(t._manual) badge=`<span style="font-size:9px;padding:1px 5px;border-radius:8px;background:#EAF3DE;color:#3B6D11;white-space:nowrap;margin-right:4px">MANUAL</span>`;
+      else badge=`<span style="font-size:9px;padding:1px 5px;border-radius:8px;background:var(--surface2);color:var(--text3);white-space:nowrap;margin-right:4px">ÚNICO</span>`;
+      return `<div class="tx-row">
+        <span style="font-size:11px;color:var(--text3);min-width:40px;font-family:'JetBrains Mono',monospace">${t.date}</span>
+        <span style="flex:1;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${t.desc}">${t.desc}</span>
+        ${badge}
+        <span style="font-size:10px;padding:2px 8px;border-radius:10px;background:${c}18;color:${c};white-space:nowrap;margin-right:6px">${t.category}</span>
+        <span style="font-size:12px;font-weight:600;min-width:80px;text-align:right;font-family:'JetBrains Mono',monospace">${fmtR(t.value)}</span>
+      </div>`;
+    }).join('');
+
+    // Subtotal por tipo
+    const parcelTotal=f.txs.filter(t=>t.isParcel).reduce((s,t)=>s+t.value,0);
+    const avistTotal=f.txs.filter(t=>!t.isParcel&&!t._manual).reduce((s,t)=>s+t.value,0);
+    const manualTotal=f.txs.filter(t=>t._manual).reduce((s,t)=>s+t.value,0);
+    const subtotals=[];
+    if(parcelTotal>0) subtotals.push(`<span style="font-size:11px;color:var(--text2)">Parcelado: <strong>R$ ${fmt(parcelTotal)}</strong></span>`);
+    if(avistTotal>0)  subtotals.push(`<span style="font-size:11px;color:var(--text2)">À vista: <strong>R$ ${fmt(avistTotal)}</strong></span>`);
+    if(manualTotal>0) subtotals.push(`<span style="font-size:11px;color:var(--text2)">Manual: <strong>R$ ${fmt(manualTotal)}</strong></span>`);
+
+    return `<div class="card-detail-panel">
+      <div class="card-detail-header">
+        <span style="width:14px;height:14px;border-radius:50%;background:${f.color};flex-shrink:0"></span>
+        <div style="flex:1">
+          <div style="font-size:15px;font-weight:600">${f.cardName}</div>
+          <div style="font-size:11px;color:var(--text3)">${f.txs.length} transações · ${f.month}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:20px;font-weight:700">R$ ${fmt(ft)}</div>
+          ${f.expectedTotal?`<div style="font-size:10px;color:${Math.abs(f.expectedTotal-ft)>0.5?'#BA7517':'#3B6D11'}">de R$ ${f.expectedTotal.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>`:''}
+        </div>
+      </div>
+      ${subtotals.length?`<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;padding:8px 12px;background:var(--surface2);border-radius:8px">${subtotals.join('')}</div>`:''}
+      ${validBanner}
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+        <div>
+          ${ct.map(([cat,val])=>{
+            const c=CATS[cat]?.color||'#888';
+            return `<div class="cat-row">
+              <span class="cat-dot" style="background:${c}"></span>
+              <span style="flex:1;font-size:12px">${cat}</span>
+              <span style="font-size:11px;color:var(--text2);min-width:24px;text-align:right">${pct(val,ft)}%</span>
+              <span style="font-size:12px;font-weight:600;min-width:72px;text-align:right">R$ ${fmt(val)}</span>
+            </div>`;
+          }).join('')}
+        </div>
+        <div style="position:relative;height:${Math.max(160,ct.length*30)}px">
+          <canvas id="pie-${f.id}" role="img" aria-label="Distribuição ${f.cardName}"></canvas>
+        </div>
+      </div>
+      <div style="max-height:280px;overflow-y:auto">${txRows}</div>
+    </div>`;
+  }).join('');
+
+  // Render mini pie charts
+  faturas.forEach(f=>{
+    const ct=Object.entries(catTotals(f.txs)).sort((a,b)=>b[1]-a[1]);
+    const canvas=document.getElementById('pie-'+f.id);
+    if(!canvas) return;
+    new Chart(canvas.getContext('2d'),{
+      type:'doughnut',
+      data:{labels:ct.map(e=>e[0]),datasets:[{data:ct.map(e=>Math.round(e[1])),backgroundColor:ct.map(([c])=>CATS[c]?.color||'#888'),borderWidth:2,borderColor:'#fff'}]},
+      options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` R$ ${ctx.parsed.toLocaleString('pt-BR')}`}}}}
+    });
+  });
+}
+
+// ── BY MONTH VIEW ─────────────────────────────────────────────────────────
+let monthBarInst = null;
+let monthStackInst = null;
+
+function sortMonths(months){
+  const ORDER=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  return [...months].sort((a,b)=>{
+    const [ma,ya]=a.split('/'); const [mb,yb]=b.split('/');
+    const y=parseInt(ya||0)-parseInt(yb||0);
+    if(y!==0) return y;
+    return ORDER.indexOf(ma)-ORDER.indexOf(mb);
+  });
+}
+
+function renderByMonth(){
+  const container=document.getElementById('bymonth-container');
+
+  // Agrupar por mês REAL de cada transação (t.monthKey), não pelo mês da fatura
+  const byMonth={};
+  for(const f of faturas){
+    for(const t of f.txs){
+      const key = t.monthKey || f.month; // fallback para faturas antigas sem monthKey
+      if(!byMonth[key]) byMonth[key]={txs:[],cards:{}};
+      byMonth[key].txs.push({...t, bank:f.cardName, bankColor:f.color});
+      byMonth[key].cards[f.cardName]=(byMonth[key].cards[f.cardName]||0)+t.value;
+    }
+  }
+
+  const months=sortMonths(Object.keys(byMonth));
+  if(!months.length){ container.innerHTML=''; return; }
+
+  container.innerHTML=`
+    <div class="panel" style="margin-bottom:16px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+        <div class="panel-title" style="margin:0">Evolução mensal de gastos</div>
+        <div style="display:flex;gap:6px">
+          <button onclick="setMonthChart('total')" id="mcbtn-total" class="btn btn-primary" style="font-size:11px;padding:5px 12px">Total</button>
+          <button onclick="setMonthChart('stack')" id="mcbtn-stack" class="btn btn-ghost" style="font-size:11px;padding:5px 12px">Por categoria</button>
+          <button onclick="setMonthChart('cards')" id="mcbtn-cards" class="btn btn-ghost" style="font-size:11px;padding:5px 12px">Por cartão</button>
+        </div>
+      </div>
+      <div style="position:relative;height:260px"><canvas id="monthChart" role="img" aria-label="Evolução mensal"></canvas></div>
+    </div>
+    <div id="month-cards-grid" style="display:grid;gap:16px"></div>`;
+
+  window._byMonth=byMonth;
+  window._months=months;
+  buildMonthChart('total');
+  renderMonthCards(byMonth, months);
+}
+
+function setMonthChart(type){
+  ['total','stack','cards'].forEach(t=>{
+    const btn=document.getElementById('mcbtn-'+t);
+    if(!btn) return;
+    btn.className=t===type?'btn btn-primary':'btn btn-ghost';
+    btn.style.cssText='font-size:11px;padding:5px 12px';
+  });
+  buildMonthChart(type);
+}
+
+function buildMonthChart(type){
+  if(monthBarInst){monthBarInst.destroy();monthBarInst=null;}
+  if(monthStackInst){monthStackInst.destroy();monthStackInst=null;}
+  const byMonth=window._byMonth||{};
+  const months=window._months||[];
+  const ctx=document.getElementById('monthChart');
+  if(!ctx) return;
+
+  if(type==='total'){
+    const totals=months.map(m=>Math.round(byMonth[m].txs.reduce((s,t)=>s+t.value,0)));
+    monthBarInst=new Chart(ctx.getContext('2d'),{
+      type:'bar',
+      data:{
+        labels:months,
+        datasets:[{
+          label:'Total',
+          data:totals,
+          backgroundColor:months.map((_,i)=>i===months.length-1?'#185FA5':'#B5D4F4'),
+          borderRadius:6
+        }]
+      },
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` R$ ${c.parsed.y.toLocaleString('pt-BR')}`}}},
+        scales:{y:{ticks:{callback:v=>'R$'+fmt(v)},grid:{color:'rgba(0,0,0,0.04)'}},x:{grid:{display:false}}}}
+    });
+
+  } else if(type==='stack'){
+    const catNames=Object.keys(CATS);
+    const datasets=catNames.map(cat=>({
+      label:cat,
+      data:months.map(m=>Math.round(byMonth[m].txs.filter(t=>t.category===cat).reduce((s,t)=>s+t.value,0))),
+      backgroundColor:CATS[cat]?.color||'#888',
+      borderRadius:3,
+      stack:'s'
+    })).filter(d=>d.data.some(v=>v>0));
+
+    monthStackInst=new Chart(ctx.getContext('2d'),{
+      type:'bar',
+      data:{labels:months,datasets},
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{position:'bottom',labels:{font:{size:10},boxWidth:12,padding:8}},
+          tooltip:{callbacks:{label:c=>` ${c.dataset.label}: R$ ${c.parsed.y.toLocaleString('pt-BR')}`}}},
+        scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,ticks:{callback:v=>'R$'+fmt(v)},grid:{color:'rgba(0,0,0,0.04)'}}}}
+    });
+
+  } else if(type==='cards'){
+    const cardNames=[...new Set(faturas.map(f=>f.cardName))];
+    const datasets=cardNames.map(card=>{
+      const color=faturas.find(f=>f.cardName===card)?.color||'#888';
+      return {
+        label:card,
+        data:months.map(m=>Math.round(byMonth[m].cards[card]||0)),
+        backgroundColor:color,
+        borderRadius:3,
+        stack:'s'
+      };
+    });
+
+    monthStackInst=new Chart(ctx.getContext('2d'),{
+      type:'bar',
+      data:{labels:months,datasets},
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{position:'bottom',labels:{font:{size:10},boxWidth:12,padding:8}},
+          tooltip:{callbacks:{label:c=>` ${c.dataset.label}: R$ ${c.parsed.y.toLocaleString('pt-BR')}`}}},
+        scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,ticks:{callback:v=>'R$'+fmt(v)},grid:{color:'rgba(0,0,0,0.04)'}}}}
+    });
+  }
+}
+
+function renderMonthCards(byMonth, months){
+  const grid=document.getElementById('month-cards-grid');
+  if(!grid) return;
+
+  grid.innerHTML=months.map(m=>{
+    const txs=byMonth[m].txs;
+    const total=txs.reduce((s,t)=>s+t.value,0);
+    const ct=Object.entries(catTotals(txs)).sort((a,b)=>b[1]-a[1]);
+    const cards=byMonth[m].cards;
+    const topCat=ct[0]||['—',0];
+    const numCards=Object.keys(cards).length;
+
+    // Comparação com mês anterior
+    const prevMonth=months[months.indexOf(m)-1];
+    let delta='';
+    if(prevMonth){
+      const prevTotal=byMonth[prevMonth].txs.reduce((s,t)=>s+t.value,0);
+      const diff=total-prevTotal;
+      const diffPct=Math.round(Math.abs(diff)/prevTotal*100);
+      const color=diff>0?'#D85A30':'#1D9E75';
+      const arrow=diff>0?'▲':'▼';
+      delta=`<span style="font-size:11px;color:${color};margin-left:8px">${arrow} ${diffPct}% vs ${prevMonth}</span>`;
+    }
+
+    const catBars=ct.slice(0,5).map(([cat,val])=>{
+      const c=CATS[cat]?.color||'#888';
+      const p=pct(val,total);
+      return `<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:.5px solid var(--border)">
+        <span style="width:8px;height:8px;border-radius:2px;background:${c};flex-shrink:0"></span>
+        <span style="flex:1;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${cat}</span>
+        <div style="width:60px;height:4px;background:var(--surface2);border-radius:2px;overflow:hidden;flex-shrink:0">
+          <div style="width:${p}%;height:100%;background:${c};border-radius:2px"></div>
+        </div>
+        <span style="font-size:10px;color:var(--text2);min-width:24px;text-align:right">${p}%</span>
+        <span style="font-size:11px;font-weight:600;min-width:64px;text-align:right">R$ ${fmt(val)}</span>
+      </div>`;
+    }).join('');
+
+    const cardChips=Object.entries(cards).map(([name,val])=>{
+      const color=faturas.find(f=>f.cardName===name)?.color||'#888';
+      return `<span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;padding:2px 8px;border-radius:10px;background:${color}18;color:${color}">
+        <span style="width:6px;height:6px;border-radius:50%;background:${color}"></span>${name} · R$ ${fmt(val)}
+      </span>`;
+    }).join('');
+
+    return `<div class="panel">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:6px">
+        <div>
+          <span style="font-size:16px;font-weight:600">${m}</span>${delta}
+          <div style="font-size:11px;color:var(--text3);margin-top:2px">${txs.length} transações · ${numCards} cartão(ões)</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:20px;font-weight:600">R$ ${fmt(total)}</div>
+          <div style="font-size:11px;color:var(--text3)">maior: ${topCat[0]}</div>
+        </div>
+      </div>
+      ${catBars}
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">${cardChips}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderInsights(txs,total){
+  const ct=catTotals(txs);
+  const streaming=ct['Streaming/Digital']||0;
+  const food=(ct['Alimentação']||0)+(ct['Restaurantes']||0);
+  const transport=ct['Transporte']||0;
+  const shopping=ct['Compras/Vestuário']||0;
+  const ins=[];
+  if(faturas.length>1){
+    const sorted=[...faturas].sort((a,b)=>b.txs.reduce((s,t)=>s+t.value,0)-a.txs.reduce((s,t)=>s+t.value,0));
+    const top=sorted[0];const topT=top.txs.reduce((s,t)=>s+t.value,0);
+    ins.push({bg:'#E6F1FB',icon:'💳',text:`O cartão <strong>${top.cardName}</strong> concentra <strong>${pct(topT,total)}%</strong> dos gastos (R$ ${fmt(topT)}). Considere distribuir melhor.`});
+  }
+  if(streaming>100) ins.push({bg:'#EEEDFE',icon:'📺',text:`Streaming e digitais somam <strong>R$ ${fmt(streaming)}</strong>. Revisar assinaturas pode economizar ~R$ ${fmt(streaming*0.3)}/mês.`});
+  if(food/total>0.38) ins.push({bg:'#E1F5EE',icon:'🍽️',text:`Alimentação representa <strong>${pct(food,total)}% do total</strong>. Cozinhar mais em casa pode reduzir em até 25%.`});
+  if(transport>400) ins.push({bg:'#FAECE7',icon:'🚗',text:`Transporte somou <strong>R$ ${fmt(transport)}</strong>. Compare apps de corrida com transporte público em trajetos fixos.`});
+  if(shopping>500) ins.push({bg:'#FBEAF0',icon:'🛍️',text:`Compras somaram <strong>R$ ${fmt(shopping)}</strong>. Um orçamento fixo mensal evita gastos por impulso.`});
+  if(!ins.length) ins.push({bg:'#EAF3DE',icon:'⭐',text:'Gastos bem distribuídos! Continue adicionando faturas mensalmente para acompanhar a evolução.'});
+  document.getElementById('insights-list').innerHTML=ins.map(i=>
+    `<div class="insight-row"><div class="ins-icon" style="background:${i.bg}">${i.icon}</div><div style="font-size:13px;line-height:1.6">${i.text}</div></div>`).join('');
+}
+
+function renderTxTable(txs){
+  const cats=[...new Set(txs.map(t=>t.category))].sort();
+  const banks=[...new Set(txs.map(t=>t.bank))].sort();
+  document.getElementById('tx-cat').innerHTML='<option value="">Todas categorias</option>'+cats.map(c=>`<option value="${c}">${c}</option>`).join('');
+  document.getElementById('tx-bank').innerHTML='<option value="">Todos cartões</option>'+banks.map(b=>`<option value="${b}">${b}</option>`).join('');
+  window._rows=txs;
+  filterTx();
+}
+
+function filterTx(){
+  const q=(document.getElementById('tx-search').value||'').toLowerCase();
+  const cf=document.getElementById('tx-cat').value;
+  const bf=document.getElementById('tx-bank').value;
+
+  // Rebuild _rows from faturas every time so changes persist
+  const allTxs=faturas.flatMap(f=>f.txs.map((t,i)=>({
+    ...t, bank:f.cardName, bankColor:f.color,
+    monthKey:t.monthKey||f.month,
+    _fId:f.id, _tIdx:i
+  })));
+  window._rows=allTxs;
+
+  let txs=allTxs.filter(t=>
+    (!q||t.desc.toLowerCase().includes(q)||(t.note||'').toLowerCase().includes(q))&&
+    (!cf||t.category===cf)&&
+    (!bf||t.bank===bf)
+  );
+
+  // Ordenar cronologicamente: por monthKey (ano/mês) e depois por data DD/MM
+  txs=txs.slice().sort((a,b)=>{
+    const ORDER=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+    const parseKey=mk=>{
+      if(!mk||mk==='—') return [9999,0];
+      const [m,y]=mk.split('/');
+      return [parseInt(y)||9999, ORDER.indexOf(m)];
+    };
+    const [ya,ma]=parseKey(a.monthKey);
+    const [yb,mb]=parseKey(b.monthKey);
+    if(ya!==yb) return ya-yb;
+    if(ma!==mb) return ma-mb;
+    // Mesmo mês — ordenar por dia
+    const dayA=parseInt((a.date||'').split('/')[0])||0;
+    const dayB=parseInt((b.date||'').split('/')[0])||0;
+    return dayA-dayB;
+  });
+
+  const tl=document.getElementById('tx-table');
+  if(!txs.length){tl.innerHTML='<p style="font-size:12px;color:var(--text3);padding:12px 0">Nenhuma transação encontrada.</p>';return;}
+
+  const catNames=Object.keys(CATS);
+
+  tl.innerHTML=txs.map(t=>{
+    const c=CATS[t.category]?.color||'#888';
+    const opts=catNames.map(cat=>`<option value="${cat}"${cat===t.category?'selected':''}>${cat}</option>`).join('');
+
+    // Badge de parcela ou compra única
+    let parcelBadge='';
+    if(t.isParcel){
+      // Tentar extrair "X/Y" da descrição original antes de ter sido limpa
+      parcelBadge=`<span style="font-size:9px;padding:1px 6px;border-radius:8px;background:#E6F1FB;color:#185FA5;white-space:nowrap;margin-right:4px;flex-shrink:0">PARC</span>`;
+    } else if(t._manual){
+      parcelBadge=`<span style="font-size:9px;padding:1px 6px;border-radius:8px;background:#EAF3DE;color:#3B6D11;white-space:nowrap;margin-right:4px;flex-shrink:0">MANUAL</span>`;
+    } else {
+      parcelBadge=`<span style="font-size:9px;padding:1px 6px;border-radius:8px;background:var(--surface2);color:var(--text3);white-space:nowrap;margin-right:4px;flex-shrink:0">ÚNICO</span>`;
+    }
+
+    return `<div class="tx-row" data-fid="${t._fId}" data-tidx="${t._tIdx}">
+      <span style="font-size:11px;color:var(--text3);min-width:42px;font-family:'JetBrains Mono',monospace">${t.date}</span>
+      <span style="flex:1;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${t.desc}">${t.desc}</span>
+      <input
+        class="note-input"
+        type="text"
+        placeholder="+ nota..."
+        value="${(t.note||'').replace(/"/g,'&quot;')}"
+        data-fid="${t._fId}" data-tidx="${t._tIdx}"
+        title="Adicionar identificação pessoal para este gasto"
+        style="font-size:11px;width:140px;min-width:100px;padding:2px 7px;border-radius:6px;
+               border:1px solid var(--border2);background:var(--surface2);color:var(--text);
+               outline:none;font-family:'Inter',sans-serif;flex-shrink:0;"
+      />
+      ${parcelBadge}
+      <span style="font-size:10px;color:${t.bankColor};white-space:nowrap;margin:0 4px">${t.bank}</span>
+      <div style="position:relative;flex-shrink:0" title="Clique para alterar categoria">
+        <select
+          data-fid="${t._fId}" data-tidx="${t._tIdx}"
+          class="cat-sel"
+          style="font-size:10px;padding:2px 22px 2px 8px;border-radius:10px;
+                 background:${c}18;color:${c};border:1.5px solid ${c}44;
+                 cursor:pointer;appearance:none;-webkit-appearance:none;
+                 outline:none;font-family:'Inter',sans-serif;font-weight:500;
+                 white-space:nowrap;max-width:140px;">
+          ${opts}
+        </select>
+        <span style="pointer-events:none;position:absolute;right:6px;top:50%;transform:translateY(-50%);font-size:9px;color:${c}">▾</span>
+      </div>
+      <span style="font-size:12px;font-weight:600;min-width:82px;text-align:right;white-space:nowrap;font-family:'JetBrains Mono',monospace">${fmtR(t.value)}</span>
+      <button class="del-btn" data-fid="${t._fId}" data-tidx="${t._tIdx}"
+        title="Excluir transação"
+        style="margin-left:6px;flex-shrink:0;border:none;background:none;cursor:pointer;
+               color:var(--text3);font-size:15px;padding:2px 4px;border-radius:4px;line-height:1;transition:color .15s,background .15s;"
+        onmouseenter="this.style.color='#E24B4A';this.style.background='#fce8e8'"
+        onmouseleave="this.style.color='var(--text3)';this.style.background='none'">✕</button>
+    </div>`;
+  }).join('');
+
+  // Category select listeners
+  tl.querySelectorAll('select.cat-sel').forEach(sel => {
+    sel.addEventListener('change', () => changeCat(sel, sel.dataset.fid, parseInt(sel.dataset.tidx)));
+  });
+
+  // Delete button listeners
+  tl.querySelectorAll('.del-btn').forEach(btn => {
+    btn.addEventListener('click', () => deleteTx(btn.dataset.fid, parseInt(btn.dataset.tidx)));
+  });
+
+  // Note input listeners — salva ao digitar (debounced) sem re-renderizar a tabela
+  tl.querySelectorAll('.note-input').forEach(inp => {
+    let timer;
+    inp.addEventListener('input', () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        const fId = inp.dataset.fid;
+        const tIdx = parseInt(inp.dataset.tidx);
+        const fatura = faturas.find(f => f.id === fId);
+        if(fatura && fatura.txs[tIdx]) {
+          fatura.txs[tIdx].note = inp.value.trim();
+          // Highlight briefly to confirm save
+          inp.style.borderColor = '#3B6D11';
+          inp.style.background = '#EAF3DE';
+          setTimeout(() => {
+            inp.style.borderColor = '';
+            inp.style.background = '';
+          }, 800);
+        }
+      }, 500);
+    });
+    // Focus styles
+    inp.addEventListener('focus', () => { inp.style.borderColor = 'var(--accent)'; inp.style.background = '#fff'; });
+    inp.addEventListener('blur',  () => { inp.style.borderColor = ''; inp.style.background = ''; });
+  });
+}
+
+// Deleta transação por índice estável e re-renderiza todo o dash
+function deleteTx(fId, tIdx){
+  const fatura=faturas.find(f=>f.id===fId);
+  if(!fatura || !fatura.txs[tIdx]) return;
+
+  // Remover do array (splice mantém índices consistentes para a sessão)
+  fatura.txs.splice(tIdx, 1);
+
+  // Re-renderizar tudo
+  const allTxs=faturas.flatMap(f=>f.txs.map((t,i)=>({
+    ...t, bank:f.cardName, bankColor:f.color,
+    monthKey:t.monthKey||f.month, _fId:f.id, _tIdx:i
+  })));
+  const total=allTxs.reduce((s,t)=>s+t.value,0);
+
+  // Atualizar métricas
+  const avg=allTxs.length?total/allTxs.length:0;
+  const ct=catTotals(allTxs);
+  const topCat=Object.entries(ct).sort((a,b)=>b[1]-a[1])[0]||['—',0];
+  document.getElementById('metrics-row').innerHTML=`
+    <div class="mc"><div class="mc-label">Total consolidado</div><div class="mc-val">R$ ${fmt(total)}</div><div class="mc-sub">${faturas.length} cartão(ões)</div></div>
+    <div class="mc"><div class="mc-label">Maior categoria</div><div class="mc-val" style="font-size:18px">${topCat[0]}</div><div class="mc-sub">${pct(topCat[1],total)}% do total</div></div>
+    <div class="mc"><div class="mc-label">Transações</div><div class="mc-val">${allTxs.length}</div><div class="mc-sub">lançamentos</div></div>
+    <div class="mc"><div class="mc-label">Ticket médio</div><div class="mc-val">R$ ${fmt(avg)}</div><div class="mc-sub">por transação</div></div>`;
+
+  renderCats(allTxs,total);
+  renderInsights(allTxs,total);
+  renderPerCard();
+  renderBar();
+  renderSidebar();
+  if(currentView==='bymonth') renderByMonth();
+  if(currentView==='bycard')  renderByCard();
+
+  const scrollTop=document.getElementById('tx-table').scrollTop;
+  filterTx();
+  requestAnimationFrame(()=>{ document.getElementById('tx-table').scrollTop=scrollTop; });
+}
+
+// Altera categoria pelo índice estável (fId + tIdx) e re-renderiza tudo
+function changeCat(sel, fId, tIdx){
+  const newCat = sel.value;
+
+  // 1. Salvar PRIMEIRO direto no objeto faturas
+  const fatura = faturas.find(f => f.id === fId);
+  if (!fatura) { console.warn('changeCat: fatura não encontrada', fId); return; }
+  if (!fatura.txs[tIdx]) { console.warn('changeCat: txIdx inválido', tIdx); return; }
+  fatura.txs[tIdx].category = newCat;
+
+  // 2. Reconstruir allTxs APÓS o save
+  const allTxs = faturas.flatMap(f => f.txs.map((t, i) => ({
+    ...t, bank: f.cardName, bankColor: f.color,
+    monthKey: t.monthKey || f.month,
+    _fId: f.id, _tIdx: i
+  })));
+  const total = allTxs.reduce((s, t) => s + t.value, 0);
+
+  // 3. Atualizar métrica "Maior categoria"
+  const ct = catTotals(allTxs);
+  const topCat = Object.entries(ct).sort((a, b) => b[1] - a[1])[0] || ['—', 0];
+  const mcCells = document.querySelectorAll('.mc');
+  if (mcCells[1]) {
+    mcCells[1].querySelector('.mc-val').textContent = topCat[0];
+    mcCells[1].querySelector('.mc-sub').textContent = pct(topCat[1], total) + '% do total';
+  }
+
+  // 4. Re-renderizar todos os painéis
+  renderCats(allTxs, total);
+  renderInsights(allTxs, total);
+  renderPerCard();
+  renderBar();
+  if (currentView === 'bymonth') renderByMonth();
+  if (currentView === 'bycard')  renderByCard();
+
+  // 5. Re-renderizar tabela preservando scroll e filtros
+  const scrollTop = document.getElementById('tx-table').scrollTop;
+  filterTx();
+  requestAnimationFrame(() => {
+    document.getElementById('tx-table').scrollTop = scrollTop;
+  });
+}
+
+// ── PDF PASSWORD MODAL ───────────────────────────────────────────────────
+let _pwdCtx = null; // {file, bank, cardName, id}
+
+function showPasswordModal(file, bank, cardName, id){
+  _pwdCtx = {file, bank, cardName, id};
+  document.getElementById('pwd-fname').textContent = file.name;
+  document.getElementById('pwd-input').value = '';
+  document.getElementById('pwd-error').style.display = 'none';
+  document.getElementById('modal-password').classList.add('open');
+  setTimeout(()=>document.getElementById('pwd-input').focus(), 100);
+}
+
+async function submitPassword(){
+  if(!_pwdCtx) return;
+  const pwd = document.getElementById('pwd-input').value.trim();
+  if(!pwd){ document.getElementById('pwd-input').focus(); return; }
+
+  const errEl = document.getElementById('pwd-error');
+  errEl.style.display = 'none';
+
+  const btn = document.querySelector('#modal-password .btn-primary');
+  btn.textContent = '⏳ Abrindo...';
+  btn.disabled = true;
+
+  try{
+    const text = await extractText(_pwdCtx.file, pwd);
+    document.getElementById('modal-password').classList.remove('open');
+    btn.textContent = 'Desbloquear →'; btn.disabled = false;
+
+    // Reprocessar com o texto obtido
+    const {id, bank, cardName} = _pwdCtx;
+    _pwdCtx = null;
+
+    if(!text.trim()){
+      updateQueueItem(id,'warn','⚠️ PDF sem texto após descriptografia.');
+      return;
+    }
+    const {txs, month} = parseTransactions(text, bank);
+    if(!txs.length){
+      updateQueueItem(id,'warn',`⚠️ Nenhuma transação encontrada (${text.length} chars).`);
+      return;
+    }
+    const ML=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+    const [fatMonthStr, fatYearStr] = month.split('/');
+    const fatMonthIdx = ML.indexOf(fatMonthStr);
+    const fatYear = parseInt(fatYearStr)||new Date().getFullYear();
+    txs.forEach(t=>{
+      if(t.monthKey) return;
+      if(t.isParcel){t.monthKey=month;return;}
+      if(!t.date||t.date==='—'){t.monthKey=month;return;}
+      const parts=t.date.split('/');
+      const txMonthIdx=parseInt(parts[1])-1;
+      if(isNaN(txMonthIdx)){t.monthKey=month;return;}
+      let txYear=fatYear;
+      if(txMonthIdx>fatMonthIdx+3) txYear=fatYear-1;
+      t.monthKey=`${ML[txMonthIdx]}/${txYear}`;
+    });
+    const color=BANK_COLORS[bank]||'#378ADD';
+    faturas=faturas.filter(f=>!(f.cardName===cardName&&f.month===month));
+    let expectedTotal=null;
+    const totalPatterns=[
+      /total\s+(?:da\s+fatura|desta\s+fatura|a\s+pagar)[^\d]*R?\$?\s*([\d.,]+)/i,
+      /valor\s+total\s+(?:da\s+fatura)?\s*R?\$?\s*([\d.,]+)/i,
+    ];
+    for(const pat of totalPatterns){
+      const m=text.match(pat);
+      if(m){const v=parseFloat(m[1].replace(/\./g,'').replace(',','.'));if(!isNaN(v)&&v>0&&v<100000){expectedTotal=v;break;}}
+    }
+    const fid='f'+Date.now()+Math.random().toString(36).slice(2,5);
+    faturas.push({id:fid,bank,cardName,month,txs,color,expectedTotal});
+    const extracted=txs.reduce((s,t)=>s+t.value,0);
+    const diffMsg=expectedTotal&&Math.abs(expectedTotal-extracted)>0.5?` · total R$ ${expectedTotal.toLocaleString('pt-BR',{minimumFractionDigits:2})} (extraído R$ ${fmt(extracted)})`:'';
+    updateQueueItem(id,'done',`✓ ${txs.length} transações · ${month}${diffMsg}`);
+    renderSidebar(); renderDashboard(); renderValidationBanner();
+
+  }catch(err){
+    btn.textContent='Desbloquear →'; btn.disabled=false;
+    if(err.type==='password'){
+      errEl.style.display='block';
+      document.getElementById('pwd-input').value='';
+      document.getElementById('pwd-input').focus();
+    } else {
+      document.getElementById('modal-password').classList.remove('open');
+      updateQueueItem(_pwdCtx?.id||'','error','✗ Erro: '+(err.message||'desconhecido'));
+      _pwdCtx=null;
+    }
+  }
+}
+
+function cancelPassword(){
+  document.getElementById('modal-password').classList.remove('open');
+  _pwdCtx=null;
+}
+
+function togglePwdVisibility(){
+  const inp=document.getElementById('pwd-input');
+  inp.type=inp.type==='password'?'text':'password';
+}
+
+// ── EXPORTAR PARA NOTION ─────────────────────────────────────────────────
+const NOTION_DS_ID = 'ffa76f3d-05d2-48f1-88fe-3c66c0e32d8f';
+const NOTION_DB_URL = 'https://www.notion.so/db6403030368494f982485dbb26dcbb1';
+const NOTION_API = 'https://api.notion.com/v1';
+
+// Token salvo na sessão (memória — não persiste após fechar a aba)
+let _notionToken = sessionStorage.getItem('notion_token') || '';
+
+function saveNotionToken(t){ _notionToken=t; try{ sessionStorage.setItem('notion_token',t); }catch(e){} }
+function clearNotionToken(){ _notionToken=''; try{ sessionStorage.removeItem('notion_token'); }catch(e){} }
+
+function openNotionSettings(){
+  document.getElementById('notion-token-input').value = _notionToken;
+  document.getElementById('notion-token-status').textContent = _notionToken ? '✅ Token salvo na sessão' : '';
+  document.getElementById('modal-notion').classList.add('open');
+  setTimeout(()=>document.getElementById('notion-token-input').focus(),100);
+}
+function closeNotionSettings(){ document.getElementById('modal-notion').classList.remove('open'); }
+function submitNotionToken(){
+  const t = document.getElementById('notion-token-input').value.trim();
+  if(!t){ alert('Informe o token.'); return; }
+  saveNotionToken(t);
+  document.getElementById('notion-token-status').textContent='✅ Token salvo na sessão';
+  setTimeout(closeNotionSettings, 800);
+}
+
+async function exportToNotion(){
+  const btn = document.getElementById('notion-btn');
+  if(!faturas.length){ alert('Nenhuma fatura carregada para exportar.'); return; }
+
+  const allTxs = faturas.flatMap(f => f.txs.map(t => ({...t, bank:f.bank, cardName:f.cardName, month:f.month})));
+  if(!allTxs.length){ alert('Nenhuma transação para exportar.'); return; }
+
+  // Usar token salvo ou pedir
+  let token = _notionToken;
+  if(!token){
+    openNotionSettings();
+    return;
+  }
+
+  if(!confirm(`Exportar ${allTxs.length} transações para o Notion?`)){ return; }
+
+  btn.disabled = true;
+
+  const BATCH = 5;
+  let exported = 0, errors = 0;
+
+  try{
+    for(let i = 0; i < allTxs.length; i += BATCH){
+      const batch = allTxs.slice(i, i + BATCH);
+      btn.textContent = `⏳ ${exported}/${allTxs.length}...`;
+
+      // Criar páginas em paralelo dentro do batch
+      await Promise.all(batch.map(async t => {
+        // Converter DD/MM → YYYY-MM-DD
+        let isoDate = null;
+        if(t.date && t.date !== '—'){
+          const [dd, mm] = t.date.split('/');
+          const yr = (t.monthKey||t.month||'').split('/')[1];
+          if(dd && mm && yr) isoDate = `${yr}-${mm.padStart(2,'0')}-${dd.padStart(2,'0')}`;
+        }
+        const tipo = t.isParcel ? 'Parcelado' : t._manual ? 'Manual' : 'À vista';
+
+        const props = {
+          'Descrição': { title: [{ text: { content: (t.desc||'').slice(0,100) } }] },
+          'Valor':     { number: t.value },
+          'Mês/Fatura':{ rich_text: [{ text: { content: t.monthKey||t.month||'' } }] },
+          'Cartão':    { rich_text: [{ text: { content: t.cardName||'' } }] },
+          'Banco':     { rich_text: [{ text: { content: t.bank||'' } }] },
+          'Categoria': { select: { name: t.category||'Outros' } },
+          'Tipo':      { select: { name: tipo } },
+        };
+        if(t.note) props['Nota'] = { rich_text: [{ text: { content: t.note.slice(0,200) } }] };
+        if(isoDate) props['Data'] = { date: { start: isoDate } };
+
+        const resp = await fetch(`${NOTION_API}/pages`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token.trim()}`,
+            'Content-Type': 'application/json',
+            'Notion-Version': '2022-06-28'
+          },
+          body: JSON.stringify({
+            parent: { database_id: NOTION_DS_ID },
+            properties: props
+          })
+        });
+
+        if(resp.ok){ exported++; }
+        else {
+          errors++;
+          const err = await resp.json().catch(()=>({}));
+          console.error('Notion error:', err);
+        }
+      }));
+
+      if(i + BATCH < allTxs.length) await new Promise(r => setTimeout(r, 400));
+    }
+
+    const msg = errors > 0
+      ? `✅ ${exported} exportadas | ⚠️ ${errors} com erro (veja console)`
+      : `✅ ${exported} transações exportadas para o Notion!`;
+
+    alert(msg);
+    btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M4.459 4.208c.746.606 1.026.56 2.428.466l13.215-.793c.28 0 .047-.28-.046-.326L17.86 1.968c-.42-.326-.981-.7-2.055-.607L3.01 2.295c-.466.046-.56.28-.374.466zm.793 3.08v13.904c0 .747.373 1.027 1.214.98l14.523-.84c.841-.046.935-.56.935-1.167V6.354c0-.606-.233-.933-.748-.887l-15.177.887c-.56.047-.747.327-.747.933zm14.337.745c.093.42 0 .84-.42.888l-.7.14v10.264c-.608.327-1.168.514-1.635.514-.748 0-.935-.234-1.495-.933l-4.577-7.186v6.952L12.21 19s0 .84-1.168.84l-3.222.186c-.093-.186 0-.653.327-.746l.84-.233V9.854L7.822 9.76c-.094-.42.14-1.026.793-1.073l3.456-.233 4.764 7.279v-6.44l-1.215-.14c-.093-.514.28-.887.747-.933zM1.936 1.035l13.31-.98c1.634-.14 2.055-.047 3.082.7l4.249 2.986c.7.513.934.653.934 1.213v16.378c0 1.026-.373 1.634-1.68 1.726l-15.458.934c-.98.047-1.448-.093-1.962-.747l-3.129-4.06c-.56-.747-.793-1.306-.793-1.96V2.667c0-.839.374-1.54 1.447-1.632z"/></svg> Ver no Notion`;
+    btn.disabled = false;
+    btn.onclick = () => window.open(NOTION_DB_URL, '_blank');
+
+  }catch(err){
+    console.error('Erro ao exportar:', err);
+    alert('Erro: ' + (err.message||'verifique o console'));
+    btn.textContent = 'Exportar para Notion';
+    btn.disabled = false;
+    btn.onclick = exportToNotion;
+  }
+}
+
+// ── MANUAL TRANSACTION ───────────────────────────────────────────────────
+function openAddTx(prefillCardId){
+  // Populate card selector
+  const sel=document.getElementById('atx-card');
+  sel.innerHTML=faturas.map(f=>`<option value="${f.id}">${f.cardName} · ${f.month}</option>`).join('');
+  if(prefillCardId) sel.value=prefillCardId;
+
+  // Populate category selector
+  const catSel=document.getElementById('atx-cat');
+  catSel.innerHTML=Object.keys(CATS).map(c=>`<option value="${c}">${c}</option>`).join('');
+
+  // Show diff banner if there's a validation gap
+  const fId=sel.value;
+  updateAddTxDiffBanner(fId);
+  sel.onchange=()=>updateAddTxDiffBanner(sel.value);
+
+  // Clear fields
+  document.getElementById('atx-date').value='';
+  document.getElementById('atx-desc').value='';
+  document.getElementById('atx-val').value='';
+
+  document.getElementById('modal-addtx').classList.add('open');
+}
+
+function updateAddTxDiffBanner(fId){
+  const banner=document.getElementById('atx-diff-banner');
+  const f=faturas.find(x=>x.id===fId);
+  if(!f||!f.expectedTotal){ banner.style.display='none'; return; }
+  const extracted=f.txs.reduce((s,t)=>s+t.value,0);
+  const diff=f.expectedTotal-extracted;
+  if(Math.abs(diff)<0.05){ banner.style.display='none'; return; }
+  banner.style.display='block';
+  banner.innerHTML=`Total da fatura: <strong>R$ ${f.expectedTotal.toLocaleString('pt-BR',{minimumFractionDigits:2})}</strong> &nbsp;|&nbsp; Extraído: <strong>R$ ${fmt(extracted)}</strong> &nbsp;|&nbsp; <strong style="color:#993C1D">Faltam R$ ${Math.abs(diff).toLocaleString('pt-BR',{minimumFractionDigits:2})}</strong>`;
+}
+
+function closeAddTx(){
+  document.getElementById('modal-addtx').classList.remove('open');
+}
+
+function submitAddTx(){
+  const fId=document.getElementById('atx-card').value;
+  const date=document.getElementById('atx-date').value.trim()||'—';
+  const desc=document.getElementById('atx-desc').value.trim().toUpperCase();
+  const val=parseFloat(document.getElementById('atx-val').value);
+  const cat=document.getElementById('atx-cat').value;
+
+  if(!desc){ alert('Informe a descrição.'); return; }
+  if(isNaN(val)||val<=0){ alert('Informe um valor válido.'); return; }
+
+  const fatura=faturas.find(f=>f.id===fId);
+  if(!fatura){ alert('Cartão não encontrado.'); return; }
+
+  fatura.txs.push({
+    date, desc, value:val, category:cat,
+    isParcel:false, monthKey:fatura.month,
+    _manual:true
+  });
+
+  closeAddTx();
+
+  // Full re-render via renderDashboard — atualiza métricas, gráficos e tabela
+  renderDashboard();
+  renderValidationBanner();
+  if(currentView==='bycard')  renderByCard();
+  if(currentView==='bymonth') renderByMonth();
+}
+
+// ── VALIDATION BANNER ─────────────────────────────────────────────────────
+function renderValidationBanner(){
+  const banner=document.getElementById('validation-banner');
+  if(!banner) return;
+
+  // Find faturas with known expectedTotal that have a gap
+  const gaps=faturas
+    .filter(f=>f.expectedTotal && Math.abs(f.expectedTotal - f.txs.reduce((s,t)=>s+t.value,0)) > 0.5)
+    .map(f=>{
+      const extracted=f.txs.reduce((s,t)=>s+t.value,0);
+      const diff=f.expectedTotal-extracted;
+      return {f, diff};
+    });
+
+  if(!gaps.length){ banner.style.display='none'; return; }
+
+  banner.style.display='flex';
+  const lines=gaps.map(({f,diff})=>
+    `<span><strong>${f.cardName}</strong>: faltam <strong>R$ ${Math.abs(diff).toLocaleString('pt-BR',{minimumFractionDigits:2})}</strong> (total R$ ${f.expectedTotal.toLocaleString('pt-BR',{minimumFractionDigits:2})} vs R$ ${fmt(f.txs.reduce((s,t)=>s+t.value,0))} extraído)</span>`
+  ).join(' &nbsp;·&nbsp; ');
+  document.getElementById('validation-text').innerHTML=`Atenção: valor total diverge. ${lines}`;
+}
+
+// Inicialização após DOM pronto
+window.addEventListener('DOMContentLoaded', () => {
+  // Fechar modal-notion ao clicar no fundo
+  const mNotion = document.getElementById('modal-notion');
+  if(mNotion) mNotion.addEventListener('click', e => { if(e.target===mNotion) closeNotionSettings(); });
+
+  // Fechar modal-password ao clicar no fundo
+  const mPwd = document.getElementById('modal-password');
+  if(mPwd) mPwd.addEventListener('click', e => { if(e.target===mPwd) cancelPassword(); });
+  if(mAddtx) mAddtx.addEventListener('click', e => {
+    if(e.target === mAddtx) closeAddTx();
+  });
+  // Fechar modal principal ao clicar no fundo
+  const mMain = document.getElementById('modal');
+  if(mMain) mMain.addEventListener('click', e => {
+    if(e.target === mMain) { mMain.classList.remove('open'); setTimeout(processNextInQueue,300); }
+  });
+});
+</script>
+</body>
+</html>
