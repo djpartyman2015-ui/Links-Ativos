@@ -150,6 +150,15 @@
   .stat-label { color: var(--muted); font-size: 13px; }
   .admin-list-item { background: var(--card); border-radius: 10px; padding: 14px 18px; box-shadow: var(--shadow); display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
 
+  /* EDIÇÃO */
+  .btn-edit { background: rgba(255,255,255,.25); border: none; color: #fff; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-size: 13px; display: inline-flex; align-items: center; justify-content: center; transition: background .15s; position: absolute; top: 8px; left: 8px; }
+  .btn-edit:hover { background: rgba(255,255,255,.45); }
+  .btn-edit-comment { background: none; border: none; color: var(--petrol2); cursor: pointer; font-size: 12px; padding: 0 4px; opacity: .7; }
+  .btn-edit-comment:hover { opacity: 1; }
+  .edit-inline { display: none; flex-direction: column; gap: 6px; margin-top: 8px; }
+  .edit-inline textarea { padding: 8px 12px; border: 1.5px solid var(--petrol2); border-radius: 8px; font-size: 13px; font-family: 'Inter', sans-serif; resize: vertical; outline: none; }
+  .edit-inline-actions { display: flex; gap: 6px; }
+
   /* IMPORTAÇÃO IA */
   .import-box { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); padding: 24px; margin-bottom: 24px; }
   .import-box h3 { font-family: 'Nunito', sans-serif; font-weight: 900; color: var(--petrol); font-size: 18px; margin-bottom: 6px; }
@@ -202,6 +211,7 @@
 
 <main>
   <div id="tab-fornecedores">
+    <div id="stats-fornecedores"></div>
     <div class="controls">
       <div class="search-wrap">
         <span class="search-icon">🔍</span>
@@ -220,6 +230,7 @@
   </div>
 
   <div id="tab-categorias" style="display:none">
+    <div id="stats-categorias"></div>
     <div id="cat-view"><div class="loading"><div class="spinner"></div>Carregando…</div></div>
   </div>
 
@@ -331,8 +342,8 @@
         <textarea class="form-control" id="f-desc" placeholder="Conte como foi sua experiência…"></textarea>
       </div>
       <div class="form-group">
-        <label>Seu nome (opcional)</label>
-        <input class="form-control" id="f-autor" placeholder="Ex: Moradora Bloco A"/>
+        <label>Seu nome *</label>
+        <input class="form-control" id="f-autor" placeholder="Ex: Maria - Casa 12"/>
       </div>
     </div>
     <div class="modal-footer">
@@ -392,6 +403,17 @@ let fornecedores = [];
 let isAdmin = false;
 let selectedRating = 0;
 let selectedPrice = '';
+
+// DEVICE ID anônimo persistente
+function getDeviceId() {
+  let id = localStorage.getItem('indiko_device_id');
+  if (!id) {
+    id = 'dev_' + Math.random().toString(36).substr(2,9) + Date.now().toString(36);
+    localStorage.setItem('indiko_device_id', id);
+  }
+  return id;
+}
+const DEVICE_ID = getDeviceId();
 
 // ── UTILS ──
 function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
@@ -476,6 +498,17 @@ window.showTab = function(name, el) {
 }
 
 // ── CARDS ──
+function statsHtml() {
+  const total = fornecedores.length;
+  const totalCom = fornecedores.reduce((acc,f)=>acc+(f.comentarios?.length||0),0);
+  const totalCats = [...new Set(fornecedores.map(f=>f.cat))].length;
+  return `<div class="stat-cards" style="margin-bottom:20px">
+    <div class="stat-card"><div class="stat-num" style="color:var(--petrol)">${total}</div><div class="stat-label">Fornecedores</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:var(--amber)">${totalCom}</div><div class="stat-label">Comentários</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:var(--petrol2)">${totalCats}</div><div class="stat-label">Categorias</div></div>
+  </div>`;
+}
+
 window.renderCards = function() {
   const q = document.getElementById('search-input').value.toLowerCase();
   const cat = document.getElementById('cat-filter').value;
@@ -485,6 +518,10 @@ window.renderCards = function() {
   if (cat) list = list.filter(f => f.cat === cat);
   if (sort === 'rating') list.sort((a,b) => calcMedia(b).media - calcMedia(a).media);
   else if (sort === 'az') list.sort((a,b) => (a.nome||'').localeCompare(b.nome||''));
+
+  // Atualizar stats
+  const statsEl = document.getElementById('stats-fornecedores');
+  if (statsEl) statsEl.innerHTML = statsHtml();
 
   const grid = document.getElementById('cards-grid');
   if (list.length === 0) {
@@ -501,9 +538,19 @@ function cardHtml(f) {
   return `
   <div class="card" id="card-${f.id}">
     <div class="card-header">
-      <div><div class="card-name">${escHtml(f.nome)}</div></div>
+      ${f._deviceId === DEVICE_ID ? `<button class="btn-edit" onclick="abrirEdicaoCard('${f.id}')" title="Editar sua indicação">✏️</button>` : ''}
+      <div><div class="card-name" style="${f._deviceId === DEVICE_ID ? 'padding-left:32px' : ''}">${escHtml(f.nome)}</div></div>
       <span class="cat-badge">${escHtml(f.cat)}</span>
       ${adminDel}
+    </div>
+    <div class="edit-inline" id="edit-card-${f.id}">
+      <input id="edit-nome-${f.id}" class="form-control" value="${escHtml(f.nome)}" placeholder="Nome"/>
+      <input id="edit-contato-${f.id}" class="form-control" value="${escHtml(f.contato||'')}" placeholder="Contato"/>
+      <textarea id="edit-desc-${f.id}" class="form-control" rows="3">${escHtml(f.desc)}</textarea>
+      <div class="edit-inline-actions">
+        <button class="btn btn-primary btn-sm" onclick="salvarEdicaoCard('${f.id}')">💾 Salvar</button>
+        <button class="btn btn-sm" style="background:none;border:1px solid var(--border);color:var(--muted)" onclick="fecharEdicaoCard('${f.id}')">Cancelar</button>
+      </div>
     </div>
     <div class="card-body">
       <div class="rating-row">
@@ -524,8 +571,16 @@ function cardHtml(f) {
           <span class="comment-author">${escHtml(c.autor||'Anônimo')}</span>
           <span class="comment-date">${c.data ? fmtDate(c.data) : ''}</span>
           ${isAdmin && c._ip ? `<span style="font-size:10px;color:#9CA3AF;margin-left:6px">🌐 ${c._ip}</span>` : ''}
+          ${c._deviceId === DEVICE_ID ? `<button class="btn-edit-comment" onclick="editarComentario('${f.id}',${i})">✏️</button>` : ''}
           ${c.rating ? `<div class="comment-rating">${[1,2,3,4,5].map(s=>`<span class="comment-star${s<=c.rating?' filled':''}">★</span>`).join('')}</div>` : ''}
-          <div class="comment-text">${escHtml(c.texto)}</div>
+          <div class="comment-text" id="com-text-${f.id}-${i}">${escHtml(c.texto)}</div>
+          <div class="edit-inline" id="edit-com-${f.id}-${i}">
+            <textarea id="edit-com-txt-${f.id}-${i}" rows="3">${escHtml(c.texto)}</textarea>
+            <div class="edit-inline-actions">
+              <button class="btn btn-primary btn-sm" onclick="salvarEdicaoComentario('${f.id}',${i})">💾 Salvar</button>
+              <button class="btn btn-sm" style="background:none;border:1px solid var(--border);color:var(--muted)" onclick="fecharEdicaoComentario('${f.id}',${i})">Cancelar</button>
+            </div>
+          </div>
         </div>`).join('')}
       <div class="add-comment">
         <input id="com-autor-${f.id}" placeholder="Seu nome (opcional)"/>
@@ -555,6 +610,10 @@ window.toggleComments = function(id) {
 
 // ── CATEGORIAS ──
 function renderCatView() {
+  // Atualizar stats
+  const statsEl = document.getElementById('stats-categorias');
+  if (statsEl) statsEl.innerHTML = statsHtml();
+
   const cats = {};
   fornecedores.forEach(f => { if (!cats[f.cat]) cats[f.cat]=[]; cats[f.cat].push(f); });
   const sorted = Object.entries(cats).sort((a,b)=>a[0].localeCompare(b[0],'pt-BR'));
@@ -618,7 +677,8 @@ window.salvarFornecedor = async function() {
   const nome = document.getElementById('f-nome').value.trim();
   const cat  = document.getElementById('f-cat').value;
   const desc = document.getElementById('f-desc').value.trim();
-  if (!nome || !cat || !desc || !selectedRating) { toast('Preencha os campos obrigatórios ★', true); return; }
+  const autorVal = document.getElementById('f-autor').value.trim();
+  if (!nome || !cat || !desc || !selectedRating || !autorVal) { toast('Preencha todos os campos obrigatórios *', true); return; }
   const btn = document.getElementById('btn-salvar');
   btn.disabled = true; btn.textContent = 'Publicando…';
   try {
@@ -626,8 +686,8 @@ window.salvarFornecedor = async function() {
     await addDoc(collection(db, COLECAO), {
       nome, cat, rating: selectedRating, preco: selectedPrice,
       contato: document.getElementById('f-contato').value.trim(),
-      desc, autor: document.getElementById('f-autor').value.trim() || 'Morador(a)',
-      data: serverTimestamp(), comentarios: [], _ip: ip
+      desc, autor: autorVal,
+      data: serverTimestamp(), comentarios: [], _ip: ip, _deviceId: DEVICE_ID
     });
     closeModal();
     toast('✅ Indicação publicada com sucesso!');
@@ -654,7 +714,7 @@ window.addComment = async function(fid) {
     const ref = doc(db, COLECAO, fid);
     const f = fornecedores.find(x=>x.id===fid);
     const ip = await getIP();
-    const comentarios = [...(f.comentarios||[]), { autor, texto, rating, data: new Date().toISOString(), _ip: ip }];
+    const comentarios = [...(f.comentarios||[]), { autor, texto, rating, data: new Date().toISOString(), _ip: ip, _deviceId: DEVICE_ID }];
     await updateDoc(ref, { comentarios });
     delete comRatings[fid];
     toast('💬 Comentário publicado!');
@@ -724,7 +784,7 @@ function renderAdminView() {
     <div class="import-box">
       <div class="ai-badge">⚡ Auto</div>
       <h3>📥 Importar do WhatsApp</h3>
-      <p>Cole aqui o texto de uma indicação do grupo de WhatsApp. O sistema extrai as informações automaticamente — revise antes de publicar.</p>
+      <p>Cole o texto do WhatsApp <strong>exatamente como aparece</strong> — com nome do remetente, hora, contato. O sistema identifica tudo automaticamente. Revise antes de publicar.</p>
       <textarea class="import-textarea" id="import-input" placeholder="Ex: Pessoal, indico a Faxina da Jais! Ótima profissional, faz faxina residencial e pós-obra. WhatsApp: (83) 9 8114-0203, Instagram @faxinadajais. Super recomendo! ⭐⭐⭐⭐⭐"></textarea>
       <div style="margin-top:10px;display:flex;gap:10px;flex-wrap:wrap">
         <button class="btn btn-primary" onclick="processarImportacao()">⚡ Extrair Informações</button>
@@ -888,20 +948,34 @@ window.processarImportacao = function() {
 
       // ── CONTATO ──
       let contato = '';
-      const telMatch = texto.match(/(?:\+55\s*)?(?:\(?\d{2}\)?[\s-]?)?(?:9\s?)?\d{4}[\s-]?\d{4}/);
+      // Buscar todos os telefones no texto e pegar o mais relevante
+      const telMatches = [...texto.matchAll(/(?:\+55\s*)?(?:\(?\d{2}\)?\s*)?(?:9\s?)?\d{4,5}[-\s]?\d{4}/g)];
       const igMatch = texto.match(/@[a-zA-Z0-9_.]+/);
-      if (telMatch) contato = telMatch[0].trim();
-      else if (igMatch) contato = igMatch[0].trim();
+      // Preferir número com DDD 19 (região de Indaiatuba/SP) ou qualquer número longo
+      if (telMatches.length > 0) {
+        const preferred = telMatches.find(m => m[0].includes('19') || m[0].replace(/\D/g,'').length >= 10);
+        contato = (preferred || telMatches[0])[0].trim();
+      } else if (igMatch) contato = igMatch[0].trim();
 
       // ── AUTOR ──
       let autor = 'Morador(a)';
       const autorPatterns = [
-        /(?:indicado|recomendado|postado)\s+por[:\s]+([A-ZÀ-Ú][a-zà-ú]+(?:\s+[A-ZÀ-Ú][a-zà-ú]+)*)/i,
-        /^([A-ZÀ-Ú][a-zà-ú]+(?:\s+[A-ZÀ-Ú][a-zà-ú]+)*)[\s:,-]/,
+        // "Indicado por Nome"
+        /(?:indicado|recomendado|postado|compartilhado)\s+por[:\s]+([A-ZÀ-Ú][^\.!\n,]{2,40})/i,
+        // WhatsApp exportado: "[14:37] Nome Sobrenome:"
+        /\[\d{1,2}:\d{2}\]\s+([A-ZÀ-Ú][a-zà-ú]+(?:\s+[A-ZÀ-Ú][a-zà-ú]+)*):/,
+        // WhatsApp exportado: "14/06/2026, 14:37 - Nome Sobrenome:"
+        /\d{1,2}\/\d{1,2}\/\d{2,4},?\s+\d{1,2}:\d{2}\s*[-–]\s*([A-ZÀ-Ú][a-zà-ú]+(?:\s+[A-ZÀ-Ú][a-zà-ú]+)*):/,
+        // "~ Nome Sobrenome" (padrão WhatsApp com ~)
+        /~\s*([A-ZÀ-Ú][a-zà-ú]+(?:\s+[A-ZÀ-Ú][a-zà-ú]+)*)/,
+        // Primeira linha termina com ":" seguida de nome
+        /^([A-ZÀ-Ú][a-zà-ú]+(?:\s+[A-ZÀ-Ú][a-zà-ú]+){1,3}):/m,
+        // Linha isolada com nome próprio (2+ palavras capitalizadas)
+        /^([A-ZÀ-Ú][a-zà-ú]+\s+[A-ZÀ-Ú][a-zà-ú]+(?:\s+[A-ZÀ-Ú][a-zà-ú]+)?)$/m,
       ];
       for (const p of autorPatterns) {
         const m = texto.match(p);
-        if (m) { autor = m[1].trim(); break; }
+        if (m && m[1].length > 3) { autor = m[1].trim(); break; }
       }
 
       // ── RATING ──
@@ -983,13 +1057,64 @@ window.confirmarImportacao = async function() {
       nome, cat, rating: importRating, preco: importPrice,
       contato: document.getElementById('ip-contato').value.trim(),
       desc, autor: document.getElementById('ip-autor').value.trim() || 'Admin',
-      data: serverTimestamp(), comentarios: [], _ip: ip, _importado: true
+      data: serverTimestamp(), comentarios: [], _ip: ip, _importado: true, _deviceId: DEVICE_ID
     });
     document.getElementById('import-input').value = '';
     document.getElementById('import-preview').style.display = 'none';
     importRating = 5; importPrice = '';
     toast('✅ Fornecedor importado com sucesso!');
   } catch(e) { toast('Erro ao salvar.', true); console.error(e); }
+}
+
+// ── EDIÇÃO DE CARDS ────────────────────────────────────
+window.abrirEdicaoCard = function(fid) {
+  const el = document.getElementById('edit-card-'+fid);
+  if (el) { el.style.display = el.style.display === 'flex' ? 'none' : 'flex'; }
+}
+window.fecharEdicaoCard = function(fid) {
+  const el = document.getElementById('edit-card-'+fid);
+  if (el) el.style.display = 'none';
+}
+window.salvarEdicaoCard = async function(fid) {
+  const nome = document.getElementById('edit-nome-'+fid)?.value.trim();
+  const desc = document.getElementById('edit-desc-'+fid)?.value.trim();
+  const contato = document.getElementById('edit-contato-'+fid)?.value.trim();
+  if (!nome || !desc) { toast('Nome e descrição são obrigatórios', true); return; }
+  try {
+    await updateDoc(doc(db, COLECAO, fid), { nome, desc, contato });
+    toast('✅ Indicação atualizada!');
+    fecharEdicaoCard(fid);
+  } catch(e) { toast('Erro ao salvar.', true); }
+}
+
+// ── EDIÇÃO DE COMENTÁRIOS ───────────────────────────────
+window.editarComentario = function(fid, idx) {
+  const el = document.getElementById('edit-com-'+fid+'-'+idx);
+  const txt = document.getElementById('com-text-'+fid+'-'+idx);
+  if (el) { 
+    const isOpen = el.style.display === 'flex';
+    el.style.display = isOpen ? 'none' : 'flex';
+    if (txt) txt.style.display = isOpen ? '' : 'none';
+  }
+}
+window.fecharEdicaoComentario = function(fid, idx) {
+  const el = document.getElementById('edit-com-'+fid+'-'+idx);
+  const txt = document.getElementById('com-text-'+fid+'-'+idx);
+  if (el) el.style.display = 'none';
+  if (txt) txt.style.display = '';
+}
+window.salvarEdicaoComentario = async function(fid, idx) {
+  const novoTexto = document.getElementById('edit-com-txt-'+fid+'-'+idx)?.value.trim();
+  if (!novoTexto) { toast('Comentário não pode ficar vazio', true); return; }
+  const f = fornecedores.find(x=>x.id===fid);
+  if (!f) return;
+  const comentarios = [...(f.comentarios||[])];
+  comentarios[idx] = { ...comentarios[idx], texto: novoTexto };
+  try {
+    await updateDoc(doc(db, COLECAO, fid), { comentarios });
+    toast('✅ Comentário atualizado!');
+    fecharEdicaoComentario(fid, idx);
+  } catch(e) { toast('Erro ao salvar.', true); }
 }
 
 // fechar modais clicando fora
