@@ -69,9 +69,9 @@
   #cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 18px; }
   .card { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; display: flex; flex-direction: column; transition: transform .18s, box-shadow .18s; }
   .card:hover { transform: translateY(-3px); box-shadow: 0 6px 24px rgba(27,79,114,.14); }
-  .card-header { background: linear-gradient(135deg, var(--petrol) 0%, var(--petrol2) 100%); padding: 16px 18px 12px; display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; position: relative; }
+  .card-header { background: linear-gradient(135deg, var(--petrol) 0%, var(--petrol2) 100%); padding: 16px 18px 12px; display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; position: relative; flex-wrap: wrap; }
   .card-name { font-family: 'Nunito', sans-serif; font-weight: 900; font-size: 17px; color: #fff; line-height: 1.2; }
-  .cat-badge { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 50px; background: var(--amber); color: #fff; white-space: nowrap; flex-shrink: 0; }
+  .cat-badge { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 50px; background: var(--amber); color: #fff; white-space: nowrap; flex-shrink: 0; max-width: 140px; overflow: hidden; text-overflow: ellipsis; }
   .card-body { padding: 14px 18px; flex: 1; }
   .rating-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
   .stars { display: flex; gap: 2px; }
@@ -593,7 +593,7 @@ const CATEGORIAS = [
   // Serviços Gerais
   "Mudanças / Fretes","Entregas / Motoboy","Montagem de Móveis","Chaveiro",
   "Lavanderia","Costura / Customização","Contabilidade / Financeiro",
-  "Advocacia / Jurídico","Seguros",
+  "Advocacia / Jurídico","Seguros","Agência de Viagens",
   // Alimentação & Eventos
   "Delivery / Restaurantes","Buffet / Catering","Confeitaria / Bolos",
   "Festas / Eventos","DJ / Música ao Vivo","Fotografia / Vídeo",
@@ -601,7 +601,7 @@ const CATEGORIAS = [
   "Aulas Particulares","Idiomas","Musicalização / Instrumentos",
   "Cuidador / Babá","Cuidador de Idosos",
   // Moda & Vestuário
-  "Moda / Vestuário","Costureira / Alfaiate","Brechó / Roupas Usadas",
+  "Cabeleireiro / Salão de Beleza","Estética / Manicure","Moda / Vestuário","Costureira / Alfaiate","Brechó / Roupas Usadas",
   "Acessórios / Bijuterias","Calçados","Uniformes / Bordados",
   // Outros
   "Outros"
@@ -723,7 +723,7 @@ function cardHtml(f) {
           </div>
         </div>`).join('')}
       <div class="add-comment">
-        <input id="com-autor-${f.id}" placeholder="Seu nome (opcional)"/>
+        <input id="com-autor-${f.id}" placeholder="Seu nome *" required/>
         <label style="font-size:12px;font-weight:600;color:var(--petrol);margin-bottom:2px">Sua avaliação</label>
         <div class="com-star-picker" id="com-stars-${f.id}">${comStarsHtml(f.id)}</div>
         <textarea id="com-texto-${f.id}" placeholder="Compartilhe sua experiência…" rows="3"></textarea>
@@ -847,8 +847,9 @@ window.pickComStar = function(el) {
 }
 window.addComment = async function(fid) {
   const texto = document.getElementById('com-texto-'+fid)?.value.trim();
+  const autor = document.getElementById('com-autor-'+fid)?.value.trim();
+  if (!autor) { toast('Por favor, informe seu nome', true); return; }
   if (!texto) { toast('Digite algo no comentário', true); return; }
-  const autor = document.getElementById('com-autor-'+fid)?.value.trim() || 'Anônimo';
   const rating = comRatings[fid] || 0;
   try {
     const ref = doc(db, COLECAO, fid);
@@ -1002,6 +1003,7 @@ function renderAdminView() {
               <option>Montagem de Móveis</option><option>Chaveiro</option><option>Lavanderia</option>
               <option>Costura / Customização</option><option>Contabilidade / Financeiro</option>
               <option>Advocacia / Jurídico</option><option>Seguros</option>
+              <option>Agência de Viagens</option>
             </optgroup>
             <optgroup label="🍽️ Alimentação & Eventos">
               <option>Delivery / Restaurantes</option><option>Buffet / Catering</option>
@@ -1239,6 +1241,9 @@ window.processarImportacao = function() {
         { cat: 'Psicologia / Terapia', keys: ['psicolog','terapia','terapeuta','psicanalise'] },
         { cat: 'Doula / Parto', keys: ['doula','parto','maternidade','gestante','obstetriz'] },
         { cat: 'Saúde em Geral', keys: ['médico','medico','saúde','clínica','hospital','consulta'] },
+        { cat: 'Cabeleireiro / Salão de Beleza', keys: ['cabeleireiro','salão','cabelo','corte','coloração','escova'] },
+        { cat: 'Estética / Manicure', keys: ['estética','estetica','manicure','pedicure','unhas','sobrancelha'] },
+        { cat: 'Agência de Viagens', keys: ['agência de viagem','agencia de viagem','viagem','turismo','pacote','passagem'] },
         { cat: 'Moda / Vestuário', keys: ['moda','roupa','vestuário','vestuario','boutique','loja de roupa'] },
         { cat: 'Uniformes / Bordados', keys: ['uniform','bordado','bordadora','personaliz roupa'] },
         { cat: 'Mudanças / Fretes', keys: ['mudança','mudanca','frete','carreto'] },
