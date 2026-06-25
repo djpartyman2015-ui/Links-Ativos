@@ -492,6 +492,37 @@ let selectedPrice = '';
 
 console.log("🚀 Módulo Firebase carregado");
 
+// Capturar IP do usuário
+async function getIP() {
+  try {
+    const r = await fetch('https://api.ipify.org?format=json');
+    const d = await r.json();
+    return d.ip || 'desconhecido';
+  } catch { return 'desconhecido'; }
+}
+
+function statsHtml() {
+  const total = fornecedores.length;
+  const totalCom = fornecedores.reduce((acc,f)=>acc+(f.comentarios?.length||0),0);
+  const totalCats = [...new Set(fornecedores.map(f=>f.cat))].length;
+  return `<div class="stat-cards" style="margin-bottom:20px">
+    <div class="stat-card"><div class="stat-num" style="color:var(--petrol)">${total}</div><div class="stat-label">Fornecedores</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:var(--amber)">${totalCom}</div><div class="stat-label">Comentários</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:var(--petrol2)">${totalCats}</div><div class="stat-label">Categorias</div></div>
+  </div>`;
+}
+
+window._showTab = function(name, el) {
+  if (name === 'admin' && !isAdmin) { window._switchToAdmin(); return; }
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  if (el) el.classList.add('active');
+  ['fornecedores','categorias','admin'].forEach(t => {
+    document.getElementById('tab-'+t).style.display = t===name ? '' : 'none';
+  });
+  if (name === 'categorias') renderCatView();
+  if (name === 'admin') renderAdminView();
+}
+
 // DEVICE ID anônimo persistente
 function getDeviceId() {
   let id = localStorage.getItem('indiko_device_id');
@@ -665,6 +696,20 @@ const CATEGORIAS = [
   "Vidraçaria / Esquadrias",
   "Vidros Automotivos"
 ]
+
+// ── FIRESTORE LISTENER (tempo real) ──
+console.log("🔥 Firebase conectado, iniciando onSnapshot...");
+const q = query(collection(db, COLECAO), orderBy("data", "desc"));
+onSnapshot(q, (snapshot) => {
+  console.log("📦 onSnapshot recebeu", snapshot.docs.length, "documentos");
+  fornecedores = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+  renderCards();
+  buildCatDropdown();
+  if (document.getElementById('tab-categorias').style.display !== 'none') renderCatView();
+  if (document.getElementById('tab-admin').style.display !== 'none') renderAdminView();
+}, (error) => {
+  console.error("❌ Erro no onSnapshot:", error);
+});
 
 // ── RENDER CARDS ──
 window.renderCards = function() {
