@@ -253,8 +253,7 @@
       </div>
       <div class="form-group">
         <label>Categoria *</label>
-<input type="text" id="f-cat-search" class="form-control" placeholder="🔍 Buscar categoria…" oninput="filtrarCat(this.value)" style="margin-bottom:6px"/>
-          <select class="form-control" id="f-cat">
+<select class="form-control" id="f-cat">
               <option value="">Selecione…</option>
               <optgroup label="🔧 Manutenção & Reparos">
                 <option value="Elétrica">Elétrica</option>
@@ -390,7 +389,7 @@
               <optgroup label="🌟 Outros">
                 <option value="Outros">Outros</option>
               </optgroup>
-          </select>
+            </select>
             <div class="ss-option" data-value="Hidráulica / Encanamento" onclick="ssPick('fcat',this)">Hidráulica / Encanamento</div>
             <div class="ss-option" data-value="Pintura" onclick="ssPick('fcat',this)">Pintura</div>
             <div class="ss-option" data-value="Gesso / Drywall" onclick="ssPick('fcat',this)">Gesso / Drywall</div>
@@ -1240,19 +1239,7 @@ function renderAdminView() {
     </div>`;
 }
 
-// Filtro de categoria
-window.filtrarCat = function(q) {
-  const sel = document.getElementById('f-cat');
-  const term = q.toLowerCase().trim();
-  Array.from(sel.options).forEach(opt => {
-    if (!opt.value) return;
-    opt.style.display = !term || opt.value.toLowerCase().includes(term) ? '' : 'none';
-  });
-  Array.from(sel.querySelectorAll('optgroup')).forEach(og => {
-    const hasVisible = Array.from(og.querySelectorAll('option')).some(o => o.style.display !== 'none');
-    og.style.display = hasVisible ? '' : 'none';
-  });
-}
+
 
 // ── IMPORTAÇÃO IA ──────────────────────────────────────
 let importRating = 5;
