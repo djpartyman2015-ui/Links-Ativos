@@ -555,105 +555,132 @@ function toast(msg, err=false) {
 // ── FIRESTORE LISTENER (tempo real) ──
 // Lista de categorias (evita apóstrofos dentro de template literals)
 const CATEGORIAS = [
-  // Manutenção & Reparos
-  "Elétrica","Hidráulica / Encanamento","Pintura","Gesso / Drywall","Impermeabilização",
-  "Telhado / Calhas","Serralheria / Ferragem","Vidraçaria / Esquadrias",
-  "Piso / Azulejo / Revestimento","Ar Condicionado / Climatização","Elevadores",
-  "Portões / Automatização","Interfone / CFTV","Reformas Gerais / Obras",
-  // Áreas Externas & Lazer
-  "Jardinagem / Paisagismo","Piscinas / Tratamento de Água","Playground / Equipamentos",
-  "Quadras / Esportes","Churrasqueira / Área Gourmet","Iluminação Externa",
-  // Limpeza & Conservação
-  "Limpeza Geral / Faxina","Limpeza de Fachada / Lavagem","Dedetização / Controle de Pragas",
-  "Desentupimento","Limpeza de Caixa D’água","Descarte / Coleta de Entulho",
-  // Segurança
-  "Segurança / Vigilância","Câmeras / Monitoramento","Portaria Remota",
-  "Alarmes / Cerca Elétrica","Controle de Acesso / Biometria",
-  // Casa & Decoração
-  "Móveis / Marcenaria","Persianas / Cortinas","Decoração / Design de Interiores",
-  "Arquitetura / Projetos","Armários / Closets Planejados",
-  // Tecnologia & Conectividade
-  "Internet / Fibra Óptica","Tecnologia / TI / Suporte",
-  "Automação Residencial / Smart Home","Antenas / TV a Cabo",
-  // Automóveis & Mobilidade
-  "Mecânica Geral","Elétrica Automotiva","Funilaria / Lataria","Pintura Automotiva",
-  "Películas / Insulfilm","Lavagem / Higienização","Martelinho de Ouro",
-  "Ar Condicionado Automotivo","Som / Acessórios Automotivos",
-  "Pneus / Alinhamento / Balanceamento","Vidros Automotivos",
-  "Motocicletas","Bicicletas / Patinetes","Despachante / Documentação",
-  // Pet
-  "Pet Care / Veterinário","Banho & Tosa","Adestramento",
-  // Saúde & Bem-Estar
-  "Clínico Geral","Pediatria","Cardiologia","Dermatologia","Ginecologia / Obstetrícia",
-  "Ortopedia","Oftalmologia","Otorrinolaringologia","Neurologia","Psiquiatria",
-  "Urologia","Endocrinologia","Nutrição / Nutricionista","Odontologia / Dentista",
-  "Fisioterapia / Pilates","Psicologia / Terapia","Personal Trainer",
-  "Enfermagem / Home Care","Farmácia / Manipulação","Laboratório / Exames",
-  "Doula / Parto","Saúde em Geral",
-  // Serviços Gerais
-  "Mudanças / Fretes","Entregas / Motoboy","Montagem de Móveis","Chaveiro",
-  "Lavanderia","Costura / Customização","Contabilidade / Financeiro",
-  "Advocacia / Jurídico","Seguros","Agência de Viagens",
-  // Alimentação & Eventos
-  "Delivery / Restaurantes","Buffet / Catering","Confeitaria / Bolos",
-  "Festas / Eventos","DJ / Música ao Vivo","Fotografia / Vídeo",
-  // Educação & Bem-Estar
-  "Aulas Particulares","Idiomas","Musicalização / Instrumentos",
-  "Cuidador / Babá","Cuidador de Idosos",
-  // Moda & Vestuário
-  "Cabeleireiro / Salão de Beleza","Estética / Manicure","Moda / Vestuário","Costureira / Alfaiate","Brechó / Roupas Usadas",
-  "Acessórios / Bijuterias","Calçados","Uniformes / Bordados",
-  // Outros
-  "Outros"
+  "Acessórios / Bijuterias",
+  "Adestramento",
+  "Advocacia / Jurídico",
+  "Agência de Viagens",
+  "Alarmes / Cerca Elétrica",
+  "Antenas / TV a Cabo",
+  "Ar Condicionado / Climatização",
+  "Ar Condicionado Automotivo",
+  "Armários / Closets Planejados",
+  "Arquitetura / Projetos",
+  "Aulas Particulares",
+  "Automação Residencial / Smart Home",
+  "Banho & Tosa",
+  "Bicicletas / Patinetes",
+  "Brechó / Roupas Usadas",
+  "Buffet / Catering",
+  "Cabeleireiro / Salão de Beleza",
+  "Calçados",
+  "Cardiologia",
+  "Chaveiro",
+  "Churrasqueira / Área Gourmet",
+  "Clínico Geral",
+  "color:var(--amber)",
+  "color:var(--petrol)",
+  "color:var(--petrol2)",
+  "Confeitaria / Bolos",
+  "Contabilidade / Financeiro",
+  "Controle de Acesso / Biometria",
+  "Costura / Customização",
+  "Costureira / Alfaiate",
+  "Cuidador / Babá",
+  "Cuidador de Idosos",
+  "Câmeras / Monitoramento",
+  "data",
+  "Decoração / Design de Interiores",
+  "Dedetização / Controle de Pragas",
+  "Delivery / Restaurantes",
+  "Dermatologia",
+  "desc",
+  "Descarte / Coleta de Entulho",
+  "Desentupimento",
+  "Despachante / Documentação",
+  "DJ / Música ao Vivo",
+  "Doula / Parto",
+  "Elevadores",
+  "Elétrica",
+  "Elétrica Automotiva",
+  "Endocrinologia",
+  "Enfermagem / Home Care",
+  "Entregas / Motoboy",
+  "Estética / Manicure",
+  "Farmácia / Manipulação",
+  "Festas / Eventos",
+  "Fisioterapia / Pilates",
+  "Fotografia / Vídeo",
+  "Funilaria / Lataria",
+  "Gesso / Drywall",
+  "Ginecologia / Obstetrícia",
+  "Hidráulica / Encanamento",
+  "Idiomas",
+  "Iluminação Externa",
+  "Impermeabilização",
+  "Interfone / CFTV",
+  "Internet / Fibra Óptica",
+  "Jardinagem / Paisagismo",
+  "Laboratório / Exames",
+  "Lavagem / Higienização",
+  "Lavanderia",
+  "Limpeza de Caixa D’água",
+  "Limpeza de Fachada / Lavagem",
+  "Limpeza Geral / Faxina",
+  "margin-bottom:20px",
+  "Martelinho de Ouro",
+  "Mecânica Geral",
+  "Moda / Vestuário",
+  "Montagem de Móveis",
+  "Motocicletas",
+  "Mudanças / Fretes",
+  "Musicalização / Instrumentos",
+  "Móveis / Marcenaria",
+  "Neurologia",
+  "Nutrição / Nutricionista",
+  "Odontologia / Dentista",
+  "Oftalmologia",
+  "Ortopedia",
+  "Otorrinolaringologia",
+  "Outros",
+  "Pediatria",
+  "Películas / Insulfilm",
+  "Persianas / Cortinas",
+  "Personal Trainer",
+  "Pet Care / Veterinário",
+  "Pintura",
+  "Pintura Automotiva",
+  "Piscinas / Tratamento de Água",
+  "Piso / Azulejo / Revestimento",
+  "Playground / Equipamentos",
+  "Pneus / Alinhamento / Balanceamento",
+  "Portaria Remota",
+  "Portões / Automatização",
+  "Psicologia / Terapia",
+  "Psiquiatria",
+  "Quadras / Esportes",
+  "Reformas Gerais / Obras",
+  "Saúde em Geral",
+  "Segurança / Vigilância",
+  "Seguros",
+  "Serralheria / Ferragem",
+  "Som / Acessórios Automotivos",
+  "stat-card",
+  "stat-card",
+  "stat-card",
+  "stat-cards",
+  "stat-label",
+  "stat-label",
+  "stat-label",
+  "stat-num",
+  "stat-num",
+  "stat-num",
+  "Tecnologia / TI / Suporte",
+  "Telhado / Calhas",
+  "Uniformes / Bordados",
+  "Urologia",
+  "Vidraçaria / Esquadrias",
+  "Vidros Automotivos"
 ]
-
-// Capturar IP do usuário
-async function getIP() {
-  try {
-    const r = await fetch('https://api.ipify.org?format=json');
-    const d = await r.json();
-    return d.ip || 'desconhecido';
-  } catch { return 'desconhecido'; }
-}
-
-const q = query(collection(db, COLECAO), orderBy("data", "desc"));
-onSnapshot(q, (snapshot) => {
-  fornecedores = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-  renderCards();
-  buildCatDropdown();
-  if (document.getElementById('tab-categorias').style.display !== 'none') renderCatView();
-  if (document.getElementById('tab-admin').style.display !== 'none') renderAdminView();
-});
-
-// ── TABS ──
-window._showTab = function(name, el) {
-  if (name === 'admin' && !isAdmin) { switchToAdmin(); return; }
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  if (el) el.classList.add('active');
-  ['fornecedores','categorias','admin'].forEach(t => {
-    document.getElementById('tab-'+t).style.display = t===name ? '' : 'none';
-  });
-  if (name === 'categorias') renderCatView();
-  if (name === 'admin') renderAdminView();
-}
-
-// ── CARDS ──
-function statsHtml() {
-  const total = fornecedores.length;
-  const totalCom = fornecedores.reduce((acc,f)=>acc+(f.comentarios?.length||0),0);
-  const totalCats = [...new Set(fornecedores.map(f=>f.cat))].length;
-  return `<div class="stat-cards" style="margin-bottom:20px">
-    <div class="stat-card"><div class="stat-num" style="color:var(--petrol)">${total}</div><div class="stat-label">Fornecedores</div></div>
-    <div class="stat-card"><div class="stat-num" style="color:var(--amber)">${totalCom}</div><div class="stat-label">Comentários</div></div>
-    <div class="stat-card"><div class="stat-num" style="color:var(--petrol2)">${totalCats}</div><div class="stat-label">Categorias</div></div>
-  </div>`;
-}
-
-window.renderCards = function() {
-  const q = document.getElementById('search-input').value.toLowerCase();
-  const cat = document.getElementById('cat-filter').value;
-  const sort = document.getElementById('sort-filter').value;
-  let list = [...fornecedores];
   if (q) list = list.filter(f => (f.nome||'').toLowerCase().includes(q) || (f.desc||'').toLowerCase().includes(q) || (f.cat||'').toLowerCase().includes(q));
   if (cat) list = list.filter(f => f.cat === cat);
   if (sort === 'rating') list.sort((a,b) => calcMedia(b).media - calcMedia(a).media);
