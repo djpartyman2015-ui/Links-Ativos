@@ -150,18 +150,6 @@
   .stat-label { color: var(--muted); font-size: 13px; }
   .admin-list-item { background: var(--card); border-radius: 10px; padding: 14px 18px; box-shadow: var(--shadow); display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
 
-  /* SEARCHABLE SELECT */
-  .ss-wrap { position: relative; }
-  .ss-input { width: 100%; padding: 10px 36px 10px 14px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 14px; font-family: 'Inter', sans-serif; outline: none; cursor: text; background: #fff; }
-  .ss-input:focus { border-color: var(--petrol2); }
-  .ss-dropdown { position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: #fff; border: 1.5px solid var(--petrol2); border-radius: 8px; max-height: 220px; overflow-y: auto; z-index: 500; box-shadow: 0 8px 24px rgba(0,0,0,.12); display: none; }
-  .ss-dropdown.open { display: block; }
-  .ss-option { padding: 9px 14px; font-size: 13px; cursor: pointer; transition: background .1s; }
-  .ss-option:hover, .ss-option.highlighted { background: #EEF6FF; color: var(--petrol); }
-  .ss-option.selected { background: var(--petrol); color: #fff; }
-  .ss-group { padding: 6px 14px 3px; font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; background: var(--bg); }
-  .ss-empty { padding: 12px 14px; font-size: 13px; color: var(--muted); text-align: center; }
-
   /* EDIÇÃO */
   .btn-edit { background: rgba(255,255,255,.25); border: none; color: #fff; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-size: 13px; display: inline-flex; align-items: center; justify-content: center; transition: background .15s; position: absolute; top: 8px; left: 8px; }
   .btn-edit:hover { background: rgba(255,255,255,.45); }
@@ -265,12 +253,115 @@
       </div>
       <div class="form-group">
         <label>Categoria *</label>
-<div class="ss-wrap" id="ss-wrap-fcat">
-          <input type="text" class="ss-input" id="f-cat-input" placeholder="🔍 Digite ou selecione a categoria…" onclick="ssOpen('fcat')" oninput="ssFilter('fcat',this.value)" autocomplete="off"/>
-          <input type="hidden" id="f-cat" value=""/>
-          <div class="ss-dropdown" id="ss-dropdown-fcat">
-            <div class="ss-group">🔧 Manutenção & Reparos</div>
-            <div class="ss-option" data-value="Elétrica" onclick="ssPick('fcat',this)">Elétrica</div>
+<input class="form-control" id="f-cat" list="f-cat-list" placeholder="🔍 Digite ou selecione a categoria…" autocomplete="off"/>
+          <datalist id="f-cat-list">
+          <option value="Elétrica">
+          <option value="Hidráulica / Encanamento">
+          <option value="Pintura">
+          <option value="Gesso / Drywall">
+          <option value="Impermeabilização">
+          <option value="Telhado / Calhas">
+          <option value="Serralheria / Ferragem">
+          <option value="Vidraçaria / Esquadrias">
+          <option value="Piso / Azulejo / Revestimento">
+          <option value="Ar Condicionado / Climatização">
+          <option value="Elevadores">
+          <option value="Portões / Automatização">
+          <option value="Interfone / CFTV">
+          <option value="Reformas Gerais / Obras">
+          <option value="Jardinagem / Paisagismo">
+          <option value="Piscinas / Tratamento de Água">
+          <option value="Playground / Equipamentos">
+          <option value="Quadras / Esportes">
+          <option value="Churrasqueira / Área Gourmet">
+          <option value="Iluminação Externa">
+          <option value="Limpeza Geral / Faxina">
+          <option value="Limpeza de Fachada / Lavagem">
+          <option value="Dedetização / Controle de Pragas">
+          <option value="Desentupimento">
+          <option value="Limpeza de Caixa D’água">
+          <option value="Descarte / Coleta de Entulho">
+          <option value="Segurança / Vigilância">
+          <option value="Câmeras / Monitoramento">
+          <option value="Portaria Remota">
+          <option value="Alarmes / Cerca Elétrica">
+          <option value="Controle de Acesso / Biometria">
+          <option value="Móveis / Marcenaria">
+          <option value="Persianas / Cortinas">
+          <option value="Decoração / Design de Interiores">
+          <option value="Arquitetura / Projetos">
+          <option value="Armários / Closets Planejados">
+          <option value="Internet / Fibra Óptica">
+          <option value="Tecnologia / TI / Suporte">
+          <option value="Automação Residencial / Smart Home">
+          <option value="Antenas / TV a Cabo">
+          <option value="Mecânica Geral">
+          <option value="Elétrica Automotiva">
+          <option value="Funilaria / Lataria">
+          <option value="Pintura Automotiva">
+          <option value="Películas / Insulfilm">
+          <option value="Lavagem / Higienização">
+          <option value="Martelinho de Ouro">
+          <option value="Ar Condicionado Automotivo">
+          <option value="Som / Acessórios Automotivos">
+          <option value="Pneus / Alinhamento / Balanceamento">
+          <option value="Vidros Automotivos">
+          <option value="Motocicletas">
+          <option value="Bicicletas / Patinetes">
+          <option value="Despachante / Documentação">
+          <option value="Pet Care / Veterinário">
+          <option value="Banho & Tosa">
+          <option value="Adestramento">
+          <option value="Clínico Geral">
+          <option value="Pediatria">
+          <option value="Cardiologia">
+          <option value="Dermatologia">
+          <option value="Ginecologia / Obstetrícia">
+          <option value="Ortopedia">
+          <option value="Oftalmologia">
+          <option value="Otorrinolaringologia">
+          <option value="Neurologia">
+          <option value="Psiquiatria">
+          <option value="Urologia">
+          <option value="Endocrinologia">
+          <option value="Nutrição / Nutricionista">
+          <option value="Odontologia / Dentista">
+          <option value="Fisioterapia / Pilates">
+          <option value="Psicologia / Terapia">
+          <option value="Personal Trainer">
+          <option value="Enfermagem / Home Care">
+          <option value="Farmácia / Manipulação">
+          <option value="Laboratório / Exames">
+          <option value="Doula / Parto">
+          <option value="Saúde em Geral">
+          <option value="Mudanças / Fretes">
+          <option value="Entregas / Motoboy">
+          <option value="Montagem de Móveis">
+          <option value="Chaveiro">
+          <option value="Lavanderia">
+          <option value="Costura / Customização">
+          <option value="Contabilidade / Financeiro">
+          <option value="Advocacia / Jurídico">
+          <option value="Seguros">
+          <option value="Delivery / Restaurantes">
+          <option value="Buffet / Catering">
+          <option value="Confeitaria / Bolos">
+          <option value="Festas / Eventos">
+          <option value="DJ / Música ao Vivo">
+          <option value="Fotografia / Vídeo">
+          <option value="Aulas Particulares">
+          <option value="Idiomas">
+          <option value="Musicalização / Instrumentos">
+          <option value="Cuidador / Babá">
+          <option value="Cuidador de Idosos">
+          <option value="Moda / Vestuário">
+          <option value="Costureira / Alfaiate">
+          <option value="Brechó / Roupas Usadas">
+          <option value="Acessórios / Bijuterias">
+          <option value="Calçados">
+          <option value="Uniformes / Bordados">
+          <option value="Outros">
+          </datalist>
             <div class="ss-option" data-value="Hidráulica / Encanamento" onclick="ssPick('fcat',this)">Hidráulica / Encanamento</div>
             <div class="ss-option" data-value="Pintura" onclick="ssPick('fcat',this)">Pintura</div>
             <div class="ss-option" data-value="Gesso / Drywall" onclick="ssPick('fcat',this)">Gesso / Drywall</div>
@@ -1120,58 +1211,7 @@ function renderAdminView() {
     </div>`;
 }
 
-// ── SEARCHABLE SELECT ──────────────────────────────────
-function ssOpen(id) {
-  const dd = document.getElementById('ss-dropdown-'+id);
-  if (!dd) return;
-  const isOpen = dd.classList.contains('open');
-  document.querySelectorAll('.ss-dropdown.open').forEach(d => d.classList.remove('open'));
-  if (!isOpen) dd.classList.add('open');
-}
-function ssFilter(id, q) {
-  const dd = document.getElementById('ss-dropdown-'+id);
-  if (!dd) return;
-  dd.classList.add('open');
-  const term = q.toLowerCase().trim();
-  let hasVisible = false;
-  dd.querySelectorAll('.ss-option').forEach(opt => {
-    const match = !term || opt.dataset.value.toLowerCase().includes(term);
-    opt.style.display = match ? '' : 'none';
-    if (match) hasVisible = true;
-  });
-  dd.querySelectorAll('.ss-group').forEach(g => {
-    let next = g.nextElementSibling;
-    let show = false;
-    while (next && !next.classList.contains('ss-group')) {
-      if (next.classList.contains('ss-option') && next.style.display !== 'none') show = true;
-      next = next.nextElementSibling;
-    }
-    g.style.display = show ? '' : 'none';
-  });
-  const empty = document.getElementById('ss-empty-'+id);
-  if (empty) empty.style.display = hasVisible ? 'none' : '';
-}
-function ssPick(id, el) {
-  const val = el.dataset.value;
-  // Atualizar hidden input
-  const hiddenId = id === 'fcat' ? 'f-cat' : 'f-cat';
-  const hidden = document.getElementById(hiddenId);
-  if (hidden) hidden.value = val;
-  // Atualizar texto do input visível
-  const wrap = document.getElementById('ss-wrap-'+id);
-  const input = wrap ? wrap.querySelector('.ss-input') : null;
-  if (input) input.value = val;
-  // Marcar selected
-  document.querySelectorAll('#ss-dropdown-'+id+' .ss-option').forEach(o => o.classList.toggle('selected', o.dataset.value === val));
-  // Fechar
-  document.getElementById('ss-dropdown-'+id)?.classList.remove('open');
-}
-// Fechar ao clicar fora
-document.addEventListener('click', e => {
-  if (!e.target.closest('.ss-wrap')) {
-    document.querySelectorAll('.ss-dropdown.open').forEach(d => d.classList.remove('open'));
-  }
-});
+// Categoria usa datalist nativo HTML
 
 // ── IMPORTAÇÃO IA ──────────────────────────────────────
 let importRating = 5;
