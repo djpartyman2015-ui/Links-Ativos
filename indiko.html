@@ -577,23 +577,17 @@ const CATEGORIAS = [
   "Chaveiro",
   "Churrasqueira / Área Gourmet",
   "Clínico Geral",
-  "color:var(--amber)",
-  "color:var(--petrol)",
-  "color:var(--petrol2)",
   "Confeitaria / Bolos",
-  "Contabilidade / Financeiro",
   "Controle de Acesso / Biometria",
   "Costura / Customização",
   "Costureira / Alfaiate",
   "Cuidador / Babá",
   "Cuidador de Idosos",
   "Câmeras / Monitoramento",
-  "data",
   "Decoração / Design de Interiores",
   "Dedetização / Controle de Pragas",
   "Delivery / Restaurantes",
   "Dermatologia",
-  "desc",
   "Descarte / Coleta de Entulho",
   "Desentupimento",
   "Despachante / Documentação",
@@ -626,7 +620,6 @@ const CATEGORIAS = [
   "Limpeza de Caixa D’água",
   "Limpeza de Fachada / Lavagem",
   "Limpeza Geral / Faxina",
-  "margin-bottom:20px",
   "Martelinho de Ouro",
   "Mecânica Geral",
   "Moda / Vestuário",
@@ -658,22 +651,11 @@ const CATEGORIAS = [
   "Psicologia / Terapia",
   "Psiquiatria",
   "Quadras / Esportes",
-  "Reformas Gerais / Obras",
   "Saúde em Geral",
   "Segurança / Vigilância",
   "Seguros",
   "Serralheria / Ferragem",
   "Som / Acessórios Automotivos",
-  "stat-card",
-  "stat-card",
-  "stat-card",
-  "stat-cards",
-  "stat-label",
-  "stat-label",
-  "stat-label",
-  "stat-num",
-  "stat-num",
-  "stat-num",
   "Tecnologia / TI / Suporte",
   "Telhado / Calhas",
   "Uniformes / Bordados",
@@ -681,6 +663,13 @@ const CATEGORIAS = [
   "Vidraçaria / Esquadrias",
   "Vidros Automotivos"
 ]
+
+// ── RENDER CARDS ──
+window.renderCards = function() {
+  const q = document.getElementById('search-input').value.toLowerCase();
+  const cat = document.getElementById('cat-filter').value;
+  const sort = document.getElementById('sort-filter').value;
+  let list = [...fornecedores];
   if (q) list = list.filter(f => (f.nome||'').toLowerCase().includes(q) || (f.desc||'').toLowerCase().includes(q) || (f.cat||'').toLowerCase().includes(q));
   if (cat) list = list.filter(f => f.cat === cat);
   if (sort === 'rating') list.sort((a,b) => calcMedia(b).media - calcMedia(a).media);
