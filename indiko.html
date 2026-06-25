@@ -455,6 +455,16 @@
   Indiko – Vila Ytú &nbsp;·&nbsp; <a onclick="switchToAdmin()">🔐 Acesso Admin</a>
 </footer>
 
+<!-- BRIDGE: expõe funções globais antes do módulo carregar -->
+<script>
+function openModal() { if(window._openModal) window._openModal(); else setTimeout(openModal, 100); }
+function closeModal() { if(window._closeModal) window._closeModal(); else setTimeout(closeModal, 100); }
+function showTab(a,b) { if(window._showTab) window._showTab(a,b); else setTimeout(()=>showTab(a,b), 100); }
+function switchToAdmin() { if(window._switchToAdmin) window._switchToAdmin(); else setTimeout(switchToAdmin, 100); }
+function checkAdminPw() { if(window._checkAdminPw) window._checkAdminPw(); else setTimeout(checkAdminPw, 100); }
+function exitAdmin() { if(window._exitAdmin) window._exitAdmin(); else setTimeout(exitAdmin, 100); }
+</script>
+
 <!-- FIREBASE -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
@@ -617,7 +627,7 @@ onSnapshot(q, (snapshot) => {
 });
 
 // ── TABS ──
-window.showTab = function(name, el) {
+window._showTab = function(name, el) {
   if (name === 'admin' && !isAdmin) { switchToAdmin(); return; }
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   if (el) el.classList.add('active');
@@ -781,7 +791,7 @@ function buildCatDropdown() {
 }
 
 // ── MODAL ──
-window.openModal = function() {
+window._openModal = function() {
   selectedRating = 0; selectedPrice = '';
   ['f-nome','f-contato','f-desc','f-autor'].forEach(id => document.getElementById(id).value='');
   document.getElementById('f-cat').value='';
@@ -789,7 +799,7 @@ window.openModal = function() {
   document.querySelectorAll('.price-opt').forEach(p=>p.classList.remove('selected'));
   document.getElementById('modal').classList.add('show');
 }
-window.closeModal = function() { document.getElementById('modal').classList.remove('show'); }
+window._closeModal = function() { document.getElementById('modal').classList.remove('show'); }
 
 document.getElementById('star-picker').addEventListener('click', e => {
   if (!e.target.classList.contains('star-pick')) return;
@@ -865,12 +875,12 @@ window.deleteComment = async function(fid, idx) {
 }
 
 // ── ADMIN ──
-window.switchToAdmin = function() {
+window._switchToAdmin = function() {
   if (isAdmin) { showTab('admin', document.getElementById('tab-btn-admin')); return; }
   document.getElementById('modal-admin-login').classList.add('show');
   setTimeout(() => document.getElementById('admin-pw').focus(), 100);
 }
-window.checkAdminPw = function() {
+window._checkAdminPw = function() {
   if (document.getElementById('admin-pw').value === ADMIN_PW) {
     isAdmin = true;
     document.getElementById('modal-admin-login').classList.remove('show');
@@ -884,7 +894,7 @@ window.checkAdminPw = function() {
     document.getElementById('tab-btn-admin').classList.add('active');
   } else { toast('Senha incorreta', true); }
 }
-window.exitAdmin = function() {
+window._exitAdmin = function() {
   isAdmin = false;
   document.getElementById('admin-bar').classList.remove('show');
   document.getElementById('tab-btn-admin').style.display = 'none';
