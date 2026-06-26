@@ -700,9 +700,18 @@ async function apagarPalpite(id, nome) {
   if (!confirm(`Apagar palpite de "${nome}"?`)) return;
   try {
     await fbDelete(`palpites/${id}`);
+    palpitesCached = [];  // limpa cache para forçar reload
     showToast(`🗑️ Palpite de ${nome} apagado!`);
     carregarAdmin();
     checkEstado();
+    // recalcula ao vivo se tiver placar preenchido
+    const pb = document.getElementById('parcial-brasil').value;
+    const pj = document.getElementById('parcial-japao').value;
+    if (pb !== '' && pj !== '') {
+      const data = await fbGet('palpites');
+      palpitesCached = data ? Object.entries(data).map(([k,v])=>({id:k,...v})).sort((a,b)=>(a.ts||0)-(b.ts||0)) : [];
+      calcularAoVivo();
+    }
   } catch(e) { alert('Erro ao apagar.'); }
 }
 
