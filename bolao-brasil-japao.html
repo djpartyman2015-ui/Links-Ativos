@@ -185,6 +185,22 @@ body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); 
 
 @media(min-width:480px) { .team-flag{font-size:88px;} .nome-bolao{font-size:40px;} }
 
+/* ── PAGAMENTOS ── */
+.pag-card { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:14px 16px; display:flex; align-items:center; gap:12px; margin-bottom:8px; transition:border-color .2s; }
+.pag-card.pago { border-color:rgba(0,156,59,.4); background:rgba(0,156,59,.05); }
+.pag-card.pendente { border-color:rgba(255,183,0,.3); background:rgba(255,183,0,.03); }
+.pag-info { flex:1; min-width:0; }
+.pag-nome { font-size:14px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.pag-pix  { font-size:11px; color:var(--muted); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.pag-placar { font-size:12px; color:var(--amarelo); margin-top:2px; }
+.toggle-btn { flex-shrink:0; border:none; border-radius:22px; padding:8px 14px; font-size:12px; font-weight:700; cursor:pointer; font-family:'Inter',sans-serif; transition:all .2s; white-space:nowrap; }
+.toggle-btn.pago    { background:rgba(0,156,59,.2); color:#4ade80; border:1px solid rgba(0,156,59,.4); }
+.toggle-btn.pendente{ background:rgba(255,183,0,.12); color:#fbbf24; border:1px solid rgba(255,183,0,.3); }
+.pag-summary { background:var(--card2); border:1px solid var(--border); border-radius:12px; padding:14px 16px; margin-bottom:16px; display:flex; gap:16px; flex-wrap:wrap; }
+.pag-sum-item { flex:1; text-align:center; min-width:80px; }
+.pag-sum-val { font-family:'Bebas Neue',sans-serif; font-size:24px; }
+.pag-sum-lbl { font-size:10px; color:var(--muted); margin-top:2px; }
+
 /* ── STATS ── */
 .stats-grid2 { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-bottom:16px; }
 .stats-grid4 { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:20px; }
@@ -457,11 +473,30 @@ body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); 
         <button class="btn btn-stop" id="btn-stop" onclick="toggleApostas()">🔒 Encerrar Apostas</button>
       </div>
 
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-        <div class="section-title" style="margin:0">🗑️ Gerenciar Palpites</div>
-        <button class="btn btn-ghost btn-sm" onclick="carregarAdmin()">↻ Atualizar</button>
+      <!-- TABS ADMIN -->
+      <div style="display:flex;gap:8px;margin-bottom:16px;">
+        <button id="admin-tab-pag" class="btn btn-salvar btn-sm" style="flex:1;margin:0" onclick="showAdminTab('pagamentos')">💸 Pagamentos</button>
+        <button id="admin-tab-del" class="btn btn-ghost btn-sm" style="flex:1;margin:0" onclick="showAdminTab('deletar')">🗑️ Gerenciar</button>
       </div>
-      <div id="lista-admin">
+
+      <!-- PAGAMENTOS -->
+      <div id="admin-sec-pagamentos">
+        <div class="pag-summary" id="pag-summary">
+          <div class="pag-sum-item"><div class="pag-sum-val sc-green" id="pag-count-pago">0</div><div class="pag-sum-lbl">✅ Pagos</div></div>
+          <div class="pag-sum-item"><div class="pag-sum-val" style="color:#fbbf24" id="pag-count-pend">0</div><div class="pag-sum-lbl">⏳ Pendentes</div></div>
+          <div class="pag-sum-item"><div class="pag-sum-val" style="color:var(--amarelo)" id="pag-total-rec">R$ 0</div><div class="pag-sum-lbl">💰 Recebido</div></div>
+          <div class="pag-sum-item"><div class="pag-sum-val" style="color:var(--muted)" id="pag-total-pend">R$ 0</div><div class="pag-sum-lbl">⌛ A receber</div></div>
+        </div>
+        <div id="lista-pagamentos"><div class="empty-state"><span class="emoji">⏳</span><p>Carregando...</p></div></div>
+      </div>
+
+      <!-- GERENCIAR/DELETAR -->
+      <div id="admin-sec-deletar" style="display:none">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+          <div class="section-title" style="margin:0">🗑️ Gerenciar Palpites</div>
+          <button class="btn btn-ghost btn-sm" onclick="carregarAdmin()">↻ Atualizar</button>
+        </div>
+        <div id="lista-admin">
         <div class="empty-state"><span class="emoji">⏳</span><p>Carregando...</p></div>
       </div>
     </div>
@@ -744,7 +779,7 @@ function verificarSenhaAdmin() {
     document.getElementById('admin-lock-box').style.display='none';
     document.getElementById('admin-panel').style.display='block';
     atualizarUIEstado();
-    carregarAdmin();
+    showAdminTab('pagamentos');
   } else {
     showStatus('status-admin-login','❌ Senha incorreta!','err');
   }
@@ -783,13 +818,95 @@ async function carregarAdmin() {
   }
 }
 
+// ── ADMIN TABS ──
+function showAdminTab(tab) {
+  document.getElementById('admin-sec-pagamentos').style.display = tab==='pagamentos' ? 'block' : 'none';
+  document.getElementById('admin-sec-deletar').style.display    = tab==='deletar'    ? 'block' : 'none';
+  document.getElementById('admin-tab-pag').className = tab==='pagamentos'
+    ? 'btn btn-salvar btn-sm' : 'btn btn-ghost btn-sm';
+  document.getElementById('admin-tab-del').className = tab==='deletar'
+    ? 'btn btn-salvar btn-sm' : 'btn btn-ghost btn-sm';
+  document.getElementById('admin-tab-pag').style = 'flex:1;margin:0';
+  document.getElementById('admin-tab-del').style = 'flex:1;margin:0';
+  if (tab==='pagamentos') carregarPagamentos();
+  if (tab==='deletar')    carregarAdmin();
+}
+
+// ── PAGAMENTOS ──
+async function carregarPagamentos() {
+  const lista = document.getElementById('lista-pagamentos');
+  lista.innerHTML = '<div class="empty-state"><span class="emoji">⏳</span><p>Carregando...</p></div>';
+  try {
+    const [palpData, pagData] = await Promise.all([fbGet('palpites'), fbGet('pagamentos')]);
+    if (!palpData) {
+      lista.innerHTML = '<div class="empty-state"><span class="emoji">👥</span><p>Nenhum palpite ainda.</p></div>';
+      atualizarSummary(0,0); return;
+    }
+    const pagamentos = pagData || {};
+    const items = Object.entries(palpData).map(([k,v])=>({id:k,...v})).sort((a,b)=>(a.ts||0)-(b.ts||0));
+
+    let pagos = 0, pendentes = 0;
+    let html = '';
+    items.forEach((p,i) => {
+      const isPago = pagamentos[p.id] === true;
+      if (isPago) pagos++; else pendentes++;
+      html += `<div class="pag-card ${isPago?'pago':'pendente'}" id="pag-card-${p.id}">
+        <div class="pag-info">
+          <div class="pag-nome">${escHtml(p.nome)}</div>
+          <div class="pag-pix">💳 ${escHtml(p.pix||'—')}</div>
+          <div class="pag-placar">🇧🇷 ${p.brasil} × ${p.japao} 🇯🇵</div>
+        </div>
+        <button class="toggle-btn ${isPago?'pago':'pendente'}" id="pag-btn-${p.id}"
+          onclick="togglePagamento('${p.id}', ${isPago})">
+          ${isPago ? '✅ Pago' : '⏳ Pendente'}
+        </button>
+      </div>`;
+    });
+
+    lista.innerHTML = html;
+    atualizarSummary(pagos, pendentes);
+  } catch(e) {
+    lista.innerHTML = '<div class="empty-state"><span class="emoji">❌</span><p>Erro ao carregar.</p></div>';
+    console.error(e);
+  }
+}
+
+function atualizarSummary(pagos, pendentes) {
+  document.getElementById('pag-count-pago').textContent = pagos;
+  document.getElementById('pag-count-pend').textContent = pendentes;
+  document.getElementById('pag-total-rec').textContent  = `R$ ${pagos * 10}`;
+  document.getElementById('pag-total-pend').textContent = `R$ ${pendentes * 10}`;
+}
+
+async function togglePagamento(id, isPago) {
+  const novoPago = !isPago;
+  try {
+    await fbSet(`pagamentos/${id}`, novoPago);
+    // Update UI
+    const card = document.getElementById(`pag-card-${id}`);
+    const btn  = document.getElementById(`pag-btn-${id}`);
+    card.className = `pag-card ${novoPago?'pago':'pendente'}`;
+    btn.className  = `toggle-btn ${novoPago?'pago':'pendente'}`;
+    btn.textContent = novoPago ? '✅ Pago' : '⏳ Pendente';
+    btn.onclick = () => togglePagamento(id, novoPago);
+    // Recount
+    const allCards = document.querySelectorAll('.pag-card');
+    let pagos=0, pend=0;
+    allCards.forEach(c => { if(c.classList.contains('pago')) pagos++; else pend++; });
+    atualizarSummary(pagos, pend);
+    showToast(novoPago ? '✅ Marcado como pago!' : '⏳ Marcado como pendente!', novoPago ? '#009C3B' : '#92400e');
+  } catch(e) { alert('Erro ao atualizar pagamento.'); }
+}
+
 async function apagarPalpite(id, nome) {
   if (!confirm(`Apagar palpite de "${nome}"?`)) return;
   try {
     await fbDelete(`palpites/${id}`);
     palpitesCached = [];  // limpa cache para forçar reload
+    await fbDelete(`pagamentos/${id}`); // remove pagamento junto
     showToast(`🗑️ Palpite de ${nome} apagado!`);
     carregarAdmin();
+    carregarPagamentos();
     checkEstado();
     // recalcula ao vivo se tiver placar preenchido
     const pb = document.getElementById('parcial-brasil').value;
