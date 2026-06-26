@@ -184,6 +184,31 @@ body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); 
 @keyframes spin { to{transform:rotate(360deg)} }
 
 @media(min-width:480px) { .team-flag{font-size:88px;} .nome-bolao{font-size:40px;} }
+
+/* ── STATS ── */
+.stats-grid2 { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-bottom:16px; }
+.stats-grid4 { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:20px; }
+.stat-tile { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:14px 12px; text-align:center; }
+.stat-tile .val { font-family:'Bebas Neue',sans-serif; font-size:30px; line-height:1; margin-bottom:4px; }
+.stat-tile .lbl { font-size:10px; color:var(--muted); line-height:1.3; }
+.bar-row { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+.bar-score { font-size:13px; font-weight:600; width:52px; flex-shrink:0; }
+.bar-track { flex:1; background:var(--card2); border-radius:4px; height:10px; overflow:hidden; }
+.bar-fill-br { height:100%; background:#009C3B; border-radius:4px; transition:width .4s; }
+.bar-fill-jp { height:100%; background:#BC002D; border-radius:4px; transition:width .4s; }
+.bar-fill-em { height:100%; background:#FFDF00; border-radius:4px; transition:width .4s; }
+.bar-fill-pl { height:100%; background:#378ADD; border-radius:4px; transition:width .4s; }
+.bar-cnt { font-size:12px; color:var(--muted); width:24px; text-align:right; flex-shrink:0; }
+.stats-card { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:16px; margin-bottom:14px; }
+.stats-card h4 { font-family:'Bebas Neue',sans-serif; font-size:15px; letter-spacing:2px; color:var(--amarelo); margin-bottom:14px; }
+.donut-wrap { display:flex; align-items:center; gap:20px; }
+.donut-legend { display:flex; flex-direction:column; gap:8px; flex:1; }
+.legend-item { display:flex; align-items:center; gap:8px; font-size:13px; }
+.legend-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+.goals-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.goals-stat { text-align:center; }
+.goals-stat .gval { font-family:'Bebas Neue',sans-serif; font-size:26px; color:var(--text); }
+.goals-stat .glbl { font-size:11px; color:var(--muted); }
 @media(max-width:400px) { .tab{font-size:9px;padding:10px 2px;} }
 </style>
 </head>
@@ -234,9 +259,10 @@ body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); 
   <div class="tabs">
     <button class="tab active" onclick="showTab('enviar')">✏️ Palpite</button>
     <button class="tab" onclick="showTab('consolidado')">📋 Todos</button>
+    <button class="tab" onclick="showTab('stats')">📊 Stats</button>
     <button class="tab" onclick="showTab('aovivo')">🔴 Ao Vivo</button>
     <button class="tab" onclick="showTab('regras')">📜 Regras</button>
-    <button class="tab" onclick="showTab('resultado')">🏆 Result.</button>
+    <button class="tab" onclick="showTab('resultado')">🏆</button>
     <button class="tab" onclick="showTab('admin')">🔐</button>
   </div>
 
@@ -245,7 +271,12 @@ body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); 
     <div class="form-card">
       <div class="form-header"><h3>✏️ Digite seu palpite</h3></div>
       <div class="form-body">
-        <input class="inp" id="inp-nome" placeholder="Seu nome" maxlength="40">
+        <input class="inp" id="inp-nome" placeholder="Nome" maxlength="40">
+        <input class="inp" id="inp-sobrenome" placeholder="Sobrenome" maxlength="40">
+        <div style="position:relative">
+          <input class="inp" id="inp-pix" placeholder="Seu PIX (CPF, e-mail, telefone ou chave)" maxlength="80">
+          <div style="font-size:11px;color:var(--muted);margin-top:4px;padding-left:2px;">💳 Necessário para receber o prêmio caso ganhe</div>
+        </div>
         <div class="score-section">
           <label>Placar que você espera</label>
           <div class="score-inputs">
@@ -322,14 +353,54 @@ body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); 
     </div>
   </div>
 
+  <!-- ABA: STATS -->
+  <div id="tab-stats" style="display:none">
+    <div id="stats-loading" class="empty-state"><span class="emoji">⏳</span><p>Calculando estatísticas...</p></div>
+    <div id="stats-content" style="display:none">
+
+      <!-- TILES TOPO -->
+      <div class="stats-grid4" id="stats-tiles"></div>
+
+      <!-- RESULTADO ESPERADO -->
+      <div class="stats-card">
+        <h4>📊 Resultado Esperado</h4>
+        <div class="donut-wrap">
+          <canvas id="donut-canvas" width="100" height="100"></canvas>
+          <div class="donut-legend" id="donut-legend"></div>
+        </div>
+      </div>
+
+      <!-- PLACARES MAIS APOSTADOS -->
+      <div class="stats-card">
+        <h4>⚽ Placares Mais Apostados</h4>
+        <div id="stats-placares"></div>
+      </div>
+
+      <!-- GOLS -->
+      <div class="stats-card">
+        <h4>🎯 Distribuição de Gols</h4>
+        <div class="goals-grid" id="stats-gols"></div>
+      </div>
+
+    </div>
+  </div>
+
   <!-- ABA: REGRAS -->
   <div id="tab-regras" style="display:none">
     <div class="regras-intro">
       <p>Bem-vindos ao bolão da família! 🎉<br>Leia as regras antes de apostar.</p>
       <span class="boa-sorte">Boa Sorte a Todos! 🎉</span>
     </div>
-    <div class="regra-item"><div class="regra-num">1</div><div class="regra-texto"><strong>R$ 10 por pessoa</strong> — cada participante paga dez reais para entrar no bolão.</div></div>
-    <div class="regra-item"><div class="regra-num">2</div><div class="regra-texto"><strong>Pagamento após o jogo</strong> — só paga depois que acabar a partida na segunda, <strong>29/06 às 14h</strong>.</div></div>
+    <div class="regra-item"><div class="regra-num">1</div><div class="regra-texto"><strong>R$ 10 por pessoa</strong> — pague assim que enviar seu palpite via PIX para o Andrey, que fará a distribuição aos ganhadores.</div></div>
+    <div class="regra-item" style="background:rgba(255,223,0,.06);border-color:rgba(255,223,0,.2)">
+      <div class="regra-num">💳</div>
+      <div class="regra-texto">
+        <strong style="display:block;margin-bottom:6px">PIX do Andrey:</strong>
+        <div style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:14px;font-family:monospace;letter-spacing:1px;color:var(--amarelo);cursor:pointer;" onclick="copiarPix()" id="pix-andrey">22503715800</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:6px">👆 Toque para copiar</div>
+      </div>
+    </div>
+    <div class="regra-item"><div class="regra-num">2</div><div class="regra-texto"><strong>Pagamento imediato</strong> — pague R$ 10 via PIX assim que confirmar seu palpite. Palpite sem pagamento não é válido!</div></div>
     <div class="regra-item"><div class="regra-num">3</div><div class="regra-texto"><strong>Se ninguém acertar, ninguém paga.</strong> Se o acerto for repetido, o prêmio é <strong>dividido igualmente</strong>.</div></div>
     <div class="regra-item"><div class="regra-num">4</div><div class="regra-texto"><strong>Palpite é definitivo!</strong> Após salvar, não é possível alterar ou cancelar sua aposta.</div></div>
     <div class="regra-item"><div class="regra-num">5</div><div class="regra-texto"><strong>Encerramento antes do jogo</strong> — as apostas são encerradas antes da bola rolar. Fora do prazo não vale!</div></div>
@@ -509,16 +580,23 @@ async function toggleApostas() {
 // ── SALVAR PALPITE ──
 async function salvarPalpite() {
   if (!apostasAbertas) { showStatus('status-enviar','🔒 Apostas encerradas!','err'); return; }
-  const nome   = document.getElementById('inp-nome').value.trim();
-  const brasil = document.getElementById('inp-brasil').value;
-  const japao  = document.getElementById('inp-japao').value;
-  if (!nome) { showStatus('status-enviar','⚠️ Digite seu nome!','err'); return; }
+  const nome      = document.getElementById('inp-nome').value.trim();
+  const sobrenome = document.getElementById('inp-sobrenome').value.trim();
+  const pix       = document.getElementById('inp-pix').value.trim();
+  const brasil    = document.getElementById('inp-brasil').value;
+  const japao     = document.getElementById('inp-japao').value;
+  if (!nome)      { showStatus('status-enviar','⚠️ Digite seu nome!','err'); return; }
+  if (!sobrenome) { showStatus('status-enviar','⚠️ Digite seu sobrenome!','err'); return; }
+  if (!pix)       { showStatus('status-enviar','⚠️ Digite sua chave PIX!','err'); return; }
   if (brasil===''||japao==='') { showStatus('status-enviar','⚠️ Preencha o placar!','err'); return; }
   showStatus('status-enviar','<span class="spinner"></span> Salvando...','loading');
   try {
-    await fbPush('palpites', { nome, brasil:parseInt(brasil), japao:parseInt(japao), ts:Date.now() });
-    showStatus('status-enviar', `✅ Palpite de <strong>${escHtml(nome)}</strong> salvo! ${brasil} × ${japao}`, 'ok');
+    const nomeCompleto = nome + ' ' + sobrenome;
+    await fbPush('palpites', { nome: nomeCompleto, pix, brasil:parseInt(brasil), japao:parseInt(japao), ts:Date.now() });
+    showStatus('status-enviar', `✅ Palpite de <strong>${escHtml(nomeCompleto)}</strong> salvo! ${brasil} × ${japao}<br><span style="font-size:12px;color:rgba(255,255,255,.6)">Lembre-se de pagar R$ 10 via PIX para Andrey! 💸</span>`, 'ok');
     document.getElementById('inp-nome').value='';
+    document.getElementById('inp-sobrenome').value='';
+    document.getElementById('inp-pix').value='';
     document.getElementById('inp-brasil').value='';
     document.getElementById('inp-japao').value='';
     showToast('✅ Palpite salvo!');
@@ -647,13 +725,14 @@ async function calcularRanking() {
 
 // ── TABS ──
 function showTab(tab) {
-  ['enviar','consolidado','aovivo','regras','resultado','admin'].forEach(t => {
+  ['enviar','consolidado','stats','aovivo','regras','resultado','admin'].forEach(t => {
     document.getElementById(`tab-${t}`).style.display = t===tab?'block':'none';
   });
   document.querySelectorAll('.tab').forEach((el,i) => {
-    el.classList.toggle('active', ['enviar','consolidado','aovivo','regras','resultado','admin'][i]===tab);
+    el.classList.toggle('active', ['enviar','consolidado','stats','aovivo','regras','resultado','admin'][i]===tab);
   });
   if (tab==='consolidado') carregarPalpites();
+  if (tab==='stats') carregarStats();
   if (tab==='aovivo') { if (!palpitesCached.length) carregarPalpites(); calcularAoVivo(); }
 }
 
@@ -735,6 +814,130 @@ setInterval(() => {
     }
   }
 }, 15000);
+
+// ── STATS ──
+async function carregarStats() {
+  document.getElementById('stats-loading').style.display = 'block';
+  document.getElementById('stats-content').style.display = 'none';
+  try {
+    const data = await fbGet('palpites');
+    if (!data) {
+      document.getElementById('stats-loading').innerHTML = '<span class="emoji">👥</span><p>Nenhum palpite ainda.</p>';
+      return;
+    }
+    const items = Object.values(data);
+    const total = items.length;
+    const premio = total * 10;
+
+    // Resultado esperado
+    let brVence=0, jpVence=0, empate=0;
+    let somaB=0, somaJ=0;
+    const placarMap = {};
+
+    items.forEach(p => {
+      const b = parseInt(p.brasil), j = parseInt(p.japao);
+      somaB += b; somaJ += j;
+      if (b > j) brVence++;
+      else if (j > b) jpVence++;
+      else empate++;
+      const key = `${b}×${j}`;
+      placarMap[key] = (placarMap[key]||0) + 1;
+    });
+
+    const mediaB = (somaB/total).toFixed(1);
+    const mediaJ = (somaJ/total).toFixed(1);
+    const maxB = Math.max(...items.map(p=>parseInt(p.brasil)));
+    const maxJ = Math.max(...items.map(p=>parseInt(p.japao)));
+    const minB = Math.min(...items.map(p=>parseInt(p.brasil)));
+    const minJ = Math.min(...items.map(p=>parseInt(p.japao)));
+
+    // Tiles
+    document.getElementById('stats-tiles').innerHTML = `
+      <div class="stat-tile"><div class="val" style="color:var(--amarelo)">${total}</div><div class="lbl">Palpiteiros</div></div>
+      <div class="stat-tile"><div class="val" style="color:var(--amarelo)">R$${premio}</div><div class="lbl">Prêmio</div></div>
+      <div class="stat-tile"><div class="val" style="color:#4ade80">${mediaB}</div><div class="lbl">Média gols Brasil</div></div>
+      <div class="stat-tile"><div class="val" style="color:#f87171">${mediaJ}</div><div class="lbl">Média gols Japão</div></div>
+    `;
+
+    // Donut
+    const canvas = document.getElementById('donut-canvas');
+    const ctx2 = canvas.getContext('2d');
+    const slices = [
+      {val:brVence, cor:'#009C3B', label:'Brasil vence'},
+      {val:jpVence, cor:'#BC002D', label:'Japão vence'},
+      {val:empate,  cor:'#FFDF00', label:'Empate'},
+    ].filter(s=>s.val>0);
+    const cx=50,cy=50,r=42,inner=24;
+    let angle=-Math.PI/2;
+    ctx2.clearRect(0,0,100,100);
+    slices.forEach(s=>{
+      const sweep = (s.val/total)*(Math.PI*2);
+      ctx2.beginPath();
+      ctx2.moveTo(cx,cy);
+      ctx2.arc(cx,cy,r,angle,angle+sweep);
+      ctx2.closePath();
+      ctx2.fillStyle=s.cor;
+      ctx2.fill();
+      angle+=sweep;
+    });
+    // buraco
+    ctx2.beginPath();
+    ctx2.arc(cx,cy,inner,0,Math.PI*2);
+    ctx2.fillStyle='#0f1826';
+    ctx2.fill();
+    // total no centro
+    ctx2.fillStyle='#e8ecf4';
+    ctx2.font='bold 14px Inter';
+    ctx2.textAlign='center';
+    ctx2.textBaseline='middle';
+    ctx2.fillText(total,cx,cy);
+
+    document.getElementById('donut-legend').innerHTML = slices.map(s=>`
+      <div class="legend-item">
+        <div class="legend-dot" style="background:${s.cor}"></div>
+        <span>${s.label}: <strong>${s.val}</strong> (${Math.round(s.val/total*100)}%)</span>
+      </div>`).join('') + (empate===0?`<div class="legend-item"><div class="legend-dot" style="background:#FFDF00"></div><span>Empate: <strong>0</strong></span></div>`:'');
+
+    // Placares
+    const sorted = Object.entries(placarMap).sort((a,b)=>b[1]-a[1]);
+    const maxVotos = sorted[0][1];
+    document.getElementById('stats-placares').innerHTML = sorted.map(([k,v])=>`
+      <div class="bar-row">
+        <div class="bar-score">${k}</div>
+        <div class="bar-track"><div class="bar-fill-pl" style="width:${Math.round(v/maxVotos*100)}%"></div></div>
+        <div class="bar-cnt">${v}×</div>
+      </div>`).join('');
+
+    // Gols
+    document.getElementById('stats-gols').innerHTML = `
+      <div class="goals-stat"><div class="glbl">🇧🇷 Mín</div><div class="gval">${minB}</div></div>
+      <div class="goals-stat"><div class="glbl">🇯🇵 Mín</div><div class="gval">${minJ}</div></div>
+      <div class="goals-stat"><div class="glbl">🇧🇷 Média</div><div class="gval" style="color:#4ade80">${mediaB}</div></div>
+      <div class="goals-stat"><div class="glbl">🇯🇵 Média</div><div class="gval" style="color:#f87171">${mediaJ}</div></div>
+      <div class="goals-stat"><div class="glbl">🇧🇷 Máx</div><div class="gval">${maxB}</div></div>
+      <div class="goals-stat"><div class="glbl">🇯🇵 Máx</div><div class="gval">${maxJ}</div></div>
+    `;
+
+    document.getElementById('stats-loading').style.display = 'none';
+    document.getElementById('stats-content').style.display = 'block';
+  } catch(e) {
+    document.getElementById('stats-loading').innerHTML = '<span class="emoji">❌</span><p>Erro ao carregar.</p>';
+    console.error(e);
+  }
+}
+
+// ── PIX ──
+function copiarPix() {
+  const pix = document.getElementById('pix-andrey').textContent;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(pix).then(() => showToast('💳 PIX copiado!'));
+  } else {
+    const ta = document.createElement('textarea');
+    ta.value = pix; document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta);
+    showToast('💳 PIX copiado!');
+  }
+}
 
 // ── SOM ──
 let somAtivo = true;
