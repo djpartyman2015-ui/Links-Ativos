@@ -224,6 +224,12 @@ body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); 
     <span>O jogo já começou — não é mais possível enviar palpites.</span>
   </div>
 
+  <!-- SOM TOGGLE -->
+  <div id="som-bar" style="display:flex;align-items:center;justify-content:space-between;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:10px 16px;margin-bottom:12px;">
+    <span style="font-size:13px;color:var(--muted);">🔔 Alerta sonoro de novos palpites</span>
+    <button id="btn-som" onclick="toggleSom()" style="background:var(--verde);color:#fff;border:none;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;">ON</button>
+  </div>
+
   <!-- TABS -->
   <div class="tabs">
     <button class="tab active" onclick="showTab('enviar')">✏️ Palpite</button>
@@ -729,6 +735,59 @@ setInterval(() => {
     }
   }
 }, 15000);
+
+// ── SOM ──
+let somAtivo = true;
+let ultimoCount = -1;
+
+function toggleSom() {
+  somAtivo = !somAtivo;
+  const btn = document.getElementById('btn-som');
+  btn.textContent = somAtivo ? 'ON' : 'OFF';
+  btn.style.background = somAtivo ? '#009C3B' : '#6b7f96';
+  showToast(somAtivo ? '🔔 Som ativado!' : '🔕 Som desativado!');
+}
+
+function tocarSom() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    // Nota 1
+    const osc1 = ctx.createOscillator();
+    const gain1 = ctx.createGain();
+    osc1.connect(gain1); gain1.connect(ctx.destination);
+    osc1.frequency.setValueAtTime(880, ctx.currentTime);
+    gain1.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain1.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+    osc1.start(ctx.currentTime); osc1.stop(ctx.currentTime + 0.3);
+    // Nota 2
+    const osc2 = ctx.createOscillator();
+    const gain2 = ctx.createGain();
+    osc2.connect(gain2); gain2.connect(ctx.destination);
+    osc2.frequency.setValueAtTime(1100, ctx.currentTime + 0.15);
+    gain2.gain.setValueAtTime(0.3, ctx.currentTime + 0.15);
+    gain2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+    osc2.start(ctx.currentTime + 0.15); osc2.stop(ctx.currentTime + 0.5);
+  } catch(e) { console.log('som:', e); }
+}
+
+async function monitorarPalpites() {
+  try {
+    const data = await fbGet('palpites');
+    const count = data ? Object.keys(data).length : 0;
+    if (ultimoCount === -1) {
+      ultimoCount = count; // primeira vez, só registra
+    } else if (count > ultimoCount) {
+      if (somAtivo) tocarSom();
+      const diff = count - ultimoCount;
+      showToast(`🎉 ${diff} novo${diff>1?'s':''} palpite${diff>1?'s':''}!`);
+      ultimoCount = count;
+      checkEstado();
+    }
+  } catch(e) {}
+}
+
+// Monitora a cada 5 segundos
+setInterval(monitorarPalpites, 5000);
 
 // ── INIT ──
 checkEstado();
