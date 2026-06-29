@@ -573,10 +573,9 @@ let palpitesCached = [];
 
 async function checkEstado() {
   try {
-    const estado = await fbGet('estado');
+    const [estado, premio] = await Promise.all([fbGet('estado'), fbGet('palpites')]);
     apostasAbertas = estado ? estado.apostasAbertas !== false : true;
     atualizarUIEstado();
-    const premio = await fbGet('palpites');
     if (premio) {
       const total = Object.keys(premio).length;
       document.getElementById('premio-valor').textContent = `R$ ${total * VALOR},00`;
@@ -585,6 +584,7 @@ async function checkEstado() {
     } else {
       document.getElementById('premio-valor').textContent = 'R$ —';
       document.getElementById('premio-sub').textContent = 'Aguardando palpites...';
+      palpitesCached = [];
     }
   } catch(e) { console.log('checkEstado:', e); }
 }
@@ -906,9 +906,9 @@ async function apagarPalpite(id, nome) {
     palpitesCached = [];  // limpa cache para forçar reload
     await fbDelete(`pagamentos/${id}`); // remove pagamento junto
     showToast(`🗑️ Palpite de ${nome} apagado!`);
+    await checkEstado(); // recalcula prêmio primeiro
     carregarAdmin();
     carregarPagamentos();
-    checkEstado();
     // recalcula ao vivo se tiver placar preenchido
     const pb = document.getElementById('parcial-brasil').value;
     const pj = document.getElementById('parcial-japao').value;
