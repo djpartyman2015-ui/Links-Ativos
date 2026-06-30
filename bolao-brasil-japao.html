@@ -538,6 +538,16 @@ function getResult(b, j) {
   return bv > jv ? 'brasil' : jv > bv ? 'japao' : 'empate';
 }
 
+function formatDataHora(ts) {
+  if (!ts) return '—';
+  const d = new Date(ts);
+  const dia = String(d.getDate()).padStart(2,'0');
+  const mes = String(d.getMonth()+1).padStart(2,'0');
+  const hora = String(d.getHours()).padStart(2,'0');
+  const min = String(d.getMinutes()).padStart(2,'0');
+  return `${dia}/${mes} às ${hora}:${min}`;
+}
+
 function resultBadge(b, j) {
   const r = getResult(b, j);
   if (r==='brasil') return `<span class="rbadge rb-brasil"><img src="https://flagcdn.com/br.svg" style="height:13px;vertical-align:middle"> Brasil vence</span>`;
@@ -800,7 +810,7 @@ async function carregarAdmin() {
   try {
     const data = await fbGet('palpites');
     if (!data) { lista.innerHTML='<div class="empty-state"><span class="emoji">✅</span><p>Nenhum palpite.</p></div>'; return; }
-    const items = Object.entries(data).map(([k,v])=>({id:k,...v})).sort((a,b)=>(a.ts||0)-(b.ts||0));
+    const items = Object.entries(data).map(([k,v])=>({id:k,...v})).sort((a,b)=>(b.ts||0)-(a.ts||0));
     let html = '<div class="palpite-card-list">';
     items.forEach((p,i) => {
       const nomeEsc = escHtml(p.nome).replace(/'/g,"\\'");
@@ -809,6 +819,7 @@ async function carregarAdmin() {
         <div class="pi-info">
           <div class="pi-nome">${escHtml(p.nome)}</div>
           <div class="pi-placar"><img src="https://flagcdn.com/br.svg" style="height:16px;vertical-align:middle"> ${p.brasil} × ${p.japao} <img src="https://flagcdn.com/jp.svg" style="height:16px;vertical-align:middle"></div>
+          <div class="pi-result" style="font-size:11px;color:var(--muted);margin-top:2px">🕐 ${formatDataHora(p.ts)}</div>
         </div>
         <button class="btn-del-palpite" onclick="apagarPalpite('${p.id}','${nomeEsc}')">🗑️ Apagar</button>
       </div>`;
@@ -844,7 +855,7 @@ async function carregarPagamentos() {
       atualizarSummary(0,0); return;
     }
     const pagamentos = pagData || {};
-    const items = Object.entries(palpData).map(([k,v])=>({id:k,...v})).sort((a,b)=>(a.ts||0)-(b.ts||0));
+    const items = Object.entries(palpData).map(([k,v])=>({id:k,...v})).sort((a,b)=>(b.ts||0)-(a.ts||0));
 
     let pagos = 0, pendentes = 0;
     let html = '';
@@ -856,6 +867,7 @@ async function carregarPagamentos() {
           <div class="pag-nome">${escHtml(p.nome)}</div>
           <div class="pag-pix">💳 ${escHtml(p.pix||'—')}</div>
           <div class="pag-placar">🇧🇷 ${p.brasil} × ${p.japao} 🇯🇵</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px">🕐 ${formatDataHora(p.ts)}</div>
         </div>
         <button class="toggle-btn ${isPago?'pago':'pendente'}" id="pag-btn-${p.id}"
           onclick="togglePagamento('${p.id}', ${isPago})">
