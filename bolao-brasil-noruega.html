@@ -237,7 +237,7 @@ body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); 
     <div class="eyebrow">⚽ Copa do Mundo 2026 · Brasil × Noruega · 05/07 às 17h</div>
     <div class="matchup">
       <div class="team">
-        <div class="team-flag"><img src="https://flagcdn.com/br.svg" style="height:72px;width:auto;filter:drop-shadow(0 4px 12px rgba(0,0,0,.5))"></div>
+        <div class="team-flag"><img src="https://flagcdn.com/w40/br.png" style="height:72px;width:auto;filter:drop-shadow(0 4px 12px rgba(0,0,0,.5))"></div>
         <div class="team-name">Brasil</div>
       </div>
       <div class="vs-col">
@@ -245,7 +245,7 @@ body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); 
         <div class="vs-sub">versus</div>
       </div>
       <div class="team">
-        <div class="team-flag"><img src="https://flagcdn.com/no.svg" style="height:72px;width:auto;filter:drop-shadow(0 4px 12px rgba(0,0,0,.5))"></div>
+        <div class="team-flag"><img src="https://flagcdn.com/w40/no.png" style="height:72px;width:auto;filter:drop-shadow(0 4px 12px rgba(0,0,0,.5))"></div>
         <div class="team-name">Noruega</div>
       </div>
     </div>
@@ -297,13 +297,13 @@ body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); 
           <label>Placar que você espera</label>
           <div class="score-inputs">
             <div class="score-team">
-              <div class="score-flag"><img src="https://flagcdn.com/br.svg" style="height:36px;width:auto;filter:drop-shadow(0 4px 12px rgba(0,0,0,.5))"></div>
+              <div class="score-flag"><img src="https://flagcdn.com/w40/br.png" style="height:36px;width:auto;filter:drop-shadow(0 4px 12px rgba(0,0,0,.5))"></div>
               <div class="score-label">Brasil</div>
               <input class="inp-score brasil" id="inp-brasil" type="number" min="0" max="20" placeholder="0">
             </div>
             <div class="score-x">×</div>
             <div class="score-team">
-              <div class="score-flag"><img src="https://flagcdn.com/no.svg" style="height:36px;width:auto;filter:drop-shadow(0 4px 12px rgba(0,0,0,.5))"></div>
+              <div class="score-flag"><img src="https://flagcdn.com/w40/no.png" style="height:36px;width:auto;filter:drop-shadow(0 4px 12px rgba(0,0,0,.5))"></div>
               <div class="score-label">Noruega</div>
               <input class="inp-score noruega" id="inp-noruega" type="number" min="0" max="20" placeholder="0">
             </div>
@@ -339,13 +339,13 @@ body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); 
       <div class="aovivo-body">
         <div class="aovivo-placar-row">
           <div class="real-team">
-            <div class="real-flag"><img src="https://flagcdn.com/br.svg" style="height:36px;width:auto;filter:drop-shadow(0 4px 12px rgba(0,0,0,.5))"></div>
+            <div class="real-flag"><img src="https://flagcdn.com/w40/br.png" style="height:36px;width:auto;filter:drop-shadow(0 4px 12px rgba(0,0,0,.5))"></div>
             <div class="real-name">Brasil</div>
             <input class="inp-score brasil" id="parcial-brasil" type="number" min="0" max="20" placeholder="0" oninput="calcularAoVivo()">
           </div>
           <div class="real-x">×</div>
           <div class="real-team">
-            <div class="real-flag"><img src="https://flagcdn.com/no.svg" style="height:36px;width:auto;filter:drop-shadow(0 4px 12px rgba(0,0,0,.5))"></div>
+            <div class="real-flag"><img src="https://flagcdn.com/w40/no.png" style="height:36px;width:auto;filter:drop-shadow(0 4px 12px rgba(0,0,0,.5))"></div>
             <div class="real-name">Noruega</div>
             <input class="inp-score noruega" id="parcial-noruega" type="number" min="0" max="20" placeholder="0" oninput="calcularAoVivo()">
           </div>
@@ -433,13 +433,13 @@ body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); 
       <div class="resultado-body">
         <div class="real-score-row">
           <div class="real-team">
-            <div class="real-flag"><img src="https://flagcdn.com/br.svg" style="height:36px;width:auto;filter:drop-shadow(0 4px 12px rgba(0,0,0,.5))"></div>
+            <div class="real-flag"><img src="https://flagcdn.com/w40/br.png" style="height:36px;width:auto;filter:drop-shadow(0 4px 12px rgba(0,0,0,.5))"></div>
             <div class="real-name">Brasil</div>
             <input class="inp-score brasil" id="real-brasil" type="number" min="0" max="20" placeholder="—">
           </div>
           <div class="real-x">×</div>
           <div class="real-team">
-            <div class="real-flag"><img src="https://flagcdn.com/no.svg" style="height:36px;width:auto;filter:drop-shadow(0 4px 12px rgba(0,0,0,.5))"></div>
+            <div class="real-flag"><img src="https://flagcdn.com/w40/no.png" style="height:36px;width:auto;filter:drop-shadow(0 4px 12px rgba(0,0,0,.5))"></div>
             <div class="real-name">Noruega</div>
             <input class="inp-score noruega" id="real-noruega" type="number" min="0" max="20" placeholder="—">
           </div>
@@ -550,8 +550,8 @@ function formatDataHora(ts) {
 
 function resultBadge(b, j) {
   const r = getResult(b, j);
-  if (r==='brasil') return `<span class="rbadge rb-brasil"><img src="https://flagcdn.com/br.svg" style="height:13px;vertical-align:middle"> Brasil vence</span>`;
-  if (r==='noruega')  return `<span class="rbadge rb-noruega"><img src="https://flagcdn.com/no.svg" style="height:13px;vertical-align:middle"> Noruega vence</span>`;
+  if (r==='brasil') return `<span class="rbadge rb-brasil"><img src="https://flagcdn.com/w40/br.png" style="height:13px;vertical-align:middle" alt="🇧🇷"> Brasil vence</span>`;
+  if (r==='noruega')  return `<span class="rbadge rb-noruega"><img src="https://flagcdn.com/w40/no.png" style="height:13px;vertical-align:middle" alt="🇳🇴"> Noruega vence</span>`;
   if (r==='empate') return `<span class="rbadge rb-empate">🤝 Empate</span>`;
   return '';
 }
@@ -669,7 +669,7 @@ async function carregarPalpites() {
         <div class="pi-num">${i+1}</div>
         <div class="pi-info">
           <div class="pi-nome">${escHtml(p.nome)}</div>
-          <div class="pi-placar"><img src="https://flagcdn.com/br.svg" style="height:16px;vertical-align:middle"> ${p.brasil} × ${p.noruega} <img src="https://flagcdn.com/no.svg" style="height:16px;vertical-align:middle"></div>
+          <div class="pi-placar"><img src="https://flagcdn.com/w40/br.png" style="height:16px;vertical-align:middle" alt="🇧🇷"> ${p.brasil} × ${p.noruega ?? p.japao ?? "?"} <img src="https://flagcdn.com/w40/no.png" style="height:16px;vertical-align:middle" alt="🇳🇴"></div>
           <div class="pi-result">${resultBadge(p.brasil, p.noruega)}</div>
         </div>
       </div>`;
@@ -725,7 +725,7 @@ async function calcularAoVivo() {
       <div class="av-row ${dead?'av-row-dead':''}">
         <span class="av-num">${p.idx}</span>
         <span class="av-name" style="color:${dead?'':'inherit'}">${escHtml(p.nome)}</span>
-        <span class="av-score"><img src="https://flagcdn.com/br.svg" style="height:14px;vertical-align:middle"> ${p.brasil} × ${p.noruega} <img src="https://flagcdn.com/no.svg" style="height:14px;vertical-align:middle"></span>
+        <span class="av-score"><img src="https://flagcdn.com/w40/br.png" style="height:14px;vertical-align:middle" alt="🇧🇷"> ${p.brasil} × ${p.noruega ?? p.japao ?? "?"} <img src="https://flagcdn.com/w40/no.png" style="height:14px;vertical-align:middle" alt="🇳🇴"></span>
         <span class="av-badge ${badgeCls}">${badge}</span>
       </div>`).join('');
   }
@@ -757,7 +757,7 @@ async function calcularRanking() {
         <div class="rank-pos">${p.acertou?(medals[Math.min(i,2)]||'🏅'):'💀'}</div>
         <div class="rank-info">
           <div class="rank-name">${escHtml(p.nome)}</div>
-          <div class="rank-guess">Palpite: ${p.brasil} × ${p.noruega}</div>
+          <div class="rank-guess">Palpite: ${p.brasil} × ${p.noruega ?? p.japao ?? "?"}</div>
         </div>
         <div class="rank-result">${p.acertou?'✅':'❌'}</div>
       </div>`).join('') +
@@ -818,7 +818,7 @@ async function carregarAdmin() {
         <div class="pi-num">${i+1}</div>
         <div class="pi-info">
           <div class="pi-nome">${escHtml(p.nome)}</div>
-          <div class="pi-placar"><img src="https://flagcdn.com/br.svg" style="height:16px;vertical-align:middle"> ${p.brasil} × ${p.noruega} <img src="https://flagcdn.com/no.svg" style="height:16px;vertical-align:middle"></div>
+          <div class="pi-placar"><img src="https://flagcdn.com/w40/br.png" style="height:16px;vertical-align:middle" alt="🇧🇷"> ${p.brasil} × ${p.noruega ?? p.japao ?? "?"} <img src="https://flagcdn.com/w40/no.png" style="height:16px;vertical-align:middle" alt="🇳🇴"></div>
           <div class="pi-result" style="font-size:11px;color:var(--muted);margin-top:2px">🕐 ${formatDataHora(p.ts)}</div>
         </div>
         <button class="btn-del-palpite" onclick="apagarPalpite('${p.id}','${nomeEsc}')">🗑️ Apagar</button>
@@ -866,7 +866,7 @@ async function carregarPagamentos() {
         <div class="pag-info">
           <div class="pag-nome">${escHtml(p.nome)}</div>
           <div class="pag-pix">💳 ${escHtml(p.pix||'—')}</div>
-          <div class="pag-placar"><img src="https://flagcdn.com/br.svg" style="height:14px;vertical-align:middle"> ${p.brasil} × ${p.noruega} <img src="https://flagcdn.com/no.svg" style="height:14px;vertical-align:middle"></div>
+          <div class="pag-placar"><img src="https://flagcdn.com/w40/br.png" style="height:14px;vertical-align:middle" alt="🇧🇷"> ${p.brasil} × ${p.noruega ?? p.japao ?? "?"} <img src="https://flagcdn.com/w40/no.png" style="height:14px;vertical-align:middle" alt="🇳🇴"></div>
           <div style="font-size:11px;color:var(--muted);margin-top:2px">🕐 ${formatDataHora(p.ts)}</div>
         </div>
         <button class="toggle-btn ${isPago?'pago':'pendente'}" id="pag-btn-${p.id}"
@@ -1129,4 +1129,3 @@ checkEstado();
 </script>
 </body>
 </html>
-
