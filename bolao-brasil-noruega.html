@@ -632,16 +632,16 @@ async function salvarPalpite() {
   const sobrenome = document.getElementById('inp-sobrenome').value.trim();
   const pix       = document.getElementById('inp-pix').value.trim();
   const brasil    = document.getElementById('inp-brasil').value;
-  const japao     = document.getElementById('inp-noruega').value;
+  const noruega   = document.getElementById('inp-noruega').value;
   if (!nome)      { showStatus('status-enviar','⚠️ Digite seu nome!','err'); return; }
   if (!sobrenome) { showStatus('status-enviar','⚠️ Digite seu sobrenome!','err'); return; }
   if (!pix)       { showStatus('status-enviar','⚠️ Digite sua chave PIX!','err'); return; }
-  if (brasil===''||japao==='') { showStatus('status-enviar','⚠️ Preencha o placar!','err'); return; }
+  if (brasil===''||noruega==='') { showStatus('status-enviar','⚠️ Preencha o placar!','err'); return; }
   showStatus('status-enviar','<span class="spinner"></span> Salvando...','loading');
   try {
     const nomeCompleto = nome + ' ' + sobrenome;
     await fbPush('palpites', { nome: nomeCompleto, pix, brasil:parseInt(brasil), noruega:parseInt(noruega), ts:Date.now() });
-    showStatus('status-enviar', `✅ Palpite de <strong>${escHtml(nomeCompleto)}</strong> salvo! ${brasil} × ${japao}<br><span style="font-size:12px;color:rgba(255,255,255,.6)">Lembre-se de pagar R$ 10 via PIX para Andrey! 💸</span><br><span style="font-size:11px;color:rgba(255,223,0,.7);margin-top:4px;display:block">✔️ Ao palpitar, você declara ter lido e concordado com as <strong>Regras do Bolão</strong>.</span>`, 'ok');
+    showStatus('status-enviar', `✅ Palpite de <strong>${escHtml(nomeCompleto)}</strong> salvo! ${brasil} × ${noruega}<br><span style="font-size:12px;color:rgba(255,255,255,.6)">Lembre-se de pagar R$ 10 via PIX para Andrey! 💸</span><br><span style="font-size:11px;color:rgba(255,223,0,.7);margin-top:4px;display:block">✔️ Ao palpitar, você declara ter lido e concordado com as <strong>Regras do Bolão</strong>.</span>`, 'ok');
     document.getElementById('inp-nome').value='';
     document.getElementById('inp-sobrenome').value='';
     document.getElementById('inp-pix').value='';
@@ -866,7 +866,7 @@ async function carregarPagamentos() {
         <div class="pag-info">
           <div class="pag-nome">${escHtml(p.nome)}</div>
           <div class="pag-pix">💳 ${escHtml(p.pix||'—')}</div>
-          <div class="pag-placar">🇧🇷 ${p.brasil} × ${p.noruega} 🇯🇵</div>
+          <div class="pag-placar"><img src="https://flagcdn.com/br.svg" style="height:14px;vertical-align:middle"> ${p.brasil} × ${p.noruega} <img src="https://flagcdn.com/no.svg" style="height:14px;vertical-align:middle"></div>
           <div style="font-size:11px;color:var(--muted);margin-top:2px">🕐 ${formatDataHora(p.ts)}</div>
         </div>
         <button class="toggle-btn ${isPago?'pago':'pendente'}" id="pag-btn-${p.id}"
@@ -988,7 +988,7 @@ async function carregarStats() {
       <div class="stat-tile"><div class="val" style="color:var(--amarelo)">${total}</div><div class="lbl">Palpiteiros</div></div>
       <div class="stat-tile"><div class="val" style="color:var(--amarelo)">R$${premio}</div><div class="lbl">Prêmio</div></div>
       <div class="stat-tile"><div class="val" style="color:#4ade80">${mediaB}</div><div class="lbl">Média gols Brasil</div></div>
-      <div class="stat-tile"><div class="val" style="color:#f87171">${mediaJ}</div><div class="lbl">Média gols Japão</div></div>
+      <div class="stat-tile"><div class="val" style="color:#f87171">${mediaJ}</div><div class="lbl">Média gols Noruega</div></div>
     `;
 
     // Donut
@@ -1043,11 +1043,11 @@ async function carregarStats() {
     // Gols
     document.getElementById('stats-gols').innerHTML = `
       <div class="goals-stat"><div class="glbl">🇧🇷 Mín</div><div class="gval">${minB}</div></div>
-      <div class="goals-stat"><div class="glbl">🇯🇵 Mín</div><div class="gval">${minJ}</div></div>
+      <div class="goals-stat"><div class="glbl">🇳🇴 Mín</div><div class="gval">${minJ}</div></div>
       <div class="goals-stat"><div class="glbl">🇧🇷 Média</div><div class="gval" style="color:#4ade80">${mediaB}</div></div>
-      <div class="goals-stat"><div class="glbl">🇯🇵 Média</div><div class="gval" style="color:#f87171">${mediaJ}</div></div>
+      <div class="goals-stat"><div class="glbl">🇳🇴 Média</div><div class="gval" style="color:#f87171">${mediaJ}</div></div>
       <div class="goals-stat"><div class="glbl">🇧🇷 Máx</div><div class="gval">${maxB}</div></div>
-      <div class="goals-stat"><div class="glbl">🇯🇵 Máx</div><div class="gval">${maxJ}</div></div>
+      <div class="goals-stat"><div class="glbl">🇳🇴 Máx</div><div class="gval">${maxJ}</div></div>
     `;
 
     document.getElementById('stats-loading').style.display = 'none';
