@@ -431,14 +431,62 @@
     </div>
   </header>
 
-  <!-- ── APPS ATIVOS ── -->
+  <!-- ══════════════════════════════════════
+       💼 NEGÓCIO
+       ══════════════════════════════════════ -->
   <div class="section-header">
-    <p class="section-label">Apps ativos</p>
-    <button class="drag-hint" id="drag-toggle" onclick="toggleDragMode()">
+    <p class="section-label">💼 Negócio</p>
+    <button class="drag-hint" id="drag-toggle-biz" onclick="toggleDragMode('biz')">
       <span class="dot"></span> Organizar
     </button>
   </div>
+  <div class="grid" id="grid-biz">
 
+    <a class="card" data-color="purple" data-id="ptp-dashboard"
+       href="https://djpartyman2015-ui.github.io/Links-Ativos/Vale_PTP_Dashboard_Completo.html"
+       target="_blank" rel="noopener">
+      <span class="drag-handle">⠿</span>
+      <button class="delete-btn" title="Remover card">✕</button>
+      <button class="edit-btn" title="Editar card">✏️</button>
+      <span class="card-icon">📊</span>
+      <span class="card-tag">Gestão</span>
+      <div class="card-body">
+        <span class="card-title">Dashboard PTP</span>
+        <span class="card-desc">Painel executivo de transição de sistemas Vale</span>
+      </div>
+      <span class="card-arrow">↗</span>
+      <div class="edit-panel">
+        <div><label>Emoji + Categoria</label>
+          <div class="edit-panel-row">
+            <input class="edit-panel-emoji" type="text" data-field="icon" maxlength="4" value="📊" />
+            <input style="flex:1" type="text" data-field="tag" value="Gestão" />
+          </div>
+        </div>
+        <div><label>Título</label><input type="text" data-field="title" value="Dashboard PTP" /></div>
+        <div><label>Descrição</label><input type="text" data-field="desc" value="Painel executivo de transição de sistemas Vale" /></div>
+        <div><label>Cor</label><div class="color-picker" data-for="color"></div></div>
+        <div class="edit-actions">
+          <button class="btn-cancel">Cancelar</button>
+          <button class="btn-save">Salvar</button>
+        </div>
+      </div>
+    </a>
+
+    <div class="card add-card" id="add-card-btn-biz" onclick="openModal('biz')">
+      <span class="add-card-icon">＋</span>
+      <span class="add-card-label">Adicionar app</span>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       🙋 PESSOAL
+       ══════════════════════════════════════ -->
+  <div class="section-header">
+    <p class="section-label">🙋 Pessoal</p>
+    <button class="drag-hint" id="drag-toggle-pes" onclick="toggleDragMode('pes')">
+      <span class="dot"></span> Organizar
+    </button>
+  </div>
   <div class="grid" id="main-grid">
 
     <a class="card" data-color="orange" data-id="indiko"
@@ -471,66 +519,6 @@
       </div>
     </a>
 
-    <a class="card" data-color="green" data-id="bolao-escocia"
-       href="https://djpartyman2015-ui.github.io/Links-Ativos/bolao-brasil-escocia.html"
-       target="_blank" rel="noopener">
-      <span class="drag-handle">⠿</span>
-      <button class="delete-btn" title="Remover card">✕</button>
-      <button class="edit-btn" title="Editar card">✏️</button>
-      <span class="card-icon">⚽</span>
-      <span class="card-tag">Esporte</span>
-      <div class="card-body">
-        <span class="card-title">Bolão Brasil x Escócia</span>
-        <span class="card-desc">Palpites e placar do confronto</span>
-      </div>
-      <span class="card-arrow">↗</span>
-      <div class="edit-panel">
-        <div><label>Emoji + Categoria</label>
-          <div class="edit-panel-row">
-            <input class="edit-panel-emoji" type="text" data-field="icon" maxlength="4" value="⚽" />
-            <input style="flex:1" type="text" data-field="tag" value="Esporte" />
-          </div>
-        </div>
-        <div><label>Título</label><input type="text" data-field="title" value="Bolão Brasil x Escócia" /></div>
-        <div><label>Descrição</label><input type="text" data-field="desc" value="Palpites e placar do confronto" /></div>
-        <div><label>Cor</label><div class="color-picker" data-for="color"></div></div>
-        <div class="edit-actions">
-          <button class="btn-cancel">Cancelar</button>
-          <button class="btn-save">Salvar</button>
-        </div>
-      </div>
-    </a>
-
-    <a class="card" data-color="yellow" data-id="bolao-marrocos"
-       href="https://djpartyman2015-ui.github.io/Links-Ativos/bolao-brasil-marrocos.html"
-       target="_blank" rel="noopener">
-      <span class="drag-handle">⠿</span>
-      <button class="delete-btn" title="Remover card">✕</button>
-      <button class="edit-btn" title="Editar card">✏️</button>
-      <span class="card-icon">🏆</span>
-      <span class="card-tag">Esporte</span>
-      <div class="card-body">
-        <span class="card-title">Bolão Brasil x Marrocos</span>
-        <span class="card-desc">Palpites e placar do confronto</span>
-      </div>
-      <span class="card-arrow">↗</span>
-      <div class="edit-panel">
-        <div><label>Emoji + Categoria</label>
-          <div class="edit-panel-row">
-            <input class="edit-panel-emoji" type="text" data-field="icon" maxlength="4" value="🏆" />
-            <input style="flex:1" type="text" data-field="tag" value="Esporte" />
-          </div>
-        </div>
-        <div><label>Título</label><input type="text" data-field="title" value="Bolão Brasil x Marrocos" /></div>
-        <div><label>Descrição</label><input type="text" data-field="desc" value="Palpites e placar do confronto" /></div>
-        <div><label>Cor</label><div class="color-picker" data-for="color"></div></div>
-        <div class="edit-actions">
-          <button class="btn-cancel">Cancelar</button>
-          <button class="btn-save">Salvar</button>
-        </div>
-      </div>
-    </a>
-
     <a class="card" data-color="cyan" data-id="cotacao"
        href="https://djpartyman2015-ui.github.io/Links-Ativos/monitor-cotacoes.html"
        target="_blank" rel="noopener">
@@ -553,6 +541,66 @@
         </div>
         <div><label>Título</label><input type="text" data-field="title" value="Cotação do Dia" /></div>
         <div><label>Descrição</label><input type="text" data-field="desc" value="Monitor de câmbio com calculadora em BRL" /></div>
+        <div><label>Cor</label><div class="color-picker" data-for="color"></div></div>
+        <div class="edit-actions">
+          <button class="btn-cancel">Cancelar</button>
+          <button class="btn-save">Salvar</button>
+        </div>
+      </div>
+    </a>
+
+    <a class="card" data-color="red" data-id="filmoteca"
+       href="https://djpartyman2015-ui.github.io/filmoteca/"
+       target="_blank" rel="noopener">
+      <span class="drag-handle">⠿</span>
+      <button class="delete-btn" title="Remover card">✕</button>
+      <button class="edit-btn" title="Editar card">✏️</button>
+      <span class="card-icon">🎬</span>
+      <span class="card-tag">Cinema</span>
+      <div class="card-body">
+        <span class="card-title">Videolocadora do Claude</span>
+        <span class="card-desc">Tracker pessoal de filmes com estatísticas e integração TMDB</span>
+      </div>
+      <span class="card-arrow">↗</span>
+      <div class="edit-panel">
+        <div><label>Emoji + Categoria</label>
+          <div class="edit-panel-row">
+            <input class="edit-panel-emoji" type="text" data-field="icon" maxlength="4" value="🎬" />
+            <input style="flex:1" type="text" data-field="tag" value="Cinema" />
+          </div>
+        </div>
+        <div><label>Título</label><input type="text" data-field="title" value="Videolocadora do Claude" /></div>
+        <div><label>Descrição</label><input type="text" data-field="desc" value="Tracker pessoal de filmes com estatísticas e integração TMDB" /></div>
+        <div><label>Cor</label><div class="color-picker" data-for="color"></div></div>
+        <div class="edit-actions">
+          <button class="btn-cancel">Cancelar</button>
+          <button class="btn-save">Salvar</button>
+        </div>
+      </div>
+    </a>
+
+    <a class="card" data-color="pink" data-id="skincare"
+       href="https://djpartyman2015-ui.github.io/Links-Ativos/skincare-dashboard.html"
+       target="_blank" rel="noopener">
+      <span class="drag-handle">⠿</span>
+      <button class="delete-btn" title="Remover card">✕</button>
+      <button class="edit-btn" title="Editar card">✏️</button>
+      <span class="card-icon">🌿</span>
+      <span class="card-tag">Saúde</span>
+      <div class="card-body">
+        <span class="card-title">Rotina Firmadora</span>
+        <span class="card-desc">Painel de acompanhamento de skincare</span>
+      </div>
+      <span class="card-arrow">↗</span>
+      <div class="edit-panel">
+        <div><label>Emoji + Categoria</label>
+          <div class="edit-panel-row">
+            <input class="edit-panel-emoji" type="text" data-field="icon" maxlength="4" value="🌿" />
+            <input style="flex:1" type="text" data-field="tag" value="Saúde" />
+          </div>
+        </div>
+        <div><label>Título</label><input type="text" data-field="title" value="Rotina Firmadora" /></div>
+        <div><label>Descrição</label><input type="text" data-field="desc" value="Painel de acompanhamento de skincare" /></div>
         <div><label>Cor</label><div class="color-picker" data-for="color"></div></div>
         <div class="edit-actions">
           <button class="btn-cancel">Cancelar</button>
@@ -621,28 +669,28 @@
       </div>
     </a>
 
-    <a class="card" data-color="purple" data-id="ptp-dashboard"
-       href="https://djpartyman2015-ui.github.io/Links-Ativos/Vale_PTP_Dashboard_Completo.html"
+    <a class="card" data-color="green" data-id="bolao-marrocos"
+       href="https://djpartyman2015-ui.github.io/Links-Ativos/bolao-brasil-marrocos.html"
        target="_blank" rel="noopener">
       <span class="drag-handle">⠿</span>
       <button class="delete-btn" title="Remover card">✕</button>
       <button class="edit-btn" title="Editar card">✏️</button>
-      <span class="card-icon">📊</span>
-      <span class="card-tag">Gestão</span>
+      <span class="card-icon">⚽</span>
+      <span class="card-tag">Esporte</span>
       <div class="card-body">
-        <span class="card-title">Dashboard PTP</span>
-        <span class="card-desc">Painel executivo de transição de sistemas Vale</span>
+        <span class="card-title">Bolão Brasil x Marrocos</span>
+        <span class="card-desc">Palpites e placar do confronto</span>
       </div>
       <span class="card-arrow">↗</span>
       <div class="edit-panel">
         <div><label>Emoji + Categoria</label>
           <div class="edit-panel-row">
-            <input class="edit-panel-emoji" type="text" data-field="icon" maxlength="4" value="📊" />
-            <input style="flex:1" type="text" data-field="tag" value="Gestão" />
+            <input class="edit-panel-emoji" type="text" data-field="icon" maxlength="4" value="⚽" />
+            <input style="flex:1" type="text" data-field="tag" value="Esporte" />
           </div>
         </div>
-        <div><label>Título</label><input type="text" data-field="title" value="Dashboard PTP" /></div>
-        <div><label>Descrição</label><input type="text" data-field="desc" value="Painel executivo de transição de sistemas Vale" /></div>
+        <div><label>Título</label><input type="text" data-field="title" value="Bolão Brasil x Marrocos" /></div>
+        <div><label>Descrição</label><input type="text" data-field="desc" value="Palpites e placar do confronto" /></div>
         <div><label>Cor</label><div class="color-picker" data-for="color"></div></div>
         <div class="edit-actions">
           <button class="btn-cancel">Cancelar</button>
@@ -651,28 +699,28 @@
       </div>
     </a>
 
-    <a class="card" data-color="red" data-id="filmoteca"
-       href="https://djpartyman2015-ui.github.io/filmoteca/"
+    <a class="card" data-color="yellow" data-id="bolao-escocia"
+       href="https://djpartyman2015-ui.github.io/Links-Ativos/bolao-brasil-escocia.html"
        target="_blank" rel="noopener">
       <span class="drag-handle">⠿</span>
       <button class="delete-btn" title="Remover card">✕</button>
       <button class="edit-btn" title="Editar card">✏️</button>
-      <span class="card-icon">🎬</span>
-      <span class="card-tag">Cinema</span>
+      <span class="card-icon">⚽</span>
+      <span class="card-tag">Esporte</span>
       <div class="card-body">
-        <span class="card-title">Videolocadora do Claude</span>
-        <span class="card-desc">Tracker pessoal de filmes com estatísticas e integração TMDB</span>
+        <span class="card-title">Bolão Brasil x Escócia</span>
+        <span class="card-desc">Palpites e placar do confronto</span>
       </div>
       <span class="card-arrow">↗</span>
       <div class="edit-panel">
         <div><label>Emoji + Categoria</label>
           <div class="edit-panel-row">
-            <input class="edit-panel-emoji" type="text" data-field="icon" maxlength="4" value="🎬" />
-            <input style="flex:1" type="text" data-field="tag" value="Cinema" />
+            <input class="edit-panel-emoji" type="text" data-field="icon" maxlength="4" value="⚽" />
+            <input style="flex:1" type="text" data-field="tag" value="Esporte" />
           </div>
         </div>
-        <div><label>Título</label><input type="text" data-field="title" value="Videolocadora do Claude" /></div>
-        <div><label>Descrição</label><input type="text" data-field="desc" value="Tracker pessoal de filmes com estatísticas e integração TMDB" /></div>
+        <div><label>Título</label><input type="text" data-field="title" value="Bolão Brasil x Escócia" /></div>
+        <div><label>Descrição</label><input type="text" data-field="desc" value="Palpites e placar do confronto" /></div>
         <div><label>Cor</label><div class="color-picker" data-for="color"></div></div>
         <div class="edit-actions">
           <button class="btn-cancel">Cancelar</button>
@@ -742,7 +790,7 @@
     </a>
 
     <!-- Botão adicionar novo card — aparece só no modo organizar -->
-    <div class="card add-card" id="add-card-btn" onclick="openModal()">
+    <div class="card add-card" id="add-card-btn" onclick="openModal('pes')">
       <span class="add-card-icon">＋</span>
       <span class="add-card-label">Adicionar app</span>
     </div>
@@ -815,12 +863,30 @@
 
 <script>
   /* ══════════════════════════════════════════ */
-  const ORDER_KEY   = 'cappa-labs-order';
-  const EDITS_KEY   = 'cappa-labs-edits';
-  const DYNAMIC_KEY = 'cappa-labs-dynamic';
+  const EDITS_KEY = 'cappa-labs-edits';
 
-  const grid      = document.getElementById('main-grid');
-  const toggleBtn = document.getElementById('drag-toggle');
+  const GRIDS = {
+    biz: {
+      el:        document.getElementById('grid-biz'),
+      toggleBtn: document.getElementById('drag-toggle-biz'),
+      addBtn:    document.getElementById('add-card-btn-biz'),
+      orderKey:  'cappa-labs-order-biz',
+      dynKey:    'cappa-labs-dynamic-biz',
+    },
+    pes: {
+      el:        document.getElementById('main-grid'),
+      toggleBtn: document.getElementById('drag-toggle-pes'),
+      addBtn:    document.getElementById('add-card-btn'),
+      orderKey:  'cappa-labs-order-pes',
+      dynKey:    'cappa-labs-dynamic-pes',
+    }
+  };
+
+  // per-grid drag state
+  const dragState = { biz: { mode:false, src:null, locked:false }, pes: { mode:false, src:null, locked:false } };
+
+  let currentModalGrid = 'pes';
+  let selectedModalColor = 'cyan';
 
   const COLORS = [
     { name:'cyan',   hex:'#00D4FF' },
@@ -833,12 +899,7 @@
     { name:'red',    hex:'#FF4D6D' },
   ];
 
-  let dragMode    = false;
-  let dragSrc     = null;
-  let clickLocked = false;
-  let selectedModalColor = 'cyan';
-
-  /* ── Build color pickers ── */
+  /* ── Color picker ── */
   function buildColorPicker(container, currentColor, onChange) {
     container.innerHTML = '';
     COLORS.forEach(c => {
@@ -856,26 +917,19 @@
     });
   }
 
-  /* build modal color picker */
-  buildColorPicker(
-    document.getElementById('modal-color-picker'),
-    selectedModalColor,
-    name => { selectedModalColor = name; }
-  );
+  buildColorPicker(document.getElementById('modal-color-picker'), selectedModalColor, n => { selectedModalColor = n; });
 
-  /* ── Wire edit panels ── */
+  /* ── Wire card ── */
   function wireCard(card) {
     const editBtn   = card.querySelector('.edit-btn');
     const deleteBtn = card.querySelector('.delete-btn');
     const panel     = card.querySelector('.edit-panel');
     if (!panel) return;
-
     const saveB   = panel.querySelector('.btn-save');
     const cancelB = panel.querySelector('.btn-cancel');
     const colorPicker = panel.querySelector('.color-picker');
     let panelColor = card.dataset.color || 'cyan';
-
-    buildColorPicker(colorPicker, panelColor, name => { panelColor = name; });
+    buildColorPicker(colorPicker, panelColor, n => { panelColor = n; });
 
     editBtn && editBtn.addEventListener('click', e => {
       e.preventDefault(); e.stopPropagation();
@@ -884,18 +938,18 @@
 
     deleteBtn && deleteBtn.addEventListener('click', e => {
       e.preventDefault(); e.stopPropagation();
-      if (confirm('Remover esse card?')) {
-        const id = card.dataset.id;
-        // remove from edits & dynamic storage
-        const edits = JSON.parse(localStorage.getItem(EDITS_KEY) || '{}');
-        delete edits[id];
-        localStorage.setItem(EDITS_KEY, JSON.stringify(edits));
-        const dynamics = JSON.parse(localStorage.getItem(DYNAMIC_KEY) || '[]');
-        const newDyn = dynamics.filter(d => d.id !== id);
-        localStorage.setItem(DYNAMIC_KEY, JSON.stringify(newDyn));
-        card.remove();
-        saveOrder();
-      }
+      if (!confirm('Remover esse card?')) return;
+      const id = card.dataset.id;
+      const edits = JSON.parse(localStorage.getItem(EDITS_KEY) || '{}');
+      delete edits[id];
+      localStorage.setItem(EDITS_KEY, JSON.stringify(edits));
+      // remove from both dynamic stores
+      Object.values(GRIDS).forEach(g => {
+        const dyn = JSON.parse(localStorage.getItem(g.dynKey) || '[]');
+        localStorage.setItem(g.dynKey, JSON.stringify(dyn.filter(d => d.id !== id)));
+        saveOrder(g);
+      });
+      card.remove();
     });
 
     cancelB && cancelB.addEventListener('click', e => {
@@ -909,26 +963,19 @@
       const tag   = panel.querySelector('[data-field="tag"]').value.trim();
       const title = panel.querySelector('[data-field="title"]').value.trim();
       const desc  = panel.querySelector('[data-field="desc"]').value.trim();
-
       if (icon)  card.querySelector('.card-icon').textContent  = icon;
       if (tag)   card.querySelector('.card-tag').textContent   = tag;
       if (title) card.querySelector('.card-title').textContent = title;
       if (desc)  card.querySelector('.card-desc').textContent  = desc;
-
-      // update color
       card.dataset.color = panelColor;
-      buildColorPicker(colorPicker, panelColor, name => { panelColor = name; });
-
+      buildColorPicker(colorPicker, panelColor, n => { panelColor = n; });
       saveEdit(card, panelColor);
-
-      // if dynamic card, update stored data
-      const dynamics = JSON.parse(localStorage.getItem(DYNAMIC_KEY) || '[]');
-      const idx = dynamics.findIndex(d => d.id === card.dataset.id);
-      if (idx !== -1) {
-        dynamics[idx] = { ...dynamics[idx], icon, tag, title, desc, color: panelColor };
-        localStorage.setItem(DYNAMIC_KEY, JSON.stringify(dynamics));
-      }
-
+      // update dynamic store
+      Object.values(GRIDS).forEach(g => {
+        const dyn = JSON.parse(localStorage.getItem(g.dynKey) || '[]');
+        const idx = dyn.findIndex(d => d.id === card.dataset.id);
+        if (idx !== -1) { dyn[idx] = { ...dyn[idx], icon, tag, title, desc, color: panelColor }; localStorage.setItem(g.dynKey, JSON.stringify(dyn)); }
+      });
       panel.classList.remove('open');
     });
 
@@ -942,11 +989,8 @@
   function createCardEl({ id, icon, tag, title, desc, url, color }) {
     const a = document.createElement('a');
     a.className = 'card';
-    a.dataset.color = color;
-    a.dataset.id    = id;
-    a.href          = url;
-    a.target        = '_blank';
-    a.rel           = 'noopener';
+    a.dataset.color = color; a.dataset.id = id;
+    a.href = url; a.target = '_blank'; a.rel = 'noopener';
     a.innerHTML = `
       <span class="drag-handle">⠿</span>
       <button class="delete-btn" title="Remover card">✕</button>
@@ -978,7 +1022,10 @@
   }
 
   /* ── Modal ── */
-  function openModal() { document.getElementById('modal-backdrop').classList.add('open'); }
+  function openModal(gridKey) {
+    currentModalGrid = gridKey || 'pes';
+    document.getElementById('modal-backdrop').classList.add('open');
+  }
   function closeModal() {
     document.getElementById('modal-backdrop').classList.remove('open');
     ['new-icon','new-tag','new-title','new-desc','new-url'].forEach(id => document.getElementById(id).value = '');
@@ -995,23 +1042,19 @@
     const url   = document.getElementById('new-url').value.trim()   || '#';
     const color = selectedModalColor;
     const id    = 'dynamic-' + Date.now();
-
     const cardData = { id, icon, tag, title, desc, url, color };
-
-    // save to dynamic storage
-    const dynamics = JSON.parse(localStorage.getItem(DYNAMIC_KEY) || '[]');
-    dynamics.push(cardData);
-    localStorage.setItem(DYNAMIC_KEY, JSON.stringify(dynamics));
-
+    const g = GRIDS[currentModalGrid];
+    const dyn = JSON.parse(localStorage.getItem(g.dynKey) || '[]');
+    dyn.push(cardData);
+    localStorage.setItem(g.dynKey, JSON.stringify(dyn));
     const cardEl = createCardEl(cardData);
-    if (dragMode) cardEl.draggable = true;
-    const addBtn = document.getElementById('add-card-btn');
-    grid.insertBefore(cardEl, addBtn);
-    saveOrder();
+    if (dragState[currentModalGrid].mode) cardEl.draggable = true;
+    g.el.insertBefore(cardEl, g.addBtn);
+    saveOrder(g);
     closeModal();
   }
 
-  /* ── Storage: edits ── */
+  /* ── Storage ── */
   function saveEdit(card, colorOverride) {
     const id = card.dataset.id;
     const saved = JSON.parse(localStorage.getItem(EDITS_KEY) || '{}');
@@ -1030,14 +1073,13 @@
     if (!saved) return;
     try {
       Object.entries(JSON.parse(saved)).forEach(([id, data]) => {
-        const card = grid.querySelector(`[data-id="${id}"]`);
+        const card = document.querySelector(`[data-id="${id}"]`);
         if (!card) return;
         if (data.icon)  card.querySelector('.card-icon').textContent  = data.icon;
         if (data.tag)   card.querySelector('.card-tag').textContent   = data.tag;
         if (data.title) card.querySelector('.card-title').textContent = data.title;
         if (data.desc)  card.querySelector('.card-desc').textContent  = data.desc;
         if (data.color) card.dataset.color = data.color;
-        // sync panel inputs
         const panel = card.querySelector('.edit-panel');
         if (panel) {
           if (data.icon)  panel.querySelector('[data-field="icon"]').value  = data.icon;
@@ -1049,129 +1091,132 @@
     } catch(e) {}
   }
 
-  function restoreDynamicCards() {
-    const saved = localStorage.getItem(DYNAMIC_KEY);
+  function saveOrder(g) {
+    const ids = [...g.el.querySelectorAll('.card[data-id]:not(.add-card)')].map(c => c.dataset.id);
+    localStorage.setItem(g.orderKey, JSON.stringify(ids));
+  }
+
+  function restoreOrder(g) {
+    const saved = localStorage.getItem(g.orderKey);
     if (!saved) return;
     try {
-      const addBtn = document.getElementById('add-card-btn');
-      JSON.parse(saved).forEach(data => {
-        const cardEl = createCardEl(data);
-        grid.insertBefore(cardEl, addBtn);
+      JSON.parse(saved).forEach(id => {
+        const card = g.el.querySelector(`[data-id="${id}"]`);
+        if (card) g.el.insertBefore(card, g.addBtn);
       });
     } catch(e) {}
   }
 
-  /* ── Storage: order ── */
-  function saveOrder() {
-    const ids = [...grid.querySelectorAll('.card[data-id]:not(.add-card)')].map(c => c.dataset.id);
-    localStorage.setItem(ORDER_KEY, JSON.stringify(ids));
-  }
-
-  function restoreOrder() {
-    const saved = localStorage.getItem(ORDER_KEY);
+  function restoreDynamicCards(g) {
+    const saved = localStorage.getItem(g.dynKey);
     if (!saved) return;
     try {
-      const addBtn = document.getElementById('add-card-btn');
-      JSON.parse(saved).forEach(id => {
-        const card = grid.querySelector(`[data-id="${id}"]`);
-        if (card) grid.insertBefore(card, addBtn);
+      JSON.parse(saved).forEach(data => {
+        const cardEl = createCardEl(data);
+        g.el.insertBefore(cardEl, g.addBtn);
       });
     } catch(e) {}
   }
 
   /* ── Toggle drag mode ── */
-  function toggleDragMode() {
-    dragMode = !dragMode;
-    grid.classList.toggle('drag-mode', dragMode);
-    toggleBtn.classList.toggle('active', dragMode);
-    toggleBtn.innerHTML = dragMode
+  function toggleDragMode(gridKey) {
+    const g  = GRIDS[gridKey];
+    const ds = dragState[gridKey];
+    ds.mode  = !ds.mode;
+    g.el.classList.toggle('drag-mode', ds.mode);
+    g.toggleBtn.classList.toggle('active', ds.mode);
+    g.toggleBtn.innerHTML = ds.mode
       ? '<span class="dot"></span> Pronto'
       : '<span class="dot"></span> Organizar';
-    grid.querySelectorAll('.card:not(.wip):not(.add-card)').forEach(c => {
-      c.draggable = dragMode;
-      if (!dragMode) c.querySelector('.edit-panel')?.classList.remove('open');
+    g.el.querySelectorAll('.card:not(.wip):not(.add-card)').forEach(c => {
+      c.draggable = ds.mode;
+      if (!ds.mode) c.querySelector('.edit-panel')?.classList.remove('open');
     });
   }
 
-  /* ── Desktop drag ── */
-  grid.addEventListener('dragstart', e => {
-    const card = e.target.closest('.card:not(.wip):not(.add-card)');
-    if (!card || !dragMode) { e.preventDefault(); return; }
-    if (card.querySelector('.edit-panel.open')) { e.preventDefault(); return; }
-    dragSrc = card; clickLocked = true;
-    setTimeout(() => card.classList.add('dragging'), 0);
-    e.dataTransfer.effectAllowed = 'move';
-  });
+  /* ── Drag & drop (desktop) — wired per grid ── */
+  function wireDrag(gridKey) {
+    const g  = GRIDS[gridKey];
+    const ds = dragState[gridKey];
 
-  grid.addEventListener('dragend', e => {
-    const card = e.target.closest('.card');
-    if (card) card.classList.remove('dragging');
-    grid.querySelectorAll('.drag-over').forEach(c => c.classList.remove('drag-over'));
-    saveOrder();
-    setTimeout(() => { clickLocked = false; }, 50);
-  });
+    g.el.addEventListener('dragstart', e => {
+      const card = e.target.closest('.card:not(.wip):not(.add-card)');
+      if (!card || !ds.mode) { e.preventDefault(); return; }
+      if (card.querySelector('.edit-panel.open')) { e.preventDefault(); return; }
+      ds.src = card; ds.locked = true;
+      setTimeout(() => card.classList.add('dragging'), 0);
+      e.dataTransfer.effectAllowed = 'move';
+    });
 
-  grid.addEventListener('dragover', e => {
-    e.preventDefault(); e.dataTransfer.dropEffect = 'move';
-    const card = e.target.closest('.card:not(.wip):not(.add-card)');
-    if (!card || card === dragSrc) return;
-    grid.querySelectorAll('.drag-over').forEach(c => c.classList.remove('drag-over'));
-    card.classList.add('drag-over');
-  });
+    g.el.addEventListener('dragend', e => {
+      const card = e.target.closest('.card');
+      if (card) card.classList.remove('dragging');
+      g.el.querySelectorAll('.drag-over').forEach(c => c.classList.remove('drag-over'));
+      saveOrder(g);
+      setTimeout(() => { ds.locked = false; }, 50);
+    });
 
-  grid.addEventListener('dragleave', e => {
-    const card = e.target.closest('.card');
-    if (card) card.classList.remove('drag-over');
-  });
+    g.el.addEventListener('dragover', e => {
+      e.preventDefault(); e.dataTransfer.dropEffect = 'move';
+      const card = e.target.closest('.card:not(.wip):not(.add-card)');
+      if (!card || card === ds.src) return;
+      g.el.querySelectorAll('.drag-over').forEach(c => c.classList.remove('drag-over'));
+      card.classList.add('drag-over');
+    });
 
-  grid.addEventListener('drop', e => {
-    e.preventDefault();
-    const target = e.target.closest('.card:not(.wip):not(.add-card)');
-    if (!target || target === dragSrc || !dragSrc) return;
-    target.classList.remove('drag-over');
-    const rect = target.getBoundingClientRect();
-    const after = e.clientX > rect.left + rect.width / 2;
-    const addBtn = document.getElementById('add-card-btn');
-    if (after) {
-      if (target.nextSibling && target.nextSibling !== addBtn) target.after(dragSrc);
-      else grid.insertBefore(dragSrc, addBtn);
-    } else {
-      target.before(dragSrc);
-    }
-    saveOrder();
-  });
+    g.el.addEventListener('dragleave', e => {
+      const card = e.target.closest('.card');
+      if (card) card.classList.remove('drag-over');
+    });
 
-  grid.addEventListener('click', e => {
-    if (clickLocked) { e.preventDefault(); return; }
-    if (dragMode && !e.target.closest('.edit-btn') && !e.target.closest('.edit-panel') && !e.target.closest('.delete-btn') && !e.target.closest('.add-card')) {
+    g.el.addEventListener('drop', e => {
       e.preventDefault();
-    }
-  }, true);
+      const target = e.target.closest('.card:not(.wip):not(.add-card)');
+      if (!target || target === ds.src || !ds.src) return;
+      target.classList.remove('drag-over');
+      const rect  = target.getBoundingClientRect();
+      const after = e.clientX > rect.left + rect.width / 2;
+      if (after) { if (target.nextSibling && target.nextSibling !== g.addBtn) target.after(ds.src); else g.el.insertBefore(ds.src, g.addBtn); }
+      else target.before(ds.src);
+      saveOrder(g);
+    });
+
+    g.el.addEventListener('click', e => {
+      if (ds.locked) { e.preventDefault(); return; }
+      if (ds.mode && !e.target.closest('.edit-btn') && !e.target.closest('.edit-panel') && !e.target.closest('.delete-btn') && !e.target.closest('.add-card')) {
+        e.preventDefault();
+      }
+    }, true);
+  }
 
   /* ── Touch drag ── */
-  let touchCard = null, touchClone = null, touchOrigin = null;
+  let touchCard = null, touchClone = null, touchOrigin = null, touchGrid = null;
 
-  grid.addEventListener('touchstart', e => {
-    if (!dragMode) return;
-    const card = e.target.closest('.card:not(.wip):not(.add-card)');
-    if (!card) return;
-    if (card.querySelector('.edit-panel.open')) return;
-    if (e.target.closest('.edit-btn') || e.target.closest('.delete-btn') || e.target.closest('.edit-panel')) return;
-    touchCard = card; touchOrigin = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-    const r = card.getBoundingClientRect();
-    touchClone = card.cloneNode(true);
-    Object.assign(touchClone.style, {
-      position:'fixed', top:r.top+'px', left:r.left+'px',
-      width:r.width+'px', height:r.height+'px',
-      opacity:'0.75', zIndex:'9999', pointerEvents:'none',
-      transition:'none', transform:'scale(1.05)',
-      boxShadow:'0 16px 48px rgba(0,0,0,0.6)',
-    });
-    document.body.appendChild(touchClone);
-    card.classList.add('dragging');
-  }, { passive: true });
+  Object.entries(GRIDS).forEach(([key, g]) => {
+    g.el.addEventListener('touchstart', e => {
+      const ds = dragState[key];
+      if (!ds.mode) return;
+      const card = e.target.closest('.card:not(.wip):not(.add-card)');
+      if (!card) return;
+      if (card.querySelector('.edit-panel.open')) return;
+      if (e.target.closest('.edit-btn') || e.target.closest('.delete-btn') || e.target.closest('.edit-panel')) return;
+      touchCard = card; touchGrid = key;
+      touchOrigin = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      const r = card.getBoundingClientRect();
+      touchClone = card.cloneNode(true);
+      Object.assign(touchClone.style, {
+        position:'fixed', top:r.top+'px', left:r.left+'px',
+        width:r.width+'px', height:r.height+'px',
+        opacity:'0.75', zIndex:'9999', pointerEvents:'none',
+        transition:'none', transform:'scale(1.05)',
+        boxShadow:'0 16px 48px rgba(0,0,0,0.6)',
+      });
+      document.body.appendChild(touchClone);
+      card.classList.add('dragging');
+    }, { passive: true });
+  });
 
-  grid.addEventListener('touchmove', e => {
+  document.addEventListener('touchmove', e => {
     if (!touchClone) return;
     e.preventDefault();
     const t = e.touches[0];
@@ -1180,34 +1225,35 @@
     const el = document.elementFromPoint(t.clientX, t.clientY);
     touchClone.style.display = '';
     const over = el && el.closest('.card:not(.wip):not(.add-card)');
-    grid.querySelectorAll('.drag-over').forEach(c => c.classList.remove('drag-over'));
+    document.querySelectorAll('.drag-over').forEach(c => c.classList.remove('drag-over'));
     if (over && over !== touchCard) over.classList.add('drag-over');
   }, { passive: false });
 
-  grid.addEventListener('touchend', e => {
+  document.addEventListener('touchend', e => {
     if (!touchClone) return;
     const t = e.changedTouches[0];
     touchClone.remove(); touchClone = null;
     touchCard.classList.remove('dragging');
     const el = document.elementFromPoint(t.clientX, t.clientY);
     const target = el && el.closest('.card:not(.wip):not(.add-card)');
-    grid.querySelectorAll('.drag-over').forEach(c => c.classList.remove('drag-over'));
-    if (target && target !== touchCard) {
+    document.querySelectorAll('.drag-over').forEach(c => c.classList.remove('drag-over'));
+    if (target && target !== touchCard && touchGrid) {
+      const g    = GRIDS[touchGrid];
       const rect = target.getBoundingClientRect();
-      const addBtn = document.getElementById('add-card-btn');
-      if (t.clientX > rect.left + rect.width / 2) grid.insertBefore(touchCard, addBtn);
+      if (t.clientX > rect.left + rect.width / 2) g.el.insertBefore(touchCard, g.addBtn);
       else target.before(touchCard);
-      saveOrder();
+      saveOrder(g);
     }
-    touchCard = null;
+    touchCard = null; touchGrid = null;
   });
 
-  /* ── Wire static cards ── */
-  grid.querySelectorAll('.card:not(.wip):not(.add-card)').forEach(wireCard);
-
   /* ── Init ── */
-  restoreDynamicCards();
-  restoreOrder();
+  Object.entries(GRIDS).forEach(([key, g]) => {
+    g.el.querySelectorAll('.card:not(.wip):not(.add-card)').forEach(wireCard);
+    restoreDynamicCards(g);
+    restoreOrder(g);
+    wireDrag(key);
+  });
   restoreEdits();
 </script>
 </body>
