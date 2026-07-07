@@ -163,8 +163,12 @@
 
   <div class="card" style="margin-bottom:28px;">
     <div class="skip-row">
-      <label for="skipToggle">Pulei o tratamento hoje (dia intencional sem uso — não conta na projeção)</label>
-      <input type="checkbox" id="skipToggle">
+      <label for="skipManha">Pulei a manhã hoje</label>
+      <input type="checkbox" id="skipManha">
+    </div>
+    <div class="skip-row">
+      <label for="skipNoite">Pulei a noite hoje</label>
+      <input type="checkbox" id="skipNoite">
     </div>
   </div>
 
@@ -303,28 +307,32 @@ let CONFIG = {};       // { startDate: "2026-07-07" }
 function renderChecklist(){
   const t = todayKey();
   const dayData = CHECKLIST[t] || {manha:{}, noite:{}};
-  const skipped = !!dayData.skipped;
+  const skipManha = !!dayData.skippedManha;
+  const skipNoite = !!dayData.skippedNoite;
 
-  const buildList = (steps, period) => {
+  const buildList = (steps, period, skip) => {
     return steps.map(s => {
       const checked = dayData[period]?.[s.key] ? "checked" : "";
       const sub = s.sub ? `<div class="step-sub">${s.sub}</div>` : "";
       return `<div class="step-row">
         <span class="swatch ${PRODUCTS[s.key].sw}"></span>
         <div class="step-label">${s.label}${sub}</div>
-        <input type="checkbox" data-period="${period}" data-key="${s.key}" ${checked} ${skipped?"disabled":""}>
+        <input type="checkbox" data-period="${period}" data-key="${s.key}" ${checked} ${skip?"disabled":""}>
       </div>`;
     }).join("");
   };
 
-  document.getElementById("morningList").innerHTML = buildList(MORNING_STEPS, "manha");
-  document.getElementById("nightList").innerHTML = buildList(NIGHT_STEPS, "noite");
+  document.getElementById("morningList").innerHTML = buildList(MORNING_STEPS, "manha", skipManha);
+  document.getElementById("nightList").innerHTML = buildList(NIGHT_STEPS, "noite", skipNoite);
 
-  const skipToggle = document.getElementById("skipToggle");
-  skipToggle.checked = skipped;
-  skipToggle.onchange = async (e)=>{
+  const skipManhaEl = document.getElementById("skipManha");
+  const skipNoiteEl = document.getElementById("skipNoite");
+  skipManhaEl.checked = skipManha;
+  skipNoiteEl.checked = skipNoite;
+
+  const onSkipChange = (field) => async (e)=>{
     if(!CHECKLIST[t]) CHECKLIST[t] = {manha:{}, noite:{}};
-    CHECKLIST[t].skipped = e.target.checked;
+    CHECKLIST[t][field] = e.target.checked;
     await dbSet("skincare_checklist", CHECKLIST);
     renderChecklist();
     renderRings();
@@ -332,6 +340,8 @@ function renderChecklist(){
     renderInsights();
     renderCalendar();
   };
+  skipManhaEl.onchange = onSkipChange("skippedManha");
+  skipNoiteEl.onchange = onSkipChange("skippedNoite");
 
   document.querySelectorAll('input[type=checkbox][data-period]').forEach(cb=>{
     cb.addEventListener("change", async (e)=>{
@@ -356,12 +366,15 @@ function daysSince(dateStr){
 
 function skippedCountSince(dateStr){
   const start = new Date(dateStr); const now = new Date(todayKey());
-  let count = 0;
+  let weight = 0;
   for(let d = new Date(start); d <= now; d.setDate(d.getDate()+1)){
     const key = d.toISOString().slice(0,10);
-    if(CHECKLIST[key]?.skipped) count++;
+    const day = CHECKLIST[key];
+    if(!day) continue;
+    if(day.skippedManha) weight += 0.5;
+    if(day.skippedNoite) weight += 0.5;
   }
-  return count;
+  return weight;
 }
 
 function renderRings(){
@@ -391,7 +404,7 @@ function renderRings(){
   }).join("");
   if(skipped > 0){
     ringsWrap.insertAdjacentHTML("beforeend",
-      `<div style="width:100%; text-align:center; color:var(--sub); font-size:12px; margin-top:6px;">${skipped} dia(s) pulado(s) descontado(s) da contagem</div>`);
+      `<div style="width:100%; text-align:center; color:var(--sub); font-size:12px; margin-top:6px;">${skipped} dia(s)-per\u00edodo pulado(s) descontado(s) da contagem</div>`);
   }
 }
 
@@ -535,10 +548,15 @@ const TOTAL_STEPS = MORNING_STEPS.length + NIGHT_STEPS.length;
 function dayCompletion(dateKey){
   const d = CHECKLIST[dateKey];
   if(!d) return null;
-  if(d.skipped) return "skipped";
-  let done = 0;
-  ["manha","noite"].forEach(p=> Object.values(d[p]||{}).forEach(v=>{ if(v) done++; }));
-  return Math.round((done / TOTAL_STEPS) * 100);
+  const skipManha = !!d.skippedManha;
+  const skipNoite = !!d.skippedNoite;
+  if(skipManha && skipNoite) return "skipped";
+
+  let done = 0, total = 0;
+  if(!skipManha){ total += MORNING_STEPS.length; Object.values(d.manha||{}).forEach(v=>{ if(v) done++; }); }
+  if(!skipNoite){ total += NIGHT_STEPS.length; Object.values(d.noite||{}).forEach(v=>{ if(v) done++; }); }
+  if(total === 0) return "skipped";
+  return Math.round((done / total) * 100);
 }
 
 function renderCalendar(){
