@@ -105,6 +105,30 @@
   .chart-wrap{background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:18px; margin-bottom:28px;}
   canvas{max-height:260px;}
 
+  /* SKIP TOGGLE */
+  .skip-row{
+    display:flex; align-items:center; gap:10px; margin-top:14px; padding-top:14px;
+    border-top:1px dashed var(--line);
+  }
+  .skip-row label{font-size:13.5px; color:var(--sub); flex:1;}
+
+  /* CALENDAR */
+  .cal-header{display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;}
+  .cal-header button{background:var(--panel-2); border:1px solid var(--line); color:var(--text); border-radius:6px; padding:6px 10px; cursor:pointer;}
+  .cal-header .cal-title{font-family:Georgia,serif; font-size:16px; text-transform:capitalize;}
+  .cal-grid{display:grid; grid-template-columns:repeat(7,1fr); gap:6px;}
+  .cal-dow{text-align:center; font-size:10px; color:var(--sub); text-transform:uppercase; padding-bottom:4px;}
+  .cal-day{
+    aspect-ratio:1; border-radius:7px; display:flex; align-items:center; justify-content:center;
+    font-size:12px; position:relative; background:var(--panel-2); border:1px solid var(--line); color:var(--sub);
+  }
+  .cal-day.empty{background:transparent; border:none;}
+  .cal-day.today{outline:2px solid var(--laranja); outline-offset:1px;}
+  .cal-day.skipped{background:repeating-linear-gradient(45deg,#31353F,#31353F 4px,#23262E 4px,#23262E 8px); color:var(--sub);}
+  .cal-legend{display:flex; gap:14px; margin-top:12px; font-size:11px; color:var(--sub); flex-wrap:wrap;}
+  .cal-legend span{display:inline-flex; align-items:center; gap:5px;}
+  .cal-legend i{width:10px;height:10px;border-radius:3px; display:inline-block;}
+
   footer{text-align:center; color:var(--sub); font-size:12px; margin-top:40px;}
   @media(max-width:600px){
     .hero{flex-direction:column; align-items:flex-start;}
@@ -134,6 +158,13 @@
     <div class="card">
       <h3>🌙 Checklist Noite</h3>
       <div id="nightList"></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:28px;">
+    <div class="skip-row">
+      <label for="skipToggle">Pulei o tratamento hoje (dia intencional sem uso — não conta na projeção)</label>
+      <input type="checkbox" id="skipToggle">
     </div>
   </div>
 
@@ -182,6 +213,21 @@
   <div class="chart-wrap">
     <h3 style="margin:0 0 14px; font-size:13px; text-transform:uppercase; letter-spacing:.08em; color:var(--sub);">Evolução da Pele</h3>
     <canvas id="skinChart"></canvas>
+  </div>
+
+  <div class="card" style="margin-bottom:28px;">
+    <div class="cal-header">
+      <button id="calPrev">‹</button>
+      <div class="cal-title" id="calTitle"></div>
+      <button id="calNext">›</button>
+    </div>
+    <div class="cal-grid" id="calGrid"></div>
+    <div class="cal-legend">
+      <span><i style="background:#3FBE7A;"></i> 100% concluído</span>
+      <span><i style="background:#E8722C;"></i> parcial</span>
+      <span><i style="background:#23262E;border:1px dashed #31353F;"></i> pulado</span>
+      <span><i style="background:#1D2026;border:1px solid #31353F;"></i> sem registro</span>
+    </div>
   </div>
 
   <footer>Painel pessoal de skincare · dados salvos na nuvem (Firebase) com fallback local · Creamy Skincare</footer>
@@ -257,6 +303,7 @@ let CONFIG = {};       // { startDate: "2026-07-07" }
 function renderChecklist(){
   const t = todayKey();
   const dayData = CHECKLIST[t] || {manha:{}, noite:{}};
+  const skipped = !!dayData.skipped;
 
   const buildList = (steps, period) => {
     return steps.map(s => {
@@ -265,13 +312,26 @@ function renderChecklist(){
       return `<div class="step-row">
         <span class="swatch ${PRODUCTS[s.key].sw}"></span>
         <div class="step-label">${s.label}${sub}</div>
-        <input type="checkbox" data-period="${period}" data-key="${s.key}" ${checked}>
+        <input type="checkbox" data-period="${period}" data-key="${s.key}" ${checked} ${skipped?"disabled":""}>
       </div>`;
     }).join("");
   };
 
   document.getElementById("morningList").innerHTML = buildList(MORNING_STEPS, "manha");
   document.getElementById("nightList").innerHTML = buildList(NIGHT_STEPS, "noite");
+
+  const skipToggle = document.getElementById("skipToggle");
+  skipToggle.checked = skipped;
+  skipToggle.onchange = async (e)=>{
+    if(!CHECKLIST[t]) CHECKLIST[t] = {manha:{}, noite:{}};
+    CHECKLIST[t].skipped = e.target.checked;
+    await dbSet("skincare_checklist", CHECKLIST);
+    renderChecklist();
+    renderRings();
+    renderCost();
+    renderInsights();
+    renderCalendar();
+  };
 
   document.querySelectorAll('input[type=checkbox][data-period]').forEach(cb=>{
     cb.addEventListener("change", async (e)=>{
@@ -283,6 +343,7 @@ function renderChecklist(){
       await dbSet("skincare_checklist", CHECKLIST);
       renderCost();
       renderInsights();
+      renderCalendar();
     });
   });
 }
@@ -293,9 +354,21 @@ function daysSince(dateStr){
   return Math.max(1, Math.floor((now - start)/86400000) + 1);
 }
 
+function skippedCountSince(dateStr){
+  const start = new Date(dateStr); const now = new Date(todayKey());
+  let count = 0;
+  for(let d = new Date(start); d <= now; d.setDate(d.getDate()+1)){
+    const key = d.toISOString().slice(0,10);
+    if(CHECKLIST[key]?.skipped) count++;
+  }
+  return count;
+}
+
 function renderRings(){
   const start = CONFIG.startDate || todayKey();
-  const dayN = daysSince(start);
+  const calendarDays = daysSince(start);
+  const skipped = skippedCountSince(start);
+  const dayN = Math.max(1, calendarDays - skipped);
   document.getElementById("dayCount").textContent = dayN;
 
   const ringsWrap = document.getElementById("ringsWrap");
@@ -316,6 +389,10 @@ function renderRings(){
       <div class="rv">${status}</div>
     </div>`;
   }).join("");
+  if(skipped > 0){
+    ringsWrap.insertAdjacentHTML("beforeend",
+      `<div style="width:100%; text-align:center; color:var(--sub); font-size:12px; margin-top:6px;">${skipped} dia(s) pulado(s) descontado(s) da contagem</div>`);
+  }
 }
 
 /* ============ RENDER: CUSTO ============ */
@@ -451,6 +528,65 @@ function renderInsights(){
   ).join("");
 }
 
+/* ============ RENDER: CALENDÁRIO ============ */
+let calViewDate = new Date();
+const TOTAL_STEPS = MORNING_STEPS.length + NIGHT_STEPS.length;
+
+function dayCompletion(dateKey){
+  const d = CHECKLIST[dateKey];
+  if(!d) return null;
+  if(d.skipped) return "skipped";
+  let done = 0;
+  ["manha","noite"].forEach(p=> Object.values(d[p]||{}).forEach(v=>{ if(v) done++; }));
+  return Math.round((done / TOTAL_STEPS) * 100);
+}
+
+function renderCalendar(){
+  const year = calViewDate.getFullYear();
+  const month = calViewDate.getMonth();
+  const monthNames = ["janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];
+  document.getElementById("calTitle").textContent = `${monthNames[month]} ${year}`;
+
+  const firstDay = new Date(year, month, 1);
+  const startOffset = firstDay.getDay();
+  const daysInMonth = new Date(year, month+1, 0).getDate();
+  const today = todayKey();
+
+  const dows = ["D","S","T","Q","Q","S","S"];
+  let html = dows.map(d=>`<div class="cal-dow">${d}</div>`).join("");
+
+  for(let i=0;i<startOffset;i++) html += `<div class="cal-day empty"></div>`;
+
+  for(let day=1; day<=daysInMonth; day++){
+    const dateKey = `${year}-${String(month+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
+    const comp = dayCompletion(dateKey);
+    let cls = "cal-day";
+    let style = "";
+    let content = day;
+    if(dateKey === today) cls += " today";
+    if(comp === "skipped"){
+      cls += " skipped"; content = "⦸";
+    } else if(comp !== null){
+      const g = Math.round((comp/100) * 190) + 30; // verde intensidade
+      style = comp >= 100
+        ? `background:#3FBE7A22; border-color:#3FBE7A; color:#3FBE7A;`
+        : `background:#E8722C22; border-color:#E8722C; color:#E8722C;`;
+    }
+    html += `<div class="${cls}" style="${style}" title="${comp!==null && comp!=='skipped' ? comp+'%' : ''}">${content}</div>`;
+  }
+
+  document.getElementById("calGrid").innerHTML = html;
+}
+
+document.getElementById("calPrev").addEventListener("click", ()=>{
+  calViewDate.setMonth(calViewDate.getMonth()-1);
+  renderCalendar();
+});
+document.getElementById("calNext").addEventListener("click", ()=>{
+  calViewDate.setMonth(calViewDate.getMonth()+1);
+  renderCalendar();
+});
+
 /* ============ INIT ============ */
 async function init(){
   CHECKLIST = await dbGet("skincare_checklist");
@@ -466,6 +602,7 @@ async function init(){
   bindSliders();
   renderChart();
   renderInsights();
+  renderCalendar();
 }
 init();
 </script>
