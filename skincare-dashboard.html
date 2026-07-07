@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rotina Firmadora — Painel de Acompanhamento</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#14161A;
+    --panel:#1D2026;
+    --panel-2:#23262E;
+    --line:#31353F;
+    --text:#EDEEF0;
+    --sub:#9B9FAA;
+    --amarelo:#F0C43A;
+    --branco:#E7E9ED;
+    --laranja:#E8722C;
+    --azul:#3A8FD9;
+    --vermelho:#D6483F;
+    --roxo:#C4399B;
+    --good:#3FBE7A;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:'Segoe UI', -apple-system, sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3,.display{
+    font-family:'Georgia', 'Times New Roman', serif;
+    letter-spacing:-0.01em;
+  }
+  .wrap{max-width:980px;margin:0 auto;padding:28px 20px 80px;}
+
+  /* HERO */
+  .hero{
+    display:flex; justify-content:space-between; align-items:flex-end;
+    border-bottom:1px solid var(--line); padding-bottom:22px; margin-bottom:28px;
+    flex-wrap:wrap; gap:14px;
+  }
+  .hero .eyebrow{color:var(--sub); font-size:12px; letter-spacing:.14em; text-transform:uppercase; margin-bottom:6px;}
+  .hero h1{font-size:32px; margin:0; font-weight:400;}
+  .hero .daycount{text-align:right;}
+  .hero .daycount .num{font-size:42px; font-family:Georgia,serif; color:var(--laranja); line-height:1;}
+  .hero .daycount .label{font-size:12px; color:var(--sub); text-transform:uppercase; letter-spacing:.1em;}
+
+  /* CARDS GRID */
+  .grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:14px; margin-bottom:28px;}
+  .card{background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:18px;}
+  .card h3{margin:0 0 12px; font-size:13px; text-transform:uppercase; letter-spacing:.08em; color:var(--sub); font-family:inherit; font-weight:600;}
+
+  /* CHECKLIST */
+  .step-row{
+    display:flex; align-items:center; gap:10px; padding:9px 0;
+    border-bottom:1px solid var(--line);
+  }
+  .step-row:last-child{border-bottom:none;}
+  .swatch{width:14px;height:14px;border-radius:3px; flex-shrink:0;}
+  .sw-amarelo{background:var(--amarelo);}
+  .sw-branco{background:var(--branco); border:1px solid #555;}
+  .sw-laranja{background:var(--laranja);}
+  .sw-azul{background:var(--azul);}
+  .sw-vermelho{background:var(--vermelho);}
+  .sw-roxo{background:var(--roxo);}
+  .step-label{flex:1; font-size:14.5px;}
+  .step-sub{color:var(--sub); font-size:12px;}
+  input[type=checkbox]{
+    width:20px;height:20px; accent-color:var(--good); cursor:pointer;
+  }
+
+  /* PROGRESS RINGS */
+  .rings{display:flex; gap:22px; flex-wrap:wrap; justify-content:space-between;}
+  .ring-item{text-align:center; flex:1; min-width:140px;}
+  .ring-item svg{width:96px;height:96px;}
+  .ring-item .rt{font-size:11px; color:var(--sub); text-transform:uppercase; letter-spacing:.06em; margin-top:8px;}
+  .ring-item .rv{font-size:13px; color:var(--text); margin-top:2px;}
+
+  /* SLIDERS */
+  .slider-row{margin-bottom:16px;}
+  .slider-row label{display:flex; justify-content:space-between; font-size:13.5px; margin-bottom:6px;}
+  .slider-row label span.val{color:var(--laranja); font-weight:600;}
+  input[type=range]{width:100%; accent-color:var(--laranja);}
+  .save-btn{
+    width:100%; padding:12px; background:var(--laranja); border:none; color:#14161A;
+    font-weight:700; border-radius:8px; cursor:pointer; font-size:14px; margin-top:6px;
+    letter-spacing:.02em;
+  }
+  .save-btn:hover{opacity:.9;}
+  .save-btn.saved{background:var(--good);}
+
+  /* INSIGHTS */
+  .insights{background:var(--panel-2); border-left:3px solid var(--laranja); border-radius:0 8px 8px 0; padding:16px 18px; margin-bottom:28px;}
+  .insights h3{margin:0 0 10px; font-size:13px; text-transform:uppercase; letter-spacing:.08em; color:var(--sub); font-weight:600;}
+  .insight-line{font-size:14px; padding:4px 0; display:flex; gap:8px;}
+  .insight-line .dot{color:var(--laranja);}
+
+  /* TABLE */
+  table{width:100%; border-collapse:collapse; font-size:14px;}
+  th{text-align:left; color:var(--sub); font-size:11px; text-transform:uppercase; letter-spacing:.06em; padding:6px 8px; border-bottom:1px solid var(--line);}
+  td{padding:9px 8px; border-bottom:1px solid var(--line);}
+  tr:last-child td{border-bottom:none;}
+  .cost-total{font-family:Georgia,serif; font-size:20px; color:var(--laranja);}
+
+  .chart-wrap{background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:18px; margin-bottom:28px;}
+  canvas{max-height:260px;}
+
+  footer{text-align:center; color:var(--sub); font-size:12px; margin-top:40px;}
+  @media(max-width:600px){
+    .hero{flex-direction:column; align-items:flex-start;}
+    .hero .daycount{text-align:left;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="hero">
+    <div>
+      <div class="eyebrow">Rotina Firmadora · Creamy</div>
+      <h1>Painel de Acompanhamento</h1>
+    </div>
+    <div class="daycount">
+      <div class="num" id="dayCount">1</div>
+      <div class="label">dia de uso</div>
+    </div>
+  </div>
+
+  <div class="grid" style="grid-template-columns:1fr 1fr;">
+    <div class="card">
+      <h3>☀️ Checklist Manhã</h3>
+      <div id="morningList"></div>
+    </div>
+    <div class="card">
+      <h3>🌙 Checklist Noite</h3>
+      <div id="nightList"></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:28px;">
+    <h3>Projeção de Melhoria</h3>
+    <div class="rings" id="ringsWrap"></div>
+  </div>
+
+  <div class="grid" style="grid-template-columns:1fr 1fr;">
+    <div class="card">
+      <h3>Avaliação de Hoje</h3>
+      <div class="slider-row">
+        <label>Viço / Luminosidade <span class="val" id="v-vico">5</span></label>
+        <input type="range" min="1" max="10" value="5" id="s-vico">
+      </div>
+      <div class="slider-row">
+        <label>Textura / Uniformidade <span class="val" id="v-textura">5</span></label>
+        <input type="range" min="1" max="10" value="5" id="s-textura">
+      </div>
+      <div class="slider-row">
+        <label>Firmeza <span class="val" id="v-firmeza">5</span></label>
+        <input type="range" min="1" max="10" value="5" id="s-firmeza">
+      </div>
+      <div class="slider-row">
+        <label>Oleosidade <span class="val" id="v-oleo">5</span></label>
+        <input type="range" min="1" max="10" value="5" id="s-oleo">
+      </div>
+      <button class="save-btn" id="saveBtn">Salvar avaliação de hoje</button>
+    </div>
+
+    <div class="card">
+      <h3>Custo por Produto</h3>
+      <table id="costTable"></table>
+      <div style="margin-top:12px; display:flex; justify-content:space-between; align-items:baseline;">
+        <span style="color:var(--sub); font-size:12px; text-transform:uppercase;">Total investido</span>
+        <span class="cost-total" id="costTotal">R$ 0,00</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="insights" id="insightsBox">
+    <h3>Insights em Tempo Real</h3>
+    <div id="insightLines"></div>
+  </div>
+
+  <div class="chart-wrap">
+    <h3 style="margin:0 0 14px; font-size:13px; text-transform:uppercase; letter-spacing:.08em; color:var(--sub);">Evolução da Pele</h3>
+    <canvas id="skinChart"></canvas>
+  </div>
+
+  <footer>Painel pessoal de skincare · dados salvos na nuvem (Firebase) com fallback local · Creamy Skincare</footer>
+</div>
+
+<script>
+/* ============ CONFIG ============
+  Para salvar na nuvem (compartilhável entre dispositivos), crie um Firebase
+  Realtime Database gratuito e cole a URL abaixo. Sem SDK — usa REST API.
+  Se deixar em branco, os dados são salvos localmente neste navegador (localStorage).
+  Ex: "https://SEU-PROJETO-default-rtdb.firebaseio.com"
+*/
+const FIREBASE_DB_URL = ""; // <-- cole aqui a URL do seu Realtime Database
+
+const PRODUCTS = {
+  limpeza:  { label:"Limpador Antioleosidade",    sw:"sw-amarelo",  cost:54.89 },
+  protetor: { label:"Protetor Solar FPS 60",      sw:"sw-branco",   cost:69.89 },
+  vitc:     { label:"Vitamina C Gold",            sw:"sw-laranja",  cost:143.89 },
+  vichy:    { label:"Vichy Liftactiv Collagen",   sw:"sw-vermelho", cost:0 },
+  ahagel:   { label:"Creamy Gel 7% AHA",          sw:"sw-roxo",     cost:0 },
+  retinal:  { label:"Sérum Retinal",              sw:"sw-vermelho", cost:134.89 },
+};
+
+const MORNING_STEPS = [
+  {key:"limpeza",  label:"Gel de Limpeza"},
+  {key:"vitc",     label:"Vitamina C Gold"},
+  {key:"protetor", label:"Protetor Solar FPS 60"},
+];
+const NIGHT_STEPS = [
+  {key:"limpeza",  label:"Gel de Limpeza"},
+  {key:"retinal",  label:"Sérum Retinal", sub:"alterne com o Gel AHA — 2-3x/semana cada"},
+  {key:"ahagel",   label:"Creamy Gel 7% AHA", sub:"nas noites sem Retinal"},
+  {key:"vichy",    label:"Vichy Liftactiv Collagen"},
+];
+
+const MILESTONES = [
+  { key:"vico",    label:"Viço (Vit. C)",      targetDays:10,  color:"#E8722C" },
+  { key:"textura", label:"Textura (Retinal)",  targetDays:35,  color:"#D6483F" },
+  { key:"firmeza", label:"Firmeza (geral)",    targetDays:70,  color:"#3A8FD9" },
+];
+
+/* ============ STORAGE LAYER ============ */
+async function dbGet(key){
+  if(FIREBASE_DB_URL){
+    try{
+      const r = await fetch(`${FIREBASE_DB_URL}/${key}.json`);
+      const j = await r.json();
+      return j || {};
+    }catch(e){ console.error("Firebase GET falhou, usando local:", e); }
+  }
+  return JSON.parse(localStorage.getItem(key) || "{}");
+}
+async function dbSet(key, value){
+  localStorage.setItem(key, JSON.stringify(value)); // sempre espelha localmente
+  if(FIREBASE_DB_URL){
+    try{
+      await fetch(`${FIREBASE_DB_URL}/${key}.json`, {
+        method:"PUT", body: JSON.stringify(value)
+      });
+    }catch(e){ console.error("Firebase SET falhou:", e); }
+  }
+}
+
+function todayKey(){
+  return new Date().toISOString().slice(0,10);
+}
+
+let CHECKLIST = {};   // { "2026-07-07": { manha:{limpeza:true,...}, noite:{...} } }
+let AVALIACAO = {};    // { "2026-07-07": { vico:7, textura:6, firmeza:5, oleo:4 } }
+let CONFIG = {};       // { startDate: "2026-07-07" }
+
+/* ============ RENDER: CHECKLIST ============ */
+function renderChecklist(){
+  const t = todayKey();
+  const dayData = CHECKLIST[t] || {manha:{}, noite:{}};
+
+  const buildList = (steps, period) => {
+    return steps.map(s => {
+      const checked = dayData[period]?.[s.key] ? "checked" : "";
+      const sub = s.sub ? `<div class="step-sub">${s.sub}</div>` : "";
+      return `<div class="step-row">
+        <span class="swatch ${PRODUCTS[s.key].sw}"></span>
+        <div class="step-label">${s.label}${sub}</div>
+        <input type="checkbox" data-period="${period}" data-key="${s.key}" ${checked}>
+      </div>`;
+    }).join("");
+  };
+
+  document.getElementById("morningList").innerHTML = buildList(MORNING_STEPS, "manha");
+  document.getElementById("nightList").innerHTML = buildList(NIGHT_STEPS, "noite");
+
+  document.querySelectorAll('input[type=checkbox][data-period]').forEach(cb=>{
+    cb.addEventListener("change", async (e)=>{
+      const period = e.target.dataset.period;
+      const key = e.target.dataset.key;
+      if(!CHECKLIST[t]) CHECKLIST[t] = {manha:{}, noite:{}};
+      if(!CHECKLIST[t][period]) CHECKLIST[t][period] = {};
+      CHECKLIST[t][period][key] = e.target.checked;
+      await dbSet("skincare_checklist", CHECKLIST);
+      renderCost();
+      renderInsights();
+    });
+  });
+}
+
+/* ============ RENDER: DAY COUNT + RINGS ============ */
+function daysSince(dateStr){
+  const start = new Date(dateStr); const now = new Date();
+  return Math.max(1, Math.floor((now - start)/86400000) + 1);
+}
+
+function renderRings(){
+  const start = CONFIG.startDate || todayKey();
+  const dayN = daysSince(start);
+  document.getElementById("dayCount").textContent = dayN;
+
+  const ringsWrap = document.getElementById("ringsWrap");
+  ringsWrap.innerHTML = MILESTONES.map(m=>{
+    const pct = Math.min(100, Math.round((dayN / m.targetDays) * 100));
+    const r = 40, circ = 2*Math.PI*r;
+    const offset = circ - (pct/100)*circ;
+    const status = pct >= 100 ? "Alcançado 🎉" : `${m.targetDays - dayN > 0 ? m.targetDays - dayN : 0} dias restantes`;
+    return `<div class="ring-item">
+      <svg viewBox="0 0 100 100">
+        <circle cx="50" cy="50" r="${r}" fill="none" stroke="#31353F" stroke-width="9"/>
+        <circle cx="50" cy="50" r="${r}" fill="none" stroke="${m.color}" stroke-width="9"
+          stroke-dasharray="${circ}" stroke-dashoffset="${offset}" stroke-linecap="round"
+          transform="rotate(-90 50 50)"/>
+        <text x="50" y="55" text-anchor="middle" font-size="20" fill="#EDEEF0" font-family="Georgia,serif">${pct}%</text>
+      </svg>
+      <div class="rt">${m.label}</div>
+      <div class="rv">${status}</div>
+    </div>`;
+  }).join("");
+}
+
+/* ============ RENDER: CUSTO ============ */
+function renderCost(){
+  let usesCount = {};
+  Object.values(CHECKLIST).forEach(day=>{
+    ["manha","noite"].forEach(p=>{
+      Object.entries(day[p]||{}).forEach(([k,v])=>{ if(v) usesCount[k]=(usesCount[k]||0)+1; });
+    });
+  });
+
+  const rows = Object.entries(PRODUCTS).map(([k,p])=>{
+    const uses = usesCount[k] || 0;
+    const perUse = uses > 0 ? (p.cost/uses).toFixed(2) : "—";
+    return `<tr>
+      <td><span class="swatch ${p.sw}" style="display:inline-block;margin-right:8px;"></span>${p.label}</td>
+      <td>${uses}x</td>
+      <td>R$ ${perUse === "—" ? "—" : perUse}</td>
+    </tr>`;
+  }).join("");
+
+  document.getElementById("costTable").innerHTML =
+    `<tr><th>Produto</th><th>Usos</th><th>Custo/uso</th></tr>${rows}`;
+
+  const grandTotal = Object.values(PRODUCTS).reduce((a,p)=>a+p.cost,0);
+  document.getElementById("costTotal").textContent =
+    `R$ ${grandTotal.toFixed(2).replace(".",",")}`;
+}
+
+/* ============ RENDER: SLIDERS ============ */
+function bindSliders(){
+  ["vico","textura","firmeza","oleo"].forEach(k=>{
+    const input = document.getElementById("s-"+k);
+    const val = document.getElementById("v-"+k);
+    input.addEventListener("input", ()=> val.textContent = input.value);
+  });
+
+  document.getElementById("saveBtn").addEventListener("click", async (e)=>{
+    const t = todayKey();
+    AVALIACAO[t] = {
+      vico: +document.getElementById("s-vico").value,
+      textura: +document.getElementById("s-textura").value,
+      firmeza: +document.getElementById("s-firmeza").value,
+      oleo: +document.getElementById("s-oleo").value,
+    };
+    await dbSet("skincare_avaliacao", AVALIACAO);
+    e.target.textContent = "Salvo ✓";
+    e.target.classList.add("saved");
+    setTimeout(()=>{ e.target.textContent="Salvar avaliação de hoje"; e.target.classList.remove("saved"); }, 1800);
+    renderChart();
+    renderInsights();
+  });
+
+  // pre-fill if today already has data
+  const t = todayKey();
+  if(AVALIACAO[t]){
+    ["vico","textura","firmeza","oleo"].forEach(k=>{
+      document.getElementById("s-"+k).value = AVALIACAO[t][k];
+      document.getElementById("v-"+k).textContent = AVALIACAO[t][k];
+    });
+  }
+}
+
+/* ============ RENDER: CHART ============ */
+let chartInstance = null;
+function renderChart(){
+  const dates = Object.keys(AVALIACAO).sort();
+  const ctx = document.getElementById("skinChart");
+  const datasets = [
+    {label:"Viço", data:dates.map(d=>AVALIACAO[d].vico), borderColor:"#E8722C", tension:.3},
+    {label:"Textura", data:dates.map(d=>AVALIACAO[d].textura), borderColor:"#D6483F", tension:.3},
+    {label:"Firmeza", data:dates.map(d=>AVALIACAO[d].firmeza), borderColor:"#3A8FD9", tension:.3},
+    {label:"Oleosidade", data:dates.map(d=>AVALIACAO[d].oleo), borderColor:"#F0C43A", tension:.3},
+  ];
+  if(chartInstance) chartInstance.destroy();
+  chartInstance = new Chart(ctx, {
+    type:"line",
+    data:{ labels:dates, datasets },
+    options:{
+      responsive:true,
+      scales:{
+        y:{ min:0, max:10, ticks:{color:"#9B9FAA"}, grid:{color:"#31353F"} },
+        x:{ ticks:{color:"#9B9FAA"}, grid:{color:"#31353F"} }
+      },
+      plugins:{ legend:{ labels:{ color:"#EDEEF0" } } }
+    }
+  });
+}
+
+/* ============ RENDER: INSIGHTS ============ */
+function renderInsights(){
+  const lines = [];
+  const t = todayKey();
+  const dates = Object.keys(AVALIACAO).sort();
+
+  // streak de consistência
+  const checklistDates = Object.keys(CHECKLIST).sort();
+  let streak = 0;
+  for(let i=checklistDates.length-1;i>=0;i--){
+    const d = CHECKLIST[checklistDates[i]];
+    const done = Object.values(d.manha||{}).some(Boolean) || Object.values(d.noite||{}).some(Boolean);
+    if(done) streak++; else break;
+  }
+  if(streak > 0){
+    lines.push(`🔥 Sequência de ${streak} dia(s) seguido(s) usando a rotina.`);
+  } else {
+    lines.push(`👋 Marque seu checklist de hoje para começar a sequência.`);
+  }
+
+  // tendência avaliação
+  if(dates.length >= 2){
+    const last = AVALIACAO[dates[dates.length-1]];
+    const prev = AVALIACAO[dates[dates.length-2]];
+    const diffVico = last.vico - prev.vico;
+    const diffFirmeza = last.firmeza - prev.firmeza;
+    if(diffVico > 0) lines.push(`✨ Viço subiu ${diffVico} ponto(s) desde a última avaliação.`);
+    if(diffFirmeza > 0) lines.push(`💪 Firmeza subiu ${diffFirmeza} ponto(s) — o Peptide Cream está fazendo efeito.`);
+    if(diffVico <=0 && diffFirmeza<=0) lines.push(`📊 Pele estável desde a última avaliação — continue a rotina, resultados de firmeza levam de 8 a 12 semanas.`);
+  } else {
+    lines.push(`📈 Registre avaliações por alguns dias para ver tendências aqui.`);
+  }
+
+  // retinal frequência (irritação watch)
+  let retinalUses7d = 0;
+  const last7 = checklistDates.slice(-7);
+  last7.forEach(d=>{ if(CHECKLIST[d]?.noite?.retinal) retinalUses7d++; });
+  if(retinalUses7d >= 5){
+    lines.push(`⚠️ Retinal usado ${retinalUses7d}x nos últimos 7 dias — se notar descamação, reduza para 2-3x/semana.`);
+  }
+
+  document.getElementById("insightLines").innerHTML = lines.map(l=>
+    `<div class="insight-line"><span class="dot">→</span>${l}</div>`
+  ).join("");
+}
+
+/* ============ INIT ============ */
+async function init(){
+  CHECKLIST = await dbGet("skincare_checklist");
+  AVALIACAO = await dbGet("skincare_avaliacao");
+  CONFIG = await dbGet("skincare_config");
+  if(!CONFIG.startDate){
+    CONFIG.startDate = todayKey();
+    await dbSet("skincare_config", CONFIG);
+  }
+  renderChecklist();
+  renderRings();
+  renderCost();
+  bindSliders();
+  renderChart();
+  renderInsights();
+}
+init();
+</script>
+</body>
+</html>
