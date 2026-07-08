@@ -281,6 +281,8 @@
     <div class="card">
       <h3>Antes / Depois</h3>
       <div class="compare-wrap" id="compareWrap"></div>
+      <button class="save-btn" id="analyzeBtn" style="margin-top:14px;">🔍 Analisar evolução com IA</button>
+      <div id="analyzeResult" style="display:none; margin-top:12px; background:var(--panel-2); border-left:3px solid var(--laranja); border-radius:0 8px 8px 0; padding:14px 16px; font-size:13.5px; line-height:1.6; white-space:pre-wrap;"></div>
     </div>
   </div>
 
@@ -766,6 +768,61 @@ function renderComparison(){
       <img src="${PHOTOS[lastDate]}">
     </div>`;
 }
+
+function dataUrlToBase64(dataUrl){
+  const [header, data] = dataUrl.split(",");
+  const media_type = header.match(/data:(.*?);/)[1];
+  return { media_type, data };
+}
+
+async function analyzeEvolution(){
+  const btn = document.getElementById("analyzeBtn");
+  const resultBox = document.getElementById("analyzeResult");
+  const dates = Object.keys(PHOTOS).sort();
+  if(dates.length < 2){
+    resultBox.style.display = "block";
+    resultBox.textContent = "Precisa de pelo menos 2 fotos (dia 1 e outro dia) pra comparar.";
+    return;
+  }
+  const firstDate = dates[0];
+  const lastDate = dates[dates.length-1];
+  const img1 = dataUrlToBase64(PHOTOS[firstDate]);
+  const img2 = dataUrlToBase64(PHOTOS[lastDate]);
+
+  btn.disabled = true;
+  btn.textContent = "Analisando...";
+  resultBox.style.display = "block";
+  resultBox.textContent = "Comparando as fotos...";
+
+  try{
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-6",
+        max_tokens: 1000,
+        messages: [{
+          role: "user",
+          content: [
+            { type: "text", text: `Primeira imagem: foto de pele do dia ${firstDate}. Segunda imagem: foto de pele do dia ${lastDate}.` },
+            { type: "image", source: { type: "base64", media_type: img1.media_type, data: img1.data } },
+            { type: "image", source: { type: "base64", media_type: img2.media_type, data: img2.data } },
+            { type: "text", text: "Compare as duas fotos de pele (mesma pessoa, ângulos/luz podem variar levemente). Dê uma análise curta e honesta em português, em bullet points, sobre mudanças visíveis em: viço/luminosidade, textura/uniformidade, firmeza, e oleosidade. Se não houver mudança perceptível em algum quesito, diga isso claramente. Seja direto, sem enrolação, máximo 6 linhas." }
+          ]
+        }]
+      })
+    });
+    const data = await response.json();
+    const text = data.content.filter(b=>b.type==="text").map(b=>b.text).join("\n");
+    resultBox.textContent = text || "Não consegui gerar a análise.";
+  }catch(err){
+    resultBox.textContent = "Erro ao analisar: " + err.message;
+  }
+  btn.disabled = false;
+  btn.textContent = "🔍 Analisar evolução com IA";
+}
+
+document.getElementById("analyzeBtn").addEventListener("click", analyzeEvolution);
 
 function renderTimeline(){
   const dates = Object.keys(PHOTOS).sort();
