@@ -130,6 +130,29 @@
   .cal-legend i{width:10px;height:10px;border-radius:3px; display:inline-block;}
 
   footer{text-align:center; color:var(--sub); font-size:12px; margin-top:40px;}
+
+  /* PHOTOS */
+  .photo-upload{
+    border:2px dashed var(--line); border-radius:10px; padding:24px; text-align:center;
+    cursor:pointer; color:var(--sub); font-size:13.5px;
+  }
+  .photo-upload:hover{border-color:var(--laranja);}
+  .photo-preview{width:100%; max-height:340px; object-fit:contain; border-radius:8px; margin-bottom:12px; background:#000;}
+  .photo-day-label{font-size:11px; color:var(--sub); text-transform:uppercase; letter-spacing:.06em; margin-bottom:6px;}
+  .compare-wrap{display:grid; grid-template-columns:1fr 1fr; gap:14px;}
+  .compare-col img{width:100%; border-radius:8px; display:block; background:#000; aspect-ratio:3/4; object-fit:cover;}
+  .compare-col{text-align:center;}
+  .compare-empty{
+    aspect-ratio:3/4; border-radius:8px; border:1px dashed var(--line); display:flex;
+    align-items:center; justify-content:center; color:var(--sub); font-size:12px;
+  }
+  .timeline-scroll{
+    display:flex; gap:12px; overflow-x:auto; padding-bottom:8px;
+  }
+  .timeline-item{flex:0 0 130px; text-align:center;}
+  .timeline-item img{width:130px; aspect-ratio:3/4; object-fit:cover; border-radius:8px; display:block; background:#000;}
+  .timeline-item .tl-day{font-size:12px; color:var(--laranja); font-weight:600; margin-top:6px;}
+  .timeline-item .tl-date{font-size:11px; color:var(--sub);}
   @media(max-width:600px){
     .hero{flex-direction:column; align-items:flex-start;}
     .hero .daycount{text-align:left;}
@@ -232,6 +255,34 @@
       <span><i style="background:#23262E;border:1px dashed #31353F;"></i> pulado</span>
       <span><i style="background:#1D2026;border:1px solid #31353F;"></i> sem registro</span>
     </div>
+  </div>
+
+  <div class="grid" style="grid-template-columns:1fr 1fr;">
+    <div class="card">
+      <h3>📸 Foto de Hoje</h3>
+      <img id="photoPreview" class="photo-preview" style="display:none;">
+      <div id="photoButtons" style="display:flex; gap:10px;">
+        <label class="photo-upload" style="flex:1; padding:16px 10px;">
+          📷 Tirar foto
+          <input type="file" id="photoCameraInput" accept="image/*" capture="user" style="display:none;">
+        </label>
+        <label class="photo-upload" style="flex:1; padding:16px 10px;">
+          🖼️ Carregar do rolo
+          <input type="file" id="photoGalleryInput" accept="image/*" style="display:none;">
+        </label>
+      </div>
+      <button class="save-btn" id="photoSaveBtn" style="display:none; margin-top:10px;">Salvar foto de hoje</button>
+    </div>
+
+    <div class="card">
+      <h3>Antes / Depois</h3>
+      <div class="compare-wrap" id="compareWrap"></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:28px;">
+    <h3>Linha do Tempo — Evolução Dia a Dia</h3>
+    <div class="timeline-scroll" id="timelineScroll"></div>
   </div>
 
   <footer>Painel pessoal de skincare · dados salvos na nuvem (Firebase) com fallback local · Creamy Skincare</footer>
@@ -605,11 +656,112 @@ document.getElementById("calNext").addEventListener("click", ()=>{
   renderCalendar();
 });
 
+/* ============ FOTOS ============ */
+let PHOTOS = {}; // { "2026-07-08": "data:image/jpeg;base64,..." }
+let pendingPhotoDataUrl = null;
+
+function compressImage(file, maxWidth=700, quality=0.6){
+  return new Promise((resolve, reject)=>{
+    const reader = new FileReader();
+    reader.onload = (e)=>{
+      const img = new Image();
+      img.onload = ()=>{
+        const scale = Math.min(1, maxWidth / img.width);
+        const canvas = document.createElement("canvas");
+        canvas.width = img.width * scale;
+        canvas.height = img.height * scale;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL("image/jpeg", quality));
+      };
+      img.onerror = reject;
+      img.src = e.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+function renderPhotoUpload(){
+  const t = todayKey();
+  const preview = document.getElementById("photoPreview");
+  const buttons = document.getElementById("photoButtons");
+  const saveBtn = document.getElementById("photoSaveBtn");
+
+  if(PHOTOS[t]){
+    preview.src = PHOTOS[t];
+    preview.style.display = "block";
+    buttons.style.display = "none";
+    saveBtn.style.display = "none";
+  } else {
+    preview.style.display = "none";
+    buttons.style.display = "flex";
+  }
+
+  const handleFile = async (file)=>{
+    if(!file) return;
+    pendingPhotoDataUrl = await compressImage(file);
+    preview.src = pendingPhotoDataUrl;
+    preview.style.display = "block";
+    buttons.style.display = "none";
+    saveBtn.style.display = "block";
+  };
+
+  document.getElementById("photoCameraInput").onchange = (e)=> handleFile(e.target.files[0]);
+  document.getElementById("photoGalleryInput").onchange = (e)=> handleFile(e.target.files[0]);
+
+  saveBtn.onclick = async ()=>{
+    if(!pendingPhotoDataUrl) return;
+    PHOTOS[t] = pendingPhotoDataUrl;
+    saveBtn.textContent = "Salvando...";
+    await dbSet("skincare_photos", PHOTOS);
+    saveBtn.style.display = "none";
+    renderComparison();
+    renderTimeline();
+  };
+}
+
+function renderComparison(){
+  const dates = Object.keys(PHOTOS).sort();
+  const wrap = document.getElementById("compareWrap");
+  if(dates.length === 0){
+    wrap.innerHTML = `<div class="compare-empty">Dia 1</div><div class="compare-empty">Hoje</div>`;
+    return;
+  }
+  const firstDate = dates[0];
+  const lastDate = dates[dates.length-1];
+  wrap.innerHTML = `
+    <div class="compare-col">
+      <div class="photo-day-label">Dia 1 · ${firstDate}</div>
+      <img src="${PHOTOS[firstDate]}">
+    </div>
+    <div class="compare-col">
+      <div class="photo-day-label">Mais recente · ${lastDate}</div>
+      <img src="${PHOTOS[lastDate]}">
+    </div>`;
+}
+
+function renderTimeline(){
+  const dates = Object.keys(PHOTOS).sort();
+  const wrap = document.getElementById("timelineScroll");
+  if(dates.length === 0){
+    wrap.innerHTML = `<div style="color:var(--sub); font-size:13px;">Nenhuma foto ainda — salve a foto de hoje para começar.</div>`;
+    return;
+  }
+  wrap.innerHTML = dates.map((d, i)=>`
+    <div class="timeline-item">
+      <img src="${PHOTOS[d]}">
+      <div class="tl-day">Dia ${i+1}</div>
+      <div class="tl-date">${d}</div>
+    </div>`).join("");
+}
+
 /* ============ INIT ============ */
 async function init(){
   CHECKLIST = await dbGet("skincare_checklist");
   AVALIACAO = await dbGet("skincare_avaliacao");
   CONFIG = await dbGet("skincare_config");
+  PHOTOS = await dbGet("skincare_photos");
   if(!CONFIG.startDate){
     CONFIG.startDate = todayKey();
     await dbSet("skincare_config", CONFIG);
@@ -621,6 +773,9 @@ async function init(){
   renderChart();
   renderInsights();
   renderCalendar();
+  renderPhotoUpload();
+  renderComparison();
+  renderTimeline();
 }
 init();
 </script>
