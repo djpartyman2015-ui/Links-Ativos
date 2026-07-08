@@ -1,0 +1,1752 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Andrey Cappa — Patrimony Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&display=swap');
+:root{--bg:#0a0e1a;--surface:#111827;--surface2:#1a2235;--border:#1f2d45;--accent:#00d4aa;--accent2:#3b82f6;--accent3:#f59e0b;--gold:#d4a017;--text:#e8eaf0;--muted:#6b7a96;--red:#ef4444;--green:#22c55e;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;font-size:13px;min-height:100vh;}
+.header{background:linear-gradient(135deg,#0a0e1a 0%,#111827 50%,#0d1929 100%);border-bottom:1px solid var(--border);padding:24px 40px 20px;display:flex;justify-content:space-between;align-items:center;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;top:-60px;right:-60px;width:300px;height:300px;background:radial-gradient(circle,rgba(0,212,170,0.06) 0%,transparent 70%);pointer-events:none;}
+.header-title{font-family:'DM Serif Display',serif;font-size:26px;letter-spacing:-0.5px;}
+.header-title span{color:var(--accent);}
+.header-sub{color:var(--muted);font-size:10px;margin-top:4px;letter-spacing:1px;text-transform:uppercase;}
+.header-right{display:flex;align-items:center;gap:16px;}
+.header-info{text-align:right;color:var(--muted);font-size:11px;}
+.header-info .snap{color:var(--accent);font-size:14px;font-weight:500;}
+.update-btn{display:flex;align-items:center;gap:8px;background:transparent;border:1px solid var(--accent);color:var(--accent);font-family:'DM Mono',monospace;font-size:11px;padding:8px 16px;border-radius:8px;cursor:pointer;letter-spacing:0.5px;transition:all 0.2s;white-space:nowrap;}
+.update-btn:hover{background:rgba(0,212,170,0.1);box-shadow:0 0 20px rgba(0,212,170,0.2);}
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);backdrop-filter:blur(4px);z-index:1000;display:none;align-items:center;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:32px;max-width:520px;width:90%;position:relative;}
+.modal-title{font-family:'DM Serif Display',serif;font-size:20px;margin-bottom:6px;}
+.modal-sub{color:var(--muted);font-size:11px;margin-bottom:22px;line-height:1.6;}
+.upload-zone{border:2px dashed var(--border);border-radius:12px;padding:32px 20px;text-align:center;cursor:pointer;transition:all 0.25s;position:relative;}
+.upload-zone:hover,.upload-zone.drag{border-color:var(--accent);background:rgba(0,212,170,0.04);}
+.upload-zone input{display:none;}
+.upload-icon{font-size:32px;margin-bottom:10px;}
+.upload-main{font-size:13px;color:var(--text);margin-bottom:6px;}
+.upload-main span{color:var(--accent);cursor:pointer;}
+.upload-hint{font-size:11px;color:var(--muted);}
+.upload-progress{display:none;margin-top:16px;}
+.progress-track{height:4px;background:var(--surface2);border-radius:2px;overflow:hidden;}
+.progress-fill-anim{height:100%;background:var(--accent);border-radius:2px;width:0%;transition:width 0.4s ease;}
+.upload-status-msg{font-size:11px;color:var(--muted);margin-top:8px;text-align:center;}
+.upload-status-msg.ok{color:var(--green);}
+.upload-status-msg.err{color:var(--red);}
+.modal-footer{display:flex;justify-content:flex-end;margin-top:22px;}
+.modal-close{background:transparent;border:1px solid var(--border);color:var(--muted);padding:8px 20px;border-radius:8px;cursor:pointer;font-family:'DM Mono',monospace;font-size:11px;}
+.modal-close:hover{border-color:var(--text);color:var(--text);}
+/* NAV */
+.nav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 40px;display:flex;}
+.nav-tab{padding:14px 24px;font-family:'DM Mono',monospace;font-size:12px;color:var(--muted);background:transparent;border:none;border-bottom:2px solid transparent;cursor:pointer;letter-spacing:0.5px;transition:all 0.2s;}
+.nav-tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+.nav-tab:hover:not(.active){color:var(--text);}
+/* PAGES */
+.page{display:none;padding:24px 40px 40px;max-width:1600px;}
+.page.active{display:block;}
+/* KPI */
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px 22px;position:relative;overflow:hidden;transition:border-color 0.2s;}
+.kpi:hover{border-color:var(--accent);}
+.kpi::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:var(--accent-bar,var(--accent));opacity:0.6;}
+.kpi-label{color:var(--muted);font-size:10px;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;}
+.kpi-value{font-family:'DM Serif Display',serif;font-size:26px;color:var(--text);line-height:1;}
+.kpi-sub{color:var(--muted);font-size:11px;margin-top:6px;}
+.kpi-badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;margin-top:4px;}
+.badge-green{background:rgba(34,197,94,0.15);color:var(--green);}
+.badge-red{background:rgba(239,68,68,0.15);color:var(--red);}
+.badge-blue{background:rgba(59,130,246,0.15);color:var(--accent2);}
+.badge-orange{background:rgba(245,158,11,0.15);color:var(--accent3);}
+/* LAYOUT */
+.section-title{font-family:'DM Serif Display',serif;font-size:17px;margin-bottom:14px;display:flex;align-items:center;gap:10px;}
+.section-title::after{content:'';flex:1;height:1px;background:var(--border);}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px;}
+.grid-60-40{display:grid;grid-template-columns:60fr 40fr;gap:20px;margin-bottom:24px;}
+.grid-65-35{display:grid;grid-template-columns:65fr 35fr;gap:20px;margin-bottom:24px;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:22px;}
+.card-title{color:var(--muted);font-size:10px;letter-spacing:1.2px;text-transform:uppercase;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;}
+.pill{background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:3px 10px;font-size:10px;color:var(--accent);}
+.chart-wrap{position:relative;}
+/* TABLE */
+.data-table{width:100%;border-collapse:collapse;}
+.data-table th{color:var(--muted);font-size:10px;letter-spacing:1px;text-transform:uppercase;text-align:right;padding:6px 10px;border-bottom:1px solid var(--border);}
+.data-table th:first-child{text-align:left;}
+.data-table td{padding:9px 10px;text-align:right;border-bottom:1px solid rgba(31,45,69,0.5);font-size:12px;}
+.data-table td:first-child{text-align:left;}
+.data-table tr:last-child td{border-bottom:none;}
+.data-table tr:hover td{background:rgba(255,255,255,0.02);}
+.pos{color:var(--green);}
+.neg{color:var(--red);}
+.bar-inner{display:inline-block;height:4px;border-radius:2px;background:var(--accent);margin-left:8px;vertical-align:middle;opacity:0.7;}
+.cat-tag{display:inline-block;font-size:9px;padding:1px 6px;border-radius:10px;margin-left:6px;}
+.tag-bens{background:rgba(59,130,246,0.15);color:var(--accent2);}
+.tag-din{background:rgba(0,212,170,0.1);color:var(--accent);}
+/* DONUT LEGEND */
+.donut-legend-item{display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(31,45,69,0.4);font-size:11px;}
+.donut-legend-item:last-child{border-bottom:none;}
+.donut-dot{width:8px;height:8px;border-radius:50%;margin-right:8px;flex-shrink:0;}
+.donut-name{display:flex;align-items:center;flex:1;}
+.donut-pct{color:var(--accent);margin-left:12px;min-width:40px;text-align:right;}
+/* PROGRESS */
+.progress-wrap{margin-bottom:12px;}
+.progress-label{display:flex;justify-content:space-between;margin-bottom:4px;font-size:11px;}
+.progress-bar{height:6px;border-radius:3px;background:var(--surface2);overflow:hidden;}
+.progress-fill{height:100%;border-radius:3px;transition:width 0.8s ease;}
+/* INSIGHTS */
+.insight-list{display:flex;flex-direction:column;gap:10px;}
+.insight{background:var(--surface2);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:8px;padding:12px 14px;font-size:12px;line-height:1.5;}
+.insight.warn{border-left-color:var(--accent3);}
+.insight.info{border-left-color:var(--accent2);}
+.insight.ipos{border-left-color:var(--green);}
+.insight.ineg{border-left-color:var(--red);}
+.insight strong{color:var(--accent);}
+.insight.warn strong{color:var(--accent3);}
+.insight.info strong{color:var(--accent2);}
+.insight.ipos strong{color:var(--green);}
+.insight.ineg strong{color:var(--red);}
+/* MILESTONE */
+.milestone{display:flex;align-items:flex-start;gap:14px;padding:11px 0;border-bottom:1px solid rgba(31,45,69,0.4);}
+.milestone:last-child{border-bottom:none;}
+.ms-dot{width:10px;height:10px;border-radius:50%;background:var(--accent);margin-top:3px;flex-shrink:0;box-shadow:0 0 8px rgba(0,212,170,0.4);}
+.ms-dot.gold{background:var(--gold);box-shadow:0 0 8px rgba(212,160,23,0.4);}
+.ms-info{flex:1;}
+.ms-title{font-size:12px;}
+.ms-date{font-size:10px;color:var(--muted);margin-top:2px;}
+.ms-val{font-size:13px;color:var(--accent);white-space:nowrap;}
+.ms-val.gold{color:var(--gold);}
+/* TAB BTNS */
+.tab-row{display:flex;gap:6px;}
+.tab-btn{padding:5px 14px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'DM Mono',monospace;font-size:11px;cursor:pointer;transition:all 0.2s;}
+.tab-btn.active{background:var(--accent);color:#000;border-color:var(--accent);}
+.tab-btn:not(.active):hover{border-color:var(--accent);color:var(--accent);}
+/* TOAST */
+.toast{position:fixed;bottom:24px;right:24px;background:#1a2235;border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:10px;padding:14px 20px;font-size:12px;color:var(--text);z-index:9999;transform:translateY(80px);opacity:0;transition:all 0.35s ease;max-width:320px;}
+.toast.show{transform:translateY(0);opacity:1;}
+.toast.err{border-left-color:var(--red);}
+footer{text-align:center;color:var(--muted);font-size:10px;letter-spacing:1px;padding:20px 40px;border-top:1px solid var(--border);margin-top:20px;}
+</style>
+</head>
+<body>
+
+<div style="background:#0d1929;border-bottom:2px solid #f59e0b;padding:8px 40px;display:flex;align-items:center;gap:12px;font-family:'DM Mono',monospace;font-size:11px;color:#f59e0b;letter-spacing:0.5px">
+  <span style="background:#f59e0b;color:#000;padding:2px 8px;border-radius:4px;font-weight:700">DEMO</span>
+  Dados 100% fictícios para demonstração — nenhum dado real exposto.
+  <span style="margin-left:auto;color:#6b7a96">Criado com Claude · Anthropic</span>
+</div>
+<div class="header">
+  <div>
+    <div class="header-title">Demo User — <span>Patrimônio</span></div>
+    <div class="header-sub">Dashboard Financeiro · Inventário & Dívidas</div>
+  </div>
+  <div class="header-right">
+    <div class="header-info">
+      <div class="snap" id="hdr-total">—</div>
+      <div style="margin-top:4px">Snapshot: <span id="hdr-date">—</span></div>
+      <div style="margin-top:2px" id="hdr-debt">—</div>
+    </div>
+    <button class="update-btn" onclick="openModal()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
+      Atualizar Base
+    </button>
+  </div>
+</div>
+
+<div class="nav">
+  <button class="nav-tab active" onclick="switchPage('inventario',this)">📊 Inventário</button>
+  <button class="nav-tab" onclick="switchPage('dividas',this)">💳 Dívidas</button>
+  <button class="nav-tab" onclick="switchPage('veiculo',this)">🚗 Veículo</button>
+  <button class="nav-tab" onclick="switchPage('payslip',this)">💰 PaySlip</button>
+  <button class="nav-tab" onclick="switchPage('investimentos',this)">📈 Investimentos</button>
+</div>
+
+<!-- INVENTÁRIO -->
+<div class="page active" id="page-inventario">
+  <div class="kpi-row" style="margin-top:24px">
+    <div class="kpi" style="--accent-bar:#00d4aa"><div class="kpi-label">Patrimônio Atual</div><div class="kpi-value" id="inv-total">—</div><div class="kpi-sub" id="inv-total-sub">—</div><div class="kpi-badge badge-green" id="inv-mom">—</div></div>
+    <div class="kpi" style="--accent-bar:#3b82f6"><div class="kpi-label">Crescimento Total</div><div class="kpi-value" id="inv-growth">—</div><div class="kpi-sub" id="inv-growth-sub">—</div><div class="kpi-badge badge-blue" id="inv-snaps">—</div></div>
+    <div class="kpi" style="--accent-bar:#f59e0b"><div class="kpi-label">Maior Ativo</div><div class="kpi-value">Apto Centro</div><div class="kpi-sub" id="inv-casa-sub">—</div><div class="kpi-badge badge-blue">Imóvel Principal</div></div>
+    <div class="kpi" style="--accent-bar:#22c55e"><div class="kpi-label">CAGR Médio Anual</div><div class="kpi-value">~25%</div><div class="kpi-sub" id="inv-cagr-sub">2019–2026</div><div class="kpi-badge badge-green" id="inv-anos">Todos os anos positivos</div></div>
+  </div>
+  <div class="section-title">Evolução do Patrimônio</div>
+  <div class="grid-65-35">
+    <div class="card">
+      <div class="card-title"><span>Total ao Longo do Tempo</span><div class="tab-row"><button class="tab-btn active" onclick="switchMainChart('total',this)">Total</button><button class="tab-btn" onclick="switchMainChart('stacked',this)">Composição</button><button class="tab-btn" onclick="switchMainChart('growth',this)">Crescimento</button></div></div>
+      <div class="chart-wrap" style="height:300px"><canvas id="mainChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Composição Atual <span class="pill" id="inv-comp-date">—</span></div>
+      <div class="chart-wrap" style="height:180px"><canvas id="donutChart"></canvas></div>
+      <div id="donutLegend" style="margin-top:14px"></div>
+    </div>
+  </div>
+  <div class="grid-60-40">
+    <div class="card"><div class="card-title">Desempenho por Ano</div><table class="data-table" id="yearlyTable"></table></div>
+    <div class="card"><div class="card-title">Marcos do Patrimônio</div><div id="milestones"></div></div>
+  </div>
+  <div class="section-title">Ativos & Liquidez</div>
+  <div class="grid-65-35">
+    <div class="card"><div class="card-title">Posição Atual <span class="pill" id="inv-asset-date">—</span></div><table class="data-table" id="assetTable"></table></div>
+    <div class="card"><div class="card-title">Insights</div><div class="insight-list" id="invInsights"></div></div>
+  </div>
+  <div class="section-title">Bens vs. Liquidez</div>
+  <div class="grid-2">
+    <div class="card"><div class="card-title">Top 5 Maiores Ativos</div><div class="chart-wrap" style="height:200px"><canvas id="bensChart"></canvas></div></div>
+    <div class="card"><div class="card-title">Liquidez / Investimentos</div><div class="chart-wrap" style="height:200px"><canvas id="liquidezChart"></canvas></div></div>
+  </div>
+</div>
+
+<!-- DÍVIDAS -->
+<div class="page" id="page-dividas">
+  <div class="kpi-row" style="margin-top:24px">
+    <div class="kpi" style="--accent-bar:#ef4444"><div class="kpi-label">Total das Dívidas</div><div class="kpi-value" id="div-total">—</div><div class="kpi-sub">Valor original acumulado</div><div class="kpi-badge badge-orange" id="div-pct">—</div></div>
+    <div class="kpi" style="--accent-bar:#f59e0b"><div class="kpi-label">Ainda a Pagar</div><div class="kpi-value" id="div-pagar">—</div><div class="kpi-sub">Saldo restante total</div><div class="kpi-badge badge-red" id="div-pagar-pct">—</div></div>
+    <div class="kpi" style="--accent-bar:#22c55e"><div class="kpi-label">Total Pago</div><div class="kpi-value" id="div-pago">—</div><div class="kpi-sub">Valor já quitado</div><div class="kpi-badge badge-green">Excelente progresso!</div></div>
+    <div class="kpi" style="--accent-bar:#3b82f6"><div class="kpi-label">Maior Dívida Ativa</div><div class="kpi-value">Cartões</div><div class="kpi-sub" id="div-cart-sub">—</div><div class="kpi-badge badge-orange" id="div-cart-days">—</div></div>
+  </div>
+  <div class="section-title">Análise das Dívidas</div>
+  <div class="grid-65-35">
+    <div class="card">
+      <div class="card-title"><span>Gastos Mensais por Categoria</span><div class="tab-row"><button class="tab-btn active" onclick="switchDivChart('mensal',this)">Mensal</button><button class="tab-btn" onclick="switchDivChart('projecao',this)">Projeção</button><button class="tab-btn" onclick="switchDivChart('categ',this)">Por Categoria</button></div></div>
+      <div class="chart-wrap" style="height:300px"><canvas id="divChart"></canvas></div>
+    </div>
+    <div class="card"><div class="card-title">Progresso por Dívida</div><div id="debtProgress"></div></div>
+  </div>
+  <div class="grid-60-40">
+    <div class="card"><div class="card-title">Histórico Mensal Detalhado</div><div style="max-height:380px;overflow-y:auto"><table class="data-table" id="divMonthlyTable"></table></div></div>
+    <div class="card"><div class="card-title">Insights & Alertas</div><div class="insight-list" id="divInsights"></div></div>
+  </div>
+  <div class="section-title">Projeção de Quitação</div>
+  <div class="grid-2">
+    <div class="card"><div class="card-title">Fluxo — Próximos Meses</div><div class="chart-wrap" style="height:200px"><canvas id="projChart"></canvas></div></div>
+    <div class="card"><div class="card-title">Vencimentos Ativos (por proximidade)</div><div id="divCalendar"></div></div>
+  </div>
+</div>
+
+
+
+<!-- PAYSLIP -->
+<div class="page" id="page-payslip">
+  <div class="kpi-row" style="margin-top:24px">
+    <div class="kpi" style="--accent-bar:#00d4aa"><div class="kpi-label">Bruto Médio Mensal</div><div class="kpi-value" id="ps-media-bruto">—</div><div class="kpi-sub" id="ps-media-sub">Média 2024 + 2025</div><div class="kpi-badge badge-green" id="ps-crescimento">—</div></div>
+    <div class="kpi" style="--accent-bar:#22c55e"><div class="kpi-label">Líquido Médio Mensal</div><div class="kpi-value" id="ps-media-liq">—</div><div class="kpi-sub" id="ps-liq-sub">Após impostos</div><div class="kpi-badge badge-green" id="ps-liq-badge">—</div></div>
+    <div class="kpi" style="--accent-bar:#ef4444"><div class="kpi-label">Imposto Médio</div><div class="kpi-value" id="ps-imposto">—</div><div class="kpi-sub" id="ps-imp-sub">Média mensal retida</div><div class="kpi-badge badge-red" id="ps-imp-pct">—% do bruto</div></div>
+    <div class="kpi" style="--accent-bar:#3b82f6"><div class="kpi-label">Total Bruto 2025</div><div class="kpi-value" id="ps-total-2025">—</div><div class="kpi-sub" id="ps-total-sub">vs 2024</div><div class="kpi-badge badge-blue" id="ps-total-badge">—</div></div>
+  </div>
+
+  <div class="section-title">Evolução Salarial</div>
+  <div class="grid-65-35">
+    <div class="card">
+      <div class="card-title"><span>Bruto vs. Líquido por Mês</span>
+        <div class="tab-row"><button class="tab-btn active" onclick="switchPsChart('mensal',this)">Mensal</button><button class="tab-btn" onclick="switchPsChart('comparativo',this)">Mês a Mês</button><button class="tab-btn" onclick="switchPsChart('imposto',this)">Impostos</button><button class="tab-btn" onclick="switchPsChart('anual',this)">Por Ano</button></div>
+      </div>
+      <div class="chart-wrap" style="height:280px"><canvas id="psMainChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Composição Salarial <span class="pill" id="ps-comp-year">2024+2025</span></div>
+      <div class="chart-wrap" style="height:160px"><canvas id="psDonut"></canvas></div>
+      <div id="psDonutLegend" style="margin-top:14px"></div>
+    </div>
+  </div>
+
+  <div class="grid-60-40">
+    <div class="card">
+      <div class="card-title">Detalhamento Mensal — 2024 & 2025</div>
+      <div style="max-height:380px;overflow-y:auto">
+        <table class="data-table" id="psTable"></table>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Insights Salariais</div>
+      <div class="insight-list" id="psInsights"></div>
+    </div>
+  </div>
+
+  <div class="section-title">Análise de Tempo</div>
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">Ganho por Hora Trabalhada (Mês / Dia / Hora)</div>
+      <div class="chart-wrap" style="height:200px"><canvas id="psPorHoraChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Resumo Anual Consolidado</div>
+      <div id="psAnoResumo"></div>
+    </div>
+  </div>
+</div>
+
+<!-- VEICULO -->
+<div class="page" id="page-veiculo">
+  <div class="kpi-row" style="margin-top:24px">
+    <div class="kpi" style="--accent-bar:#f59e0b"><div class="kpi-label">Valor do Carro Hoje</div><div class="kpi-value" id="fb-valor-atual">—</div><div class="kpi-sub" id="fb-dias">—</div><div class="kpi-badge badge-orange" id="fb-data-compra">—</div></div>
+    <div class="kpi" style="--accent-bar:#ef4444"><div class="kpi-label">Custo Total Acumulado</div><div class="kpi-value" id="fb-custo-total">—</div><div class="kpi-sub">Financ. + Entrada + IPVA + Seguro</div><div class="kpi-badge badge-red" id="fb-custo-dia">R$ —/dia</div></div>
+    <div class="kpi" style="--accent-bar:#3b82f6"><div class="kpi-label">Financiamento</div><div class="kpi-value" id="fb-financ-pago">—</div><div class="kpi-sub" id="fb-financ-sub">— parcelas pagas</div><div class="kpi-badge badge-blue" id="fb-financ-falta">falta R$ —</div></div>
+    <div class="kpi" style="--accent-bar:#22c55e"><div class="kpi-label">IPVA + Seguro</div><div class="kpi-value" id="fb-ipva-seg">—</div><div class="kpi-sub" id="fb-ipva-sub">Total pago em encargos</div><div class="kpi-badge badge-orange" id="fb-encargos-pend">—</div></div>
+  </div>
+
+  <div class="section-title">Evolução do Custo por Dia</div>
+  <div class="grid-65-35">
+    <div class="card">
+      <div class="card-title"><span>Custo Total do Carro por Dia — Tendência de Queda</span><span class="pill" id="fb-cpd-atual">—</span></div>
+      <div class="chart-wrap" style="height:280px"><canvas id="fbCpdChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Composição do Custo Total</div>
+      <div class="chart-wrap" style="height:160px"><canvas id="fbComposChart"></canvas></div>
+      <div id="fbComposLegend" style="margin-top:14px"></div>
+    </div>
+  </div>
+
+  <div class="section-title">Controle de Financiamento</div>
+  <div class="grid-65-35">
+    <div class="card">
+      <div class="card-title">Parcelas do Financiamento <span class="pill" id="fb-financ-pill">36x R$ 1.799</span></div>
+      <div style="max-height:340px;overflow-y:auto">
+        <table class="data-table" id="fbFinancTable"></table>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Progresso do Financiamento</div>
+      <div style="margin-bottom:20px" id="fbFinancProgress"></div>
+      <div class="card-title" style="margin-top:4px">Custos por Ano</div>
+      <div class="chart-wrap" style="height:160px"><canvas id="fbAnualChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="section-title">IPVA & Seguro</div>
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">Controle de IPVA <span class="pill" id="fb-ipva-total-pill">—</span></div>
+      <div style="max-height:300px;overflow-y:auto">
+        <table class="data-table" id="fbIpvaTable"></table>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Controle de Seguro <span class="pill" id="fb-seg-total-pill">—</span></div>
+      <div style="max-height:300px;overflow-y:auto">
+        <table class="data-table" id="fbSegTable"></table>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title">Custo Total por Mês & Combustível</div>
+  <div class="grid-60-40" style="margin-bottom:24px">
+    <div class="card">
+      <div class="card-title">
+        <span>Valor Total Gasto com o Veículo por Mês</span>
+        <span class="pill" id="fb-gastos-total">—</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px" id="fb-anos-summary"></div>
+      <div class="chart-wrap" style="height:240px"><canvas id="fbGastosChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Sem Parar + Combustível <span class="pill" id="fb-sp-total">—</span></div>
+      <div style="margin-bottom:14px" id="fb-sp-kpis"></div>
+      <div class="chart-wrap" style="height:200px"><canvas id="fbSemPararChart"></canvas></div>
+      <div style="margin-top:14px;max-height:180px;overflow-y:auto">
+        <table class="data-table" id="fbSemPararTable"></table>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title">Análise & Comparativo</div>
+  <div class="grid-60-40">
+    <div class="card">
+      <div class="card-title">Custo por Ano — Financ. + IPVA + Seguro</div>
+      <div class="chart-wrap" style="height:200px"><canvas id="fbYearChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Insights do Veículo</div>
+      <div class="insight-list" id="fbInsights"></div>
+    </div>
+  </div>
+</div>
+
+
+<!-- INVESTIMENTOS -->
+<div class="page" id="page-investimentos">
+
+  <!-- KPI ROW -->
+  <div class="kpi-row" style="margin-top:24px">
+    <div class="kpi" style="--accent-bar:#00d4aa">
+      <div class="kpi-label">Total Investido</div>
+      <div class="kpi-value" id="invest-total">—</div>
+      <div class="kpi-sub" id="invest-total-sub">—</div>
+      <div class="kpi-badge badge-green" id="inv-total-var">—</div>
+    </div>
+    <div class="kpi" style="--accent-bar:#3b82f6">
+      <div class="kpi-label">Maior Posição</div>
+      <div class="kpi-value" id="inv-maior-nome">—</div>
+      <div class="kpi-sub" id="inv-maior-sub">—</div>
+      <div class="kpi-badge badge-blue" id="inv-maior-pct">—</div>
+    </div>
+    <div class="kpi" style="--accent-bar:#f59e0b">
+      <div class="kpi-label">Melhor Performance</div>
+      <div class="kpi-value" id="inv-best-nome">—</div>
+      <div class="kpi-sub" id="inv-best-sub">—</div>
+      <div class="kpi-badge badge-green" id="inv-best-var">—</div>
+    </div>
+    <div class="kpi" style="--accent-bar:#ef4444">
+      <div class="kpi-label">Pior Performance</div>
+      <div class="kpi-value" id="inv-worst-nome">—</div>
+      <div class="kpi-sub" id="inv-worst-sub">—</div>
+      <div class="kpi-badge badge-red" id="inv-worst-var">—</div>
+    </div>
+  </div>
+
+  <!-- VARIAÇÃO + COMPOSIÇÃO -->
+  <div class="section-title">Visão Geral da Carteira</div>
+  <div class="grid-65-35">
+    <div class="card">
+      <div class="card-title">
+        <span>Posição por Investimento</span>
+        <div class="tab-row">
+          <button class="tab-btn active" onclick="switchInvChart('barras',this)">Posições</button>
+          <button class="tab-btn" onclick="switchInvChart('variacao',this)">Variação %</button>
+          <button class="tab-btn" onclick="switchInvChart('evolucao',this)">Evolução</button>
+        </div>
+      </div>
+      <div class="chart-wrap" style="height:300px"><canvas id="invMainChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Composição por Tipo <span class="pill" id="invest-comp-date">—</span></div>
+      <div class="chart-wrap" style="height:170px"><canvas id="invDonut"></canvas></div>
+      <div id="invDonutLegend" style="margin-top:12px"></div>
+    </div>
+  </div>
+
+  <!-- TABELA DE POSIÇÕES + DIVERSIFICAÇÃO -->
+  <div class="grid-60-40">
+    <div class="card">
+      <div class="card-title">Posição Detalhada — Todos os Ativos <span class="pill" id="inv-table-date">—</span></div>
+      <table class="data-table" id="invPosTable"></table>
+    </div>
+    <div class="card">
+      <div class="card-title">Score de Diversificação</div>
+      <div id="invDiversScore" style="margin-bottom:16px"></div>
+      <div class="card-title" style="margin-top:4px">Alocação por Risco</div>
+      <div class="chart-wrap" style="height:130px"><canvas id="invRiscoChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- VARIAÇÃO ENTRE SNAPSHOTS + INSIGHTS -->
+  <div class="section-title">Análise de Performance</div>
+  <div class="grid-65-35">
+    <div class="card">
+      <div class="card-title">Variação entre Snapshots <span id="inv-var-dates" style="color:var(--muted);font-size:10px">— → —</span></div>
+      <table class="data-table" id="invVarTable"></table>
+    </div>
+    <div class="card">
+      <div class="card-title">Insights & Recomendações</div>
+      <div class="insight-list" id="investInsights"></div>
+    </div>
+  </div>
+
+  <!-- RADAR DE DIVERSIFICAÇÃO -->
+  <div class="section-title">Análise de Alocação</div>
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">Distribuição por Classe de Ativo</div>
+      <div class="chart-wrap" style="height:220px"><canvas id="invClasseChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Onde Diversificar Mais</div>
+      <div id="invRecomendacoes"></div>
+    </div>
+  </div>
+
+</div>
+
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <div class="modal-title">⟳ Atualizar Base de Dados</div>
+    <div class="modal-sub">Carregue o arquivo <code style="color:var(--accent)">Patrimony_Inventory.xlsx</code> atualizado. Os dados são processados <strong style="color:var(--text)">diretamente no seu browser</strong> — nenhum dado é enviado para nenhum servidor.</div>
+    <div class="upload-zone" id="uploadZone" onclick="document.getElementById('xlsxInput').click()">
+      <input type="file" id="xlsxInput" accept=".xlsx,.xls" onchange="processXlsx(this.files[0])">
+      <div class="upload-icon" id="uploadIcon">📂</div>
+      <div class="upload-main">Arraste o <strong>.xlsx</strong> aqui ou <span style="color:var(--accent);cursor:pointer">clique para selecionar</span></div>
+      <div class="upload-hint" id="uploadHint">Patrimony_Inventory.xlsx · Abas: Inventário + Dívidas</div>
+      <div class="upload-progress" id="uploadProgress">
+        <div class="progress-track"><div class="progress-fill-anim" id="progressFill"></div></div>
+        <div class="upload-status-msg" id="uploadMsg">Lendo arquivo...</div>
+      </div>
+    </div>
+    <div class="modal-footer"><button class="modal-close" onclick="closeModal()">Fechar</button></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<footer id="footer-text">PATRIMONY DASHBOARD · DEMO</footer>
+
+<script>
+// ===========================
+// EMBEDDED DATA (initial load)
+// ===========================
+let ALL_DATA = {"inventario": {"timeline": [{"date": "2020-03-13", "label": "13/03/20", "total": 235603.8, "assets": {"Apto Centro": 146269.45, "Carro": 41882.4, "Terreno Interior": 0, "FGTS": 12782.51, "Nubank CDB": 8072.0, "XP Fundos": 14916.98, "Previdência PGBL": 3586.84, "Criptomoedas": 648.04, "Mercado Pago": 717.35, "Wise USD": 0, "Tesouro IPCA+": 5000, "Poupança": 1728.23, "Cartão Crédito": -604.29, "Rico CDB": 0}}, {"date": "2020-04-14", "label": "14/04/20", "total": 233781.84, "assets": {"Apto Centro": 147014.54, "Carro": 41958.46, "Terreno Interior": 0, "FGTS": 13650.88, "Nubank CDB": 5144.65, "XP Fundos": 12968.07, "Previdência PGBL": 4143.08, "Criptomoedas": 813.11, "Mercado Pago": 516.25, "Wise USD": 0, "Tesouro IPCA+": 5000, "Poupança": 2572.8, "Cartão Crédito": -2943.49, "Rico CDB": 0}}, {"date": "2020-05-10", "label": "10/05/20", "total": 234882.45, "assets": {"Apto Centro": 147823.24, "Carro": 41904.86, "Terreno Interior": 0, "FGTS": 14579.93, "Nubank CDB": 5190.95, "XP Fundos": 12876.88, "Previdência PGBL": 4618.72, "Criptomoedas": 830.98, "Mercado Pago": 1161.3, "Wise USD": 0, "Tesouro IPCA+": 5000, "Poupança": 895.59, "Cartão Crédito": -2107.99, "Rico CDB": 0}}, {"date": "2020-06-09", "label": "09/06/20", "total": 238349.38, "assets": {"Apto Centro": 149561.35, "Carro": 41906.04, "Terreno Interior": 0, "FGTS": 15445.54, "Nubank CDB": 2237.67, "XP Fundos": 16112.97, "Previdência PGBL": 5170.79, "Criptomoedas": 999.08, "Mercado Pago": 614.56, "Wise USD": 0, "Tesouro IPCA+": 5000, "Poupança": 1301.38, "Cartão Crédito": -1512.86, "Rico CDB": 0}}, {"date": "2020-07-09", "label": "09/07/20", "total": 252153.0, "assets": {"Apto Centro": 151161.34, "Carro": 42070.81, "Terreno Interior": 0, "FGTS": 16259.58, "Nubank CDB": 7257.81, "XP Fundos": 19279.61, "Previdência PGBL": 5577.72, "Criptomoedas": 1026.69, "Mercado Pago": 2175.44, "Wise USD": 0, "Tesouro IPCA+": 5000, "Poupança": 2344.0, "Cartão Crédito": -2892.42, "Rico CDB": 0}}, {"date": "2020-08-07", "label": "07/08/20", "total": 257992.97, "assets": {"Apto Centro": 152443.52, "Carro": 42002.2, "Terreno Interior": 0, "FGTS": 17178.32, "Nubank CDB": 7323.13, "XP Fundos": 22372.0, "Previdência PGBL": 6274.05, "Criptomoedas": 1201.23, "Mercado Pago": 1892.37, "Wise USD": 0, "Tesouro IPCA+": 5000, "Poupança": 2306.15, "Cartão Crédito": -3449.98, "Rico CDB": 0}}, {"date": "2020-09-08", "label": "08/09/20", "total": 265605.08, "assets": {"Apto Centro": 153215.1, "Carro": 41886.98, "Terreno Interior": 0, "FGTS": 17972.96, "Nubank CDB": 9389.04, "XP Fundos": 25195.66, "Previdência PGBL": 6698.47, "Criptomoedas": 1320.89, "Mercado Pago": 2711.71, "Wise USD": 0, "Tesouro IPCA+": 5000, "Poupança": 2214.27, "Cartão Crédito": -1000.05, "Rico CDB": 0}}, {"date": "2020-10-07", "label": "07/10/20", "total": 261166.88, "assets": {"Apto Centro": 154014.83, "Carro": 41949.43, "Terreno Interior": 0, "FGTS": 18751.78, "Nubank CDB": 6473.54, "XP Fundos": 23289.13, "Previdência PGBL": 7175.17, "Criptomoedas": 1781.44, "Mercado Pago": 845.83, "Wise USD": 0, "Tesouro IPCA+": 5000, "Poupança": 1885.73, "Cartão Crédito": -3145.24, "Rico CDB": 0}}, {"date": "2020-11-15", "label": "15/11/20", "total": 258667.8, "assets": {"Apto Centro": 154688.73, "Carro": 41877.27, "Terreno Interior": 0, "FGTS": 19655.92, "Nubank CDB": 3531.8, "XP Fundos": 21103.58, "Previdência PGBL": 7733.73, "Criptomoedas": 1931.13, "Mercado Pago": 1128.54, "Wise USD": 0, "Tesouro IPCA+": 5000, "Poupança": 2017.1, "Cartão Crédito": -3798.51, "Rico CDB": 0}}, {"date": "2020-12-09", "label": "09/12/20", "total": 268345.12, "assets": {"Apto Centro": 156156.18, "Carro": 41980.02, "Terreno Interior": 0, "FGTS": 20517.01, "Nubank CDB": 5563.59, "XP Fundos": 24411.59, "Previdência PGBL": 8122.77, "Criptomoedas": 2061.25, "Mercado Pago": 1634.31, "Wise USD": 0, "Tesouro IPCA+": 5000, "Poupança": 2898.4, "Cartão Crédito": -3565.49, "Rico CDB": 0}}, {"date": "2021-01-12", "label": "12/01/21", "total": 273593.51, "assets": {"Apto Centro": 157990.55, "Carro": 42109.98, "Terreno Interior": 0, "FGTS": 21369.31, "Nubank CDB": 5613.66, "XP Fundos": 27847.5, "Previdência PGBL": 8767.35, "Criptomoedas": 2275.27, "Mercado Pago": 997.28, "Wise USD": 0, "Tesouro IPCA+": 5000, "Poupança": 1622.61, "Cartão Crédito": -1065.42, "Rico CDB": 0}}, {"date": "2021-02-04", "label": "04/02/21", "total": 280593.98, "assets": {"Apto Centro": 159770.54, "Carro": 42185.42, "Terreno Interior": 0, "FGTS": 22215.89, "Nubank CDB": 5664.18, "XP Fundos": 31396.96, "Previdência PGBL": 9201.16, "Criptomoedas": 2208.0, "Mercado Pago": 1918.39, "Wise USD": 0, "Tesouro IPCA+": 5045.0, "Poupança": 988.44, "Cartão Crédito": -2200.97, "Rico CDB": 0}}, {"date": "2021-03-08", "label": "08/03/21", "total": 291573.59, "assets": {"Apto Centro": 161656.13, "Carro": 42238.64, "Terreno Interior": 0, "FGTS": 22953.62, "Nubank CDB": 10715.16, "XP Fundos": 32034.29, "Previdência PGBL": 9643.93, "Criptomoedas": 2839.97, "Mercado Pago": 1557.84, "Wise USD": 0, "Tesouro IPCA+": 5090.4, "Poupança": 2843.61, "Cartão Crédito": -3143.43, "Rico CDB": 0}}, {"date": "2021-04-14", "label": "14/04/21", "total": 293600.2, "assets": {"Apto Centro": 163178.37, "Carro": 42246.75, "Terreno Interior": 0, "FGTS": 23855.13, "Nubank CDB": 12811.6, "XP Fundos": 30163.04, "Previdência PGBL": 10036.28, "Criptomoedas": 2733.04, "Mercado Pago": 1345.21, "Wise USD": 0, "Tesouro IPCA+": 5136.21, "Poupança": 2094.57, "Cartão Crédito": -525.17, "Rico CDB": 0}}, {"date": "2021-05-10", "label": "10/05/21", "total": 302153.68, "assets": {"Apto Centro": 163754.37, "Carro": 42142.79, "Terreno Interior": 0, "FGTS": 24564.55, "Nubank CDB": 14926.9, "XP Fundos": 29929.8, "Previdência PGBL": 10483.75, "Criptomoedas": 2986.41, "Mercado Pago": 1848.08, "Wise USD": 0, "Tesouro IPCA+": 10182.44, "Poupança": 1334.59, "Cartão Crédito": -2155.41, "Rico CDB": 0}}, {"date": "2021-06-04", "label": "04/06/21", "total": 315554.28, "assets": {"Apto Centro": 164526.26, "Carro": 42049.04, "Terreno Interior": 0, "FGTS": 25393.87, "Nubank CDB": 20061.24, "XP Fundos": 30024.24, "Previdência PGBL": 11069.43, "Criptomoedas": 4008.01, "Mercado Pago": 746.04, "Wise USD": 0, "Tesouro IPCA+": 15274.08, "Poupança": 2402.07, "Cartão Crédito": -3302.07, "Rico CDB": 0}}, {"date": "2021-07-03", "label": "03/07/21", "total": 321440.01, "assets": {"Apto Centro": 165388.03, "Carro": 41986.88, "Terreno Interior": 0, "FGTS": 26228.45, "Nubank CDB": 25241.79, "XP Fundos": 27900.29, "Previdência PGBL": 11506.86, "Criptomoedas": 5257.04, "Mercado Pago": 1607.83, "Wise USD": 0, "Tesouro IPCA+": 15411.55, "Poupança": 911.29, "Cartão Crédito": -3997.49, "Rico CDB": 0}}, {"date": "2021-08-09", "label": "09/08/21", "total": 327590.67, "assets": {"Apto Centro": 167326.54, "Carro": 42172.08, "Terreno Interior": 0, "FGTS": 27183.06, "Nubank CDB": 25468.97, "XP Fundos": 25984.14, "Previdência PGBL": 11931.67, "Criptomoedas": 5522.63, "Mercado Pago": 646.59, "Wise USD": 0, "Tesouro IPCA+": 20550.25, "Poupança": 804.74, "Cartão Crédito": -1866.48, "Rico CDB": 0}}, {"date": "2021-09-10", "label": "10/09/21", "total": 329565.62, "assets": {"Apto Centro": 168258.09, "Carro": 42280.58, "Terreno Interior": 0, "FGTS": 28102.21, "Nubank CDB": 22698.19, "XP Fundos": 24274.64, "Previdência PGBL": 12335.85, "Criptomoedas": 5513.54, "Mercado Pago": 2921.77, "Wise USD": 0, "Tesouro IPCA+": 20735.2, "Poupança": 2445.55, "Cartão Crédito": -700.08, "Rico CDB": 0}}, {"date": "2021-10-10", "label": "10/10/21", "total": 329731.1, "assets": {"Apto Centro": 169484.88, "Carro": 42464.72, "Terreno Interior": 0, "FGTS": 28961.55, "Nubank CDB": 22902.47, "XP Fundos": 24778.22, "Previdência PGBL": 12983.82, "Criptomoedas": 4875.41, "Mercado Pago": 669.9, "Wise USD": 0, "Tesouro IPCA+": 20921.82, "Poupança": 1688.31, "Cartão Crédito": -3795.59, "Rico CDB": 0}}, {"date": "2021-11-10", "label": "10/11/21", "total": 342003.75, "assets": {"Apto Centro": 170368.9, "Carro": 42539.29, "Terreno Interior": 0, "FGTS": 29847.36, "Nubank CDB": 28108.59, "XP Fundos": 28051.67, "Previdência PGBL": 13660.97, "Criptomoedas": 4642.02, "Mercado Pago": 2290.48, "Wise USD": 0, "Tesouro IPCA+": 21110.12, "Poupança": 1384.35, "Cartão Crédito": -958.07, "Rico CDB": 0}}, {"date": "2021-12-02", "label": "02/12/21", "total": 344947.84, "assets": {"Apto Centro": 171340.0, "Carro": 42519.27, "Terreno Interior": 0, "FGTS": 30772.92, "Nubank CDB": 28361.57, "XP Fundos": 27779.52, "Previdência PGBL": 14036.61, "Criptomoedas": 4440.45, "Mercado Pago": 1163.0, "Wise USD": 500.0, "Tesouro IPCA+": 21300.11, "Poupança": 2734.39, "Cartão Crédito": -1793.34, "Rico CDB": 0}}, {"date": "2022-01-01", "label": "01/01/22", "total": 349461.99, "assets": {"Apto Centro": 172529.73, "Carro": 42576.49, "Terreno Interior": 0, "FGTS": 31563.68, "Nubank CDB": 25616.82, "XP Fundos": 30508.68, "Previdência PGBL": 14712.72, "Criptomoedas": 4004.37, "Mercado Pago": 2695.32, "Wise USD": 1005.0, "Tesouro IPCA+": 21491.81, "Poupança": 2757.37, "Cartão Crédito": -3098.46, "Rico CDB": 0}}, {"date": "2022-01-29", "label": "29/01/22", "total": 355138.33, "assets": {"Apto Centro": 173470.21, "Carro": 42654.77, "Terreno Interior": 0, "FGTS": 32478.96, "Nubank CDB": 25847.37, "XP Fundos": 33874.78, "Previdência PGBL": 15239.61, "Criptomoedas": 3906.51, "Mercado Pago": 2770.4, "Wise USD": 1015.05, "Tesouro IPCA+": 21685.24, "Poupança": 2195.43, "Cartão Crédito": -3402.72, "Rico CDB": 0}}, {"date": "2022-03-09", "label": "09/03/22", "total": 355316.08, "assets": {"Apto Centro": 173996.16, "Carro": 42789.94, "Terreno Interior": 0, "FGTS": 33370.09, "Nubank CDB": 28080.0, "XP Fundos": 31711.19, "Previdência PGBL": 15782.7, "Criptomoedas": 4155.92, "Mercado Pago": 524.17, "Wise USD": 1025.2, "Tesouro IPCA+": 21880.41, "Poupança": 2000.3, "Cartão Crédito": -3421.08, "Rico CDB": 0}}, {"date": "2022-04-05", "label": "05/04/22", "total": 364083.0, "assets": {"Apto Centro": 175383.38, "Carro": 42808.69, "Terreno Interior": 0, "FGTS": 34082.64, "Nubank CDB": 30332.72, "XP Fundos": 32306.33, "Previdência PGBL": 16447.32, "Criptomoedas": 3969.06, "Mercado Pago": 1123.82, "Wise USD": 1035.45, "Tesouro IPCA+": 24077.33, "Poupança": 2516.26, "Cartão Crédito": -3594.47, "Rico CDB": 0}}, {"date": "2022-05-02", "label": "02/05/22", "total": 375201.67, "assets": {"Apto Centro": 177446.68, "Carro": 42936.94, "Terreno Interior": 0, "FGTS": 35060.37, "Nubank CDB": 30605.71, "XP Fundos": 32877.1, "Previdência PGBL": 17105.82, "Criptomoedas": 3422.89, "Mercado Pago": 2341.41, "Wise USD": 1545.8, "Tesouro IPCA+": 29294.03, "Poupança": 2564.92, "Cartão Crédito": -3524.22, "Rico CDB": 0}}, {"date": "2022-06-03", "label": "03/06/22", "total": 376961.45, "assets": {"Apto Centro": 178405.11, "Carro": 43078.59, "Terreno Interior": 0, "FGTS": 35792.8, "Nubank CDB": 30881.16, "XP Fundos": 33451.63, "Previdência PGBL": 17525.67, "Criptomoedas": 4481.34, "Mercado Pago": 1374.15, "Wise USD": 1561.26, "Tesouro IPCA+": 29557.68, "Poupança": 852.06, "Cartão Crédito": -1175.95, "Rico CDB": 0}}, {"date": "2022-07-07", "label": "07/07/22", "total": 383319.55, "assets": {"Apto Centro": 179387.66, "Carro": 42973.28, "Terreno Interior": 0, "FGTS": 36724.8, "Nubank CDB": 33159.09, "XP Fundos": 31803.79, "Previdência PGBL": 18113.5, "Criptomoedas": 5699.51, "Mercado Pago": 1327.87, "Wise USD": 1576.87, "Tesouro IPCA+": 29823.7, "Poupança": 2729.48, "Cartão Crédito": -1414.25, "Rico CDB": 0}}, {"date": "2022-08-05", "label": "05/08/22", "total": 396805.01, "assets": {"Apto Centro": 181479.82, "Carro": 42935.62, "Terreno Interior": 0, "FGTS": 37457.32, "Nubank CDB": 38457.52, "XP Fundos": 34837.57, "Previdência PGBL": 18616.24, "Criptomoedas": 7649.41, "Mercado Pago": 789.11, "Wise USD": 1592.64, "Tesouro IPCA+": 32092.11, "Poupança": 897.65, "Cartão Crédito": -2026.2, "Rico CDB": 0}}, {"date": "2022-09-01", "label": "01/09/22", "total": 407884.9, "assets": {"Apto Centro": 183536.02, "Carro": 42991.76, "Terreno Interior": 0, "FGTS": 38373.15, "Nubank CDB": 38803.64, "XP Fundos": 34895.23, "Previdência PGBL": 19298.35, "Criptomoedas": 10023.68, "Mercado Pago": 2057.89, "Wise USD": 1608.57, "Tesouro IPCA+": 34380.94, "Poupança": 1915.67, "Cartão Crédito": -2834.13, "Rico CDB": 0}}, {"date": "2022-09-30", "label": "30/09/22", "total": 493638.3, "assets": {"Apto Centro": 184751.32, "Carro": 42964.47, "Terreno Interior": 70580, "FGTS": 39111.34, "Nubank CDB": 44152.87, "XP Fundos": 33288.77, "Previdência PGBL": 19885.41, "Criptomoedas": 13044.84, "Mercado Pago": 2038.79, "Wise USD": 2124.66, "Tesouro IPCA+": 39690.37, "Poupança": 2005.46, "Cartão Crédito": -501.42, "Rico CDB": 0}}, {"date": "2022-11-04", "label": "04/11/22", "total": 498511.76, "assets": {"Apto Centro": 185655.06, "Carro": 43105.65, "Terreno Interior": 70760, "FGTS": 39993.34, "Nubank CDB": 46550.25, "XP Fundos": 31451.21, "Previdência PGBL": 20471.88, "Criptomoedas": 14422.21, "Mercado Pago": 2484.34, "Wise USD": 2145.91, "Tesouro IPCA+": 40047.58, "Poupança": 1424.33, "Cartão Crédito": -2823.49, "Rico CDB": 0}}, {"date": "2022-11-28", "label": "28/11/22", "total": 507933.88, "assets": {"Apto Centro": 186772.09, "Carro": 43258.56, "Terreno Interior": 70940, "FGTS": 40918.68, "Nubank CDB": 48969.2, "XP Fundos": 31362.78, "Previdência PGBL": 20873.45, "Criptomoedas": 12592.13, "Mercado Pago": 2959.84, "Wise USD": 2167.37, "Tesouro IPCA+": 45408.01, "Poupança": 1711.77, "Cartão Crédito": -2704.18, "Rico CDB": 0}}, {"date": "2023-01-02", "label": "02/01/23", "total": 516340.57, "assets": {"Apto Centro": 188539.91, "Carro": 43261.67, "Terreno Interior": 71120, "FGTS": 41738.58, "Nubank CDB": 49409.92, "XP Fundos": 31707.58, "Previdência PGBL": 21535.88, "Criptomoedas": 16120.7, "Mercado Pago": 2713.66, "Wise USD": 3189.04, "Tesouro IPCA+": 45816.68, "Poupança": 1186.95, "Cartão Crédito": -3852.88, "Rico CDB": 0}}, {"date": "2023-01-26", "label": "26/01/23", "total": 530791.41, "assets": {"Apto Centro": 189893.81, "Carro": 43324.8, "Terreno Interior": 71300, "FGTS": 42713.82, "Nubank CDB": 49854.61, "XP Fundos": 29853.65, "Previdência PGBL": 22119.53, "Criptomoedas": 21665.35, "Mercado Pago": 1988.63, "Wise USD": 4220.93, "Tesouro IPCA+": 51229.03, "Poupança": 2627.25, "Cartão Crédito": -2417.55, "Rico CDB": 0}}, {"date": "2023-02-27", "label": "27/02/23", "total": 545016.85, "assets": {"Apto Centro": 191734.43, "Carro": 43359.35, "Terreno Interior": 71480, "FGTS": 43491.58, "Nubank CDB": 50303.3, "XP Fundos": 33357.45, "Previdência PGBL": 22737.56, "Criptomoedas": 24062.62, "Mercado Pago": 2066.87, "Wise USD": 4763.14, "Tesouro IPCA+": 56690.09, "Poupança": 970.46, "Cartão Crédito": -1500.05, "Rico CDB": 0}}, {"date": "2023-03-31", "label": "31/03/23", "total": 551358.57, "assets": {"Apto Centro": 192889.18, "Carro": 43539.04, "Terreno Interior": 71660, "FGTS": 44215.75, "Nubank CDB": 50756.03, "XP Fundos": 33270.73, "Previdência PGBL": 23334.81, "Criptomoedas": 21225.98, "Mercado Pago": 1519.0, "Wise USD": 5810.77, "Tesouro IPCA+": 62200.3, "Poupança": 936.98, "Cartão Crédito": -3415.12, "Rico CDB": 0}}, {"date": "2023-05-01", "label": "01/05/23", "total": 555374.83, "assets": {"Apto Centro": 195038.65, "Carro": 43611.86, "Terreno Interior": 71840, "FGTS": 45124.41, "Nubank CDB": 48212.83, "XP Fundos": 33343.0, "Previdência PGBL": 24014.77, "Criptomoedas": 21211.26, "Mercado Pago": 1474.97, "Wise USD": 6868.88, "Tesouro IPCA+": 62760.1, "Poupança": 1874.1, "Cartão Crédito": -1455.27, "Rico CDB": 0}}, {"date": "2023-05-31", "label": "31/05/23", "total": 569950.02, "assets": {"Apto Centro": 195674.71, "Carro": 43598.3, "Terreno Interior": 72020, "FGTS": 46028.15, "Nubank CDB": 53646.75, "XP Fundos": 31782.25, "Previdência PGBL": 24686.61, "Criptomoedas": 28430.75, "Mercado Pago": 1835.31, "Wise USD": 7937.57, "Tesouro IPCA+": 63324.94, "Poupança": 984.68, "Cartão Crédito": -2000.14, "Rico CDB": 0}}, {"date": "2023-06-28", "label": "28/06/23", "total": 590223.0, "assets": {"Apto Centro": 196581.77, "Carro": 43558.24, "Terreno Interior": 72200, "FGTS": 46826.36, "Nubank CDB": 59129.57, "XP Fundos": 29796.84, "Previdência PGBL": 25134.0, "Criptomoedas": 37687.86, "Mercado Pago": 1553.91, "Wise USD": 8016.95, "Tesouro IPCA+": 68894.86, "Poupança": 842.64, "Cartão Crédito": -2387.97, "Rico CDB": 0}}, {"date": "2023-07-27", "label": "27/07/23", "total": 594599.24, "assets": {"Apto Centro": 197568.22, "Carro": 43451.48, "Terreno Interior": 72380, "FGTS": 47813.55, "Nubank CDB": 59661.74, "XP Fundos": 30218.03, "Previdência PGBL": 25553.78, "Criptomoedas": 32418.72, "Mercado Pago": 880.96, "Wise USD": 8097.12, "Tesouro IPCA+": 74514.91, "Poupança": 2040.73, "Cartão Crédito": -1262.88, "Rico CDB": 0}}, {"date": "2023-08-31", "label": "31/08/23", "total": 604875.01, "assets": {"Apto Centro": 199524.56, "Carro": 43379.45, "Terreno Interior": 72560, "FGTS": 48695.72, "Nubank CDB": 60198.7, "XP Fundos": 30667.96, "Previdência PGBL": 26241.43, "Criptomoedas": 29308.12, "Mercado Pago": 564.2, "Wise USD": 8678.09, "Tesouro IPCA+": 80185.54, "Poupança": 2871.24, "Cartão Crédito": -1194.15, "Rico CDB": 2000}}, {"date": "2023-09-27", "label": "27/09/23", "total": 618195.87, "assets": {"Apto Centro": 201363.28, "Carro": 43466.99, "Terreno Interior": 72740, "FGTS": 49426.29, "Nubank CDB": 62740.49, "XP Fundos": 31195.74, "Previdência PGBL": 26870.11, "Criptomoedas": 33205.11, "Mercado Pago": 602.67, "Wise USD": 9764.87, "Tesouro IPCA+": 82907.21, "Poupança": 1913.11, "Cartão Crédito": -1694.31, "Rico CDB": 2000}}, {"date": "2023-10-26", "label": "26/10/23", "total": 640487.57, "assets": {"Apto Centro": 203457.66, "Carro": 43373.29, "Terreno Interior": 72920, "FGTS": 50414.53, "Nubank CDB": 68305.15, "XP Fundos": 29589.86, "Previdência PGBL": 27281.76, "Criptomoedas": 36886.67, "Mercado Pago": 2126.14, "Wise USD": 10862.52, "Tesouro IPCA+": 88653.37, "Poupança": 2616.62, "Cartão Crédito": -2573.66, "Rico CDB": 4000}}, {"date": "2023-11-24", "label": "24/11/23", "total": 656988.84, "assets": {"Apto Centro": 205627.62, "Carro": 43531.42, "Terreno Interior": 73100, "FGTS": 51140.53, "Nubank CDB": 73919.9, "XP Fundos": 27524.87, "Previdência PGBL": 27831.21, "Criptomoedas": 43677.29, "Mercado Pago": 1340.99, "Wise USD": 11971.15, "Tesouro IPCA+": 91451.25, "Poupança": 1872.61, "Cartão Crédito": -1741.89, "Rico CDB": 4000}}, {"date": "2023-12-24", "label": "24/12/23", "total": 680171.89, "assets": {"Apto Centro": 206874.35, "Carro": 43707.4, "Terreno Interior": 73280, "FGTS": 52050.89, "Nubank CDB": 76585.18, "XP Fundos": 27739.16, "Previdência PGBL": 28211.17, "Criptomoedas": 52851.15, "Mercado Pago": 1721.44, "Wise USD": 12090.86, "Tesouro IPCA+": 97274.31, "Poupança": 1785.98, "Cartão Crédito": -560.35, "Rico CDB": 6000}}, {"date": "2024-01-22", "label": "22/01/24", "total": 699479.23, "assets": {"Apto Centro": 207907.56, "Carro": 43818.17, "Terreno Interior": 73460, "FGTS": 52842.75, "Nubank CDB": 74274.45, "XP Fundos": 30789.33, "Previdência PGBL": 28710.1, "Criptomoedas": 64635.25, "Mercado Pago": 1326.98, "Wise USD": 13211.77, "Tesouro IPCA+": 100149.78, "Poupança": 1353.09, "Cartão Crédito": -922.3, "Rico CDB": 7000}}, {"date": "2024-02-22", "label": "22/02/24", "total": 713048.1, "assets": {"Apto Centro": 209121.73, "Carro": 43947.13, "Terreno Interior": 73640, "FGTS": 53828.01, "Nubank CDB": 74942.92, "XP Fundos": 28670.15, "Previdência PGBL": 29156.87, "Criptomoedas": 73994.01, "Mercado Pago": 2400.52, "Wise USD": 13843.89, "Tesouro IPCA+": 101051.13, "Poupança": 1451.74, "Cartão Crédito": -1763.08, "Rico CDB": 7000}}, {"date": "2024-03-19", "label": "19/03/24", "total": 736746.27, "assets": {"Apto Centro": 209775.72, "Carro": 44003.08, "Terreno Interior": 73820, "FGTS": 54610.3, "Nubank CDB": 75617.41, "XP Fundos": 28891.12, "Previdência PGBL": 29730.12, "Criptomoedas": 90745.96, "Mercado Pago": 756.47, "Wise USD": 13982.33, "Tesouro IPCA+": 103960.59, "Poupança": 1853.17, "Cartão Crédito": -1692.47, "Rico CDB": 9000}}, {"date": "2024-04-27", "label": "27/04/24", "total": 758692.08, "assets": {"Apto Centro": 210881.72, "Carro": 44174.42, "Terreno Interior": 74000, "FGTS": 55344.53, "Nubank CDB": 76297.97, "XP Fundos": 28972.67, "Previdência PGBL": 30282.08, "Criptomoedas": 108280.39, "Mercado Pago": 879.32, "Wise USD": 14622.15, "Tesouro IPCA+": 104896.24, "Poupança": 1060.59, "Cartão Crédito": -3175.55, "Rico CDB": 9000}}, {"date": "2024-05-19", "label": "19/05/24", "total": 784442.97, "assets": {"Apto Centro": 212645.78, "Carro": 44260.44, "Terreno Interior": 74180, "FGTS": 56277.24, "Nubank CDB": 81984.65, "XP Fundos": 27100.63, "Previdência PGBL": 30736.15, "Criptomoedas": 123901.2, "Mercado Pago": 1572.07, "Wise USD": 14768.37, "Tesouro IPCA+": 105840.31, "Poupança": 2176.13, "Cartão Crédito": -1426.26, "Rico CDB": 9000}}, {"date": "2024-06-27", "label": "27/06/24", "total": 784692.78, "assets": {"Apto Centro": 213584.3, "Carro": 44189.2, "Terreno Interior": 74360, "FGTS": 56999.76, "Nubank CDB": 82722.51, "XP Fundos": 25183.9, "Previdência PGBL": 31188.09, "Criptomoedas": 119656.11, "Mercado Pago": 2267.39, "Wise USD": 15916.05, "Tesouro IPCA+": 106792.87, "Poupança": 2832.6, "Cartão Crédito": -3257.4, "Rico CDB": 9000}}, {"date": "2024-07-21", "label": "21/07/24", "total": 826811.55, "assets": {"Apto Centro": 215358.78, "Carro": 44340.82, "Terreno Interior": 74540, "FGTS": 57759.11, "Nubank CDB": 83467.01, "XP Fundos": 25370.92, "Previdência PGBL": 31856.03, "Criptomoedas": 151163.43, "Mercado Pago": 678.52, "Wise USD": 16075.21, "Tesouro IPCA+": 109754.01, "Poupança": 2447.71, "Cartão Crédito": -2492.22, "Rico CDB": 14000}}, {"date": "2024-08-25", "label": "25/08/24", "total": 860852.23, "assets": {"Apto Centro": 216856.04, "Carro": 44374.06, "Terreno Interior": 74720, "FGTS": 58550.34, "Nubank CDB": 89218.21, "XP Fundos": 23882.54, "Previdência PGBL": 32359.25, "Criptomoedas": 173689.55, "Mercado Pago": 2723.56, "Wise USD": 16735.96, "Tesouro IPCA+": 112741.8, "Poupança": 1000.92, "Cartão Crédito": -3866.69, "Rico CDB": 14000}}, {"date": "2024-09-21", "label": "21/09/24", "total": 907857.99, "assets": {"Apto Centro": 218652.5, "Carro": 44248.3, "Terreno Interior": 74900, "FGTS": 59479.77, "Nubank CDB": 92021.17, "XP Fundos": 24084.11, "Previdência PGBL": 32873.93, "Criptomoedas": 204216.31, "Mercado Pago": 2790.18, "Wise USD": 16903.32, "Tesouro IPCA+": 118756.48, "Poupança": 2931.92, "Cartão Crédito": -2145.04, "Rico CDB": 16000}}, {"date": "2024-10-21", "label": "21/10/24", "total": 982188.25, "assets": {"Apto Centro": 219964.37, "Carro": 44352.77, "Terreno Interior": 75080, "FGTS": 60437.09, "Nubank CDB": 94849.36, "XP Fundos": 22160.52, "Previdência PGBL": 33324.81, "Criptomoedas": 270095.83, "Mercado Pago": 2533.92, "Wise USD": 17072.35, "Tesouro IPCA+": 124825.29, "Poupança": 1491.94, "Cartão Crédito": -1631.46, "Rico CDB": 16000}}, {"date": "2024-11-18", "label": "18/11/24", "total": 994365.76, "assets": {"Apto Centro": 222336.51, "Carro": 44512.41, "Terreno Interior": 75260, "FGTS": 61137.44, "Nubank CDB": 92703.0, "XP Fundos": 22266.52, "Previdência PGBL": 33740.46, "Criptomoedas": 278439.0, "Mercado Pago": 2391.11, "Wise USD": 18243.07, "Tesouro IPCA+": 125948.72, "Poupança": 1387.52, "Cartão Crédito": -958.55, "Rico CDB": 16000}}, {"date": "2024-12-16", "label": "16/12/24", "total": 959659.7, "assets": {"Apto Centro": 223880.2, "Carro": 44627.52, "Terreno Interior": 75440, "FGTS": 61873.87, "Nubank CDB": 90537.33, "XP Fundos": 22613.39, "Previdência PGBL": 34199.22, "Criptomoedas": 238576.9, "Mercado Pago": 1519.98, "Wise USD": 18425.5, "Tesouro IPCA+": 127082.26, "Poupança": 2883.53, "Cartão Crédito": -2766.98, "Rico CDB": 18000}}, {"date": "2025-01-14", "label": "14/01/25", "total": 964081.14, "assets": {"Apto Centro": 225556.03, "Carro": 44749.48, "Terreno Interior": 75620, "FGTS": 62726.53, "Nubank CDB": 93352.17, "XP Fundos": 20687.92, "Previdência PGBL": 34892.31, "Criptomoedas": 231864.65, "Mercado Pago": 1878.16, "Wise USD": 19609.76, "Tesouro IPCA+": 128226.0, "Poupança": 1918.13, "Cartão Crédito": -3577.64, "Rico CDB": 23000}}, {"date": "2025-02-20", "label": "20/02/25", "total": 969069.43, "assets": {"Apto Centro": 226793.48, "Carro": 44898.05, "Terreno Interior": 75800, "FGTS": 63551.01, "Nubank CDB": 91192.34, "XP Fundos": 20657.91, "Previdência PGBL": 35341.3, "Criptomoedas": 231697.23, "Mercado Pago": 1967.34, "Wise USD": 20805.86, "Tesouro IPCA+": 129380.03, "Poupança": 1984.88, "Cartão Crédito": -1707.93, "Rico CDB": 25000}}, {"date": "2025-03-20", "label": "20/03/25", "total": 972794.14, "assets": {"Apto Centro": 229030.99, "Carro": 44898.84, "Terreno Interior": 75980, "FGTS": 64530.87, "Nubank CDB": 92013.07, "XP Fundos": 21099.68, "Previdência PGBL": 35891.43, "Criptomoedas": 224000.53, "Mercado Pago": 2438.86, "Wise USD": 21013.92, "Tesouro IPCA+": 132544.45, "Poupança": 2351.5, "Cartão Crédito": -3339.93, "Rico CDB": 27000}}, {"date": "2025-04-15", "label": "15/04/25", "total": 1057509.45, "assets": {"Apto Centro": 231755.48, "Carro": 45048.76, "Terreno Interior": 76160, "FGTS": 65426.48, "Nubank CDB": 92841.19, "XP Fundos": 21223.12, "Previdência PGBL": 36285.62, "Criptomoedas": 298520.31, "Mercado Pago": 1329.99, "Wise USD": 21224.06, "Tesouro IPCA+": 138737.35, "Poupança": 1957.09, "Cartão Crédito": -2099.25, "Rico CDB": 27000}}, {"date": "2025-05-20", "label": "20/05/25", "total": 1137302.09, "assets": {"Apto Centro": 233305.88, "Carro": 45149.59, "Terreno Interior": 76340, "FGTS": 66172.79, "Nubank CDB": 98676.76, "XP Fundos": 24541.65, "Previdência PGBL": 36754.12, "Criptomoedas": 357135.46, "Mercado Pago": 2124.59, "Wise USD": 21936.3, "Tesouro IPCA+": 144985.99, "Poupança": 2178.96, "Cartão Crédito": -3606.04, "Rico CDB": 28000}}, {"date": "2025-06-12", "label": "12/06/25", "total": 1115180.02, "assets": {"Apto Centro": 235837.59, "Carro": 45027.11, "Terreno Interior": 76520, "FGTS": 66893.32, "Nubank CDB": 101564.85, "XP Fundos": 25079.54, "Previdência PGBL": 37256.01, "Criptomoedas": 321143.91, "Mercado Pago": 2084.37, "Wise USD": 22155.66, "Tesouro IPCA+": 151290.86, "Poupança": 2326.8, "Cartão Crédito": -3661.98, "Rico CDB": 28000}}, {"date": "2025-07-21", "label": "21/07/25", "total": 1211261.56, "assets": {"Apto Centro": 237233.6, "Carro": 44912.24, "Terreno Interior": 76700, "FGTS": 67700.86, "Nubank CDB": 107478.93, "XP Fundos": 22945.57, "Previdência PGBL": 37804.08, "Criptomoedas": 400228.72, "Mercado Pago": 924.96, "Wise USD": 22377.22, "Tesouro IPCA+": 157652.48, "Poupança": 2302.9, "Cartão Crédito": -2241.84, "Rico CDB": 33000}}, {"date": "2025-08-15", "label": "15/08/25", "total": 1299492.1, "assets": {"Apto Centro": 238250.87, "Carro": 44943.19, "Terreno Interior": 76880, "FGTS": 68477.05, "Nubank CDB": 110446.24, "XP Fundos": 21205.75, "Previdência PGBL": 38469.5, "Criptomoedas": 475794.08, "Mercado Pago": 894.94, "Wise USD": 23600.99, "Tesouro IPCA+": 161071.35, "Poupança": 1458.14, "Cartão Crédito": -3867.1, "Rico CDB": 38000}}, {"date": "2025-09-20", "label": "20/09/25", "total": 1378339.65, "assets": {"Apto Centro": 239945.2, "Carro": 44916.99, "Terreno Interior": 77060, "FGTS": 69476.86, "Nubank CDB": 116440.26, "XP Fundos": 19066.07, "Previdência PGBL": 39019.67, "Criptomoedas": 541171.02, "Mercado Pago": 2981.73, "Wise USD": 24337.0, "Tesouro IPCA+": 162520.99, "Poupança": 1403.86, "Cartão Crédito": -2480.75, "Rico CDB": 40000}}, {"date": "2025-10-20", "label": "20/10/25", "total": 1379363.21, "assets": {"Apto Centro": 242345.8, "Carro": 45132.09, "Terreno Interior": 77240, "FGTS": 70450.05, "Nubank CDB": 122488.22, "XP Fundos": 22383.54, "Previdência PGBL": 39641.18, "Criptomoedas": 522262.07, "Mercado Pago": 2504.83, "Wise USD": 24580.37, "Tesouro IPCA+": 163983.68, "Poupança": 1351.38, "Cartão Crédito": -3144.52, "Rico CDB": 45000}}, {"date": "2025-11-17", "label": "17/11/25", "total": 1403177.58, "assets": {"Apto Centro": 244557.86, "Carro": 45046.08, "Terreno Interior": 77420, "FGTS": 71179.2, "Nubank CDB": 123590.61, "XP Fundos": 20380.98, "Previdência PGBL": 40002.86, "Criptomoedas": 539199.35, "Mercado Pago": 828.53, "Wise USD": 25326.17, "Tesouro IPCA+": 167459.53, "Poupança": 1186.41, "Cartão Crédito": -962.56, "Rico CDB": 47000}}, {"date": "2025-12-12", "label": "12/12/25", "total": 1594654.75, "assets": {"Apto Centro": 247220.64, "Carro": 45042.79, "Terreno Interior": 77600, "FGTS": 72029.74, "Nubank CDB": 126702.93, "XP Fundos": 23718.8, "Previdência PGBL": 40672.78, "Criptomoedas": 712872.18, "Mercado Pago": 2918.46, "Wise USD": 26079.43, "Tesouro IPCA+": 170966.67, "Poupança": 1830.33, "Cartão Crédito": -763.55, "Rico CDB": 47000}}, {"date": "2026-01-08", "label": "08/01/26", "total": 1685694.61, "assets": {"Apto Centro": 249876.1, "Carro": 45168.63, "Terreno Interior": 77780, "FGTS": 73023.72, "Nubank CDB": 124843.26, "XP Fundos": 21759.24, "Previdência PGBL": 41027.65, "Criptomoedas": 797195.09, "Mercado Pago": 1636.97, "Wise USD": 26840.22, "Tesouro IPCA+": 177505.37, "Poupança": 1038.36, "Cartão Crédito": -1318.38, "Rico CDB": 48000}}, {"date": "2026-02-14", "label": "14/02/26", "total": 1756473.47, "assets": {"Apto Centro": 252019.02, "Carro": 45373.94, "Terreno Interior": 77960, "FGTS": 73822.12, "Nubank CDB": 122966.85, "XP Fundos": 21695.78, "Previdência PGBL": 41600.04, "Criptomoedas": 862671.73, "Mercado Pago": 2252.69, "Wise USD": 28108.62, "Tesouro IPCA+": 179102.92, "Poupança": 899.76, "Cartão Crédito": -630.24, "Rico CDB": 48000}}, {"date": "2026-03-09", "label": "09/03/26", "total": 1960403.0, "assets": {"Apto Centro": 253038.46, "Carro": 45323.05, "Terreno Interior": 78140, "FGTS": 74683.38, "Nubank CDB": 129073.55, "XP Fundos": 19793.77, "Previdência PGBL": 42155.61, "Criptomoedas": 1046679.24, "Mercado Pago": 2713.53, "Wise USD": 28389.71, "Tesouro IPCA+": 185714.85, "Poupança": 1697.85, "Cartão Crédito": -3830.33, "Rico CDB": 53000}}, {"date": "2026-04-15", "label": "15/04/26", "total": 2005333.4, "assets": {"Apto Centro": 255369.58, "Carro": 45265.86, "Terreno Interior": 78320, "FGTS": 75516.79, "Nubank CDB": 130235.21, "XP Fundos": 20137.67, "Previdência PGBL": 42848.93, "Criptomoedas": 1081918.29, "Mercado Pago": 2754.24, "Wise USD": 29173.61, "Tesouro IPCA+": 187386.28, "Poupança": 1406.94, "Cartão Crédito": -3888.72, "Rico CDB": 55000}}, {"date": "2026-05-13", "label": "13/05/26", "total": 1923597.15, "assets": {"Apto Centro": 256346.38, "Carro": 45206.87, "Terreno Interior": 78500, "FGTS": 76408.64, "Nubank CDB": 131407.33, "XP Fundos": 22968.89, "Previdência PGBL": 43284.18, "Criptomoedas": 987750.22, "Mercado Pago": 1911.44, "Wise USD": 29465.35, "Tesouro IPCA+": 189072.76, "Poupança": 1275.09, "Cartão Crédito": -3543.93, "Rico CDB": 60000}}, {"date": "2026-06-10", "label": "10/06/26", "total": 2052415.86, "assets": {"Apto Centro": 258901.98, "Carro": 45356.47, "Terreno Interior": 78680, "FGTS": 77287.43, "Nubank CDB": 134590.0, "XP Fundos": 23370.13, "Previdência PGBL": 43979.81, "Criptomoedas": 1106386.66, "Mercado Pago": 2496.28, "Wise USD": 29760.0, "Tesouro IPCA+": 190774.41, "Poupança": 832.69, "Cartão Crédito": -3264.95, "Rico CDB": 60000}}, {"date": "2026-07-17", "label": "17/07/26", "total": 2167453.35, "assets": {"Apto Centro": 261050.78, "Carro": 45226.13, "Terreno Interior": 78860, "FGTS": 78067.04, "Nubank CDB": 135801.31, "XP Fundos": 23691.12, "Previdência PGBL": 44590.79, "Criptomoedas": 1203884.75, "Mercado Pago": 2445.04, "Wise USD": 30057.6, "Tesouro IPCA+": 197491.38, "Poupança": 1287.41, "Cartão Crédito": -2652.87, "Rico CDB": 65000}}], "yearly": [{"year": 2020, "start": 235603.8, "end": 268345.12, "growth": 0.139}, {"year": 2021, "start": 273593.51, "end": 344947.84, "growth": 0.2608}, {"year": 2022, "start": 349461.99, "end": 507933.88, "growth": 0.4535}, {"year": 2023, "start": 516340.57, "end": 680171.89, "growth": 0.3173}, {"year": 2024, "start": 699479.23, "end": 959659.7, "growth": 0.372}, {"year": 2025, "start": 964081.14, "end": 1594654.75, "growth": 0.6541}, {"year": 2026, "start": 1685694.61, "end": 2167453.35, "growth": 0.2858}], "assets": ["Apto Centro", "Carro", "Terreno Interior", "FGTS", "Nubank CDB", "XP Fundos", "Previdência PGBL", "Criptomoedas", "Mercado Pago", "Wise USD", "Tesouro IPCA+", "Poupança", "Cartão Crédito", "Rico CDB"], "stats": {"current_total": 2167453.35, "prev_total": 2052415.86, "first_total": 235603.8, "growth_total_pct": 820.0, "total_snapshots": 78, "last_date": "2026-07-17", "first_date": "2020-03-13"}}, "dividas": {"summary": {"Cartões": {"pct_pago": 0.6981, "valor_divida": 87420.15, "total_pagar": 26396.51, "total_pago": 61023.64, "dias_prox": 12}, "Financiamento Apto": {"pct_pago": 0.7824, "valor_divida": 83883.36, "total_pagar": 18250.17, "total_pago": 65633.19, "dias_prox": 15}, "IPVA Carro": {"pct_pago": 0.7691, "valor_divida": 5041.82, "total_pagar": 1164.28, "total_pago": 3877.54, "dias_prox": 12}, "Plano Saúde": {"pct_pago": 0.6916, "valor_divida": 14508.61, "total_pagar": 4473.77, "total_pago": 10034.84, "dias_prox": 12}, "Internet/Cel": {"pct_pago": 0.6699, "valor_divida": 5987.99, "total_pagar": 1976.37, "total_pago": 4011.62, "dias_prox": 30}, "IRPF": {"pct_pago": 0.7063, "valor_divida": 2709.64, "total_pagar": 795.94, "total_pago": 1913.7, "dias_prox": 12}, "Empréstimo": {"pct_pago": 1.0, "valor_divida": 13133.85, "total_pagar": 0, "total_pago": 13133.85, "dias_prox": null}}, "cats": ["Cartões", "Financiamento Apto", "IPVA Carro", "Plano Saúde", "Internet/Cel", "IRPF", "Empréstimo"], "monthly": [{"mes": "Jan/23", "status": "Pago", "Cartões": 2920.79, "Financiamento Apto": 2983.22, "IPVA Carro": 778.42, "Plano Saúde": 388.52, "Internet/Cel": 188.74, "IRPF": 0, "Empréstimo": 720.49, "total": 7980.18}, {"mes": "Fev/23", "status": "Pago", "Cartões": 3464.12, "Financiamento Apto": 2996.11, "IPVA Carro": 745.82, "Plano Saúde": 390.29, "Internet/Cel": 164.85, "IRPF": 0, "Empréstimo": 782.49, "total": 8543.68}, {"mes": "Mar/23", "status": "Pago", "Cartões": 1416.75, "Financiamento Apto": 2910.01, "IPVA Carro": 579.85, "Plano Saúde": 456.77, "Internet/Cel": 179.51, "IRPF": 0, "Empréstimo": 898.39, "total": 6441.28}, {"mes": "Abr/23", "status": "Pago", "Cartões": 2950.84, "Financiamento Apto": 2981.49, "IPVA Carro": 0, "Plano Saúde": 464.76, "Internet/Cel": 165.95, "IRPF": 248.43, "Empréstimo": 855.84, "total": 7667.31}, {"mes": "Mai/23", "status": "Pago", "Cartões": 3348.02, "Financiamento Apto": 3107.59, "IPVA Carro": 0, "Plano Saúde": 480.92, "Internet/Cel": 172.9, "IRPF": 188.37, "Empréstimo": 668.55, "total": 7966.35}, {"mes": "Jun/23", "status": "Pago", "Cartões": 2318.47, "Financiamento Apto": 2981.4, "IPVA Carro": 0, "Plano Saúde": 438.24, "Internet/Cel": 165.71, "IRPF": 182.42, "Empréstimo": 799.53, "total": 6885.77}, {"mes": "Jul/23", "status": "Pago", "Cartões": 2435.19, "Financiamento Apto": 2861.06, "IPVA Carro": 0, "Plano Saúde": 509.22, "Internet/Cel": 164.03, "IRPF": 279.63, "Empréstimo": 627.97, "total": 6877.1}, {"mes": "Ago/23", "status": "Pago", "Cartões": 1518.66, "Financiamento Apto": 3095.52, "IPVA Carro": 0, "Plano Saúde": 493.65, "Internet/Cel": 193.38, "IRPF": 220.75, "Empréstimo": 768.48, "total": 6290.44}, {"mes": "Set/23", "status": "Pago", "Cartões": 2287.83, "Financiamento Apto": 2848.89, "IPVA Carro": 0, "Plano Saúde": 429.5, "Internet/Cel": 199.92, "IRPF": 0, "Empréstimo": 825.09, "total": 6591.23}, {"mes": "Out/23", "status": "Pago", "Cartões": 4064.7, "Financiamento Apto": 3088.42, "IPVA Carro": 0, "Plano Saúde": 515.58, "Internet/Cel": 196.02, "IRPF": 0, "Empréstimo": 705.49, "total": 8570.21}, {"mes": "Nov/23", "status": "Pago", "Cartões": 3107.13, "Financiamento Apto": 2885.1, "IPVA Carro": 0, "Plano Saúde": 471.94, "Internet/Cel": 173.45, "IRPF": 0, "Empréstimo": 632.47, "total": 7270.09}, {"mes": "Dez/23", "status": "Pago", "Cartões": 3989.73, "Financiamento Apto": 2947.02, "IPVA Carro": 0, "Plano Saúde": 486.76, "Internet/Cel": 194.45, "IRPF": 0, "Empréstimo": 842.17, "total": 8460.13}, {"mes": "Jan/24", "status": "Pago", "Cartões": 3989.01, "Financiamento Apto": 3189.82, "IPVA Carro": 691.06, "Plano Saúde": 465.9, "Internet/Cel": 198.56, "IRPF": 0, "Empréstimo": 607.88, "total": 9142.23}, {"mes": "Fev/24", "status": "Pago", "Cartões": 4265.98, "Financiamento Apto": 3131.78, "IPVA Carro": 360.47, "Plano Saúde": 405.26, "Internet/Cel": 202.16, "IRPF": 0, "Empréstimo": 692.7, "total": 9058.35}, {"mes": "Mar/24", "status": "Pago", "Cartões": 2321.42, "Financiamento Apto": 2802.44, "IPVA Carro": 721.92, "Plano Saúde": 459.28, "Internet/Cel": 184.05, "IRPF": 0, "Empréstimo": 642.56, "total": 7131.67}, {"mes": "Abr/24", "status": "Pago", "Cartões": 3289.47, "Financiamento Apto": 2812.26, "IPVA Carro": 0, "Plano Saúde": 484.46, "Internet/Cel": 172.91, "IRPF": 180.76, "Empréstimo": 702.27, "total": 7642.13}, {"mes": "Mai/24", "status": "Pago", "Cartões": 2421.18, "Financiamento Apto": 3088.64, "IPVA Carro": 0, "Plano Saúde": 488.76, "Internet/Cel": 194.06, "IRPF": 100.39, "Empréstimo": 615.78, "total": 6908.81}, {"mes": "Jun/24", "status": "Pago", "Cartões": 1719.45, "Financiamento Apto": 3047.14, "IPVA Carro": 0, "Plano Saúde": 474.36, "Internet/Cel": 176.33, "IRPF": 238.87, "Empréstimo": 745.7, "total": 6401.85}, {"mes": "Jul/24", "status": "Pago", "Cartões": 2658.75, "Financiamento Apto": 2909.27, "IPVA Carro": 0, "Plano Saúde": 485.69, "Internet/Cel": 166.83, "IRPF": 183.18, "Empréstimo": 0, "total": 6403.72}, {"mes": "Ago/24", "status": "Pago", "Cartões": 2134.71, "Financiamento Apto": 3071.39, "IPVA Carro": 0, "Plano Saúde": 448.13, "Internet/Cel": 200.03, "IRPF": 90.9, "Empréstimo": 0, "total": 5945.16}, {"mes": "Set/24", "status": "Pago", "Cartões": 2504.37, "Financiamento Apto": 3039.73, "IPVA Carro": 0, "Plano Saúde": 381.08, "Internet/Cel": 178.09, "IRPF": 0, "Empréstimo": 0, "total": 6103.27}, {"mes": "Out/24", "status": "Pago", "Cartões": 1897.07, "Financiamento Apto": 2854.89, "IPVA Carro": 0, "Plano Saúde": 415.77, "Internet/Cel": 179.69, "IRPF": 0, "Empréstimo": 0, "total": 5347.42}, {"mes": "Nov/24", "status": "A Pagar", "Cartões": 1225.51, "Financiamento Apto": 3098.81, "IPVA Carro": 0, "Plano Saúde": 404.6, "Internet/Cel": 182.81, "IRPF": 0, "Empréstimo": 0, "total": 4911.73}, {"mes": "Dez/24", "status": "A Pagar", "Cartões": 3522.12, "Financiamento Apto": 3000.1, "IPVA Carro": 0, "Plano Saúde": 496.67, "Internet/Cel": 208.37, "IRPF": 0, "Empréstimo": 0, "total": 7227.26}, {"mes": "Jan/25", "status": "A Pagar", "Cartões": 1437.85, "Financiamento Apto": 3144.71, "IPVA Carro": 225.38, "Plano Saúde": 382.62, "Internet/Cel": 215.27, "IRPF": 0, "Empréstimo": 0, "total": 5405.83}, {"mes": "Fev/25", "status": "A Pagar", "Cartões": 4044.96, "Financiamento Apto": 3030.3, "IPVA Carro": 544.04, "Plano Saúde": 479.33, "Internet/Cel": 185.06, "IRPF": 0, "Empréstimo": 0, "total": 8283.69}, {"mes": "Mar/25", "status": "A Pagar", "Cartões": 1580.07, "Financiamento Apto": 2808.34, "IPVA Carro": 394.86, "Plano Saúde": 492.19, "Internet/Cel": 197.09, "IRPF": 0, "Empréstimo": 0, "total": 5472.55}, {"mes": "Abr/25", "status": "A Pagar", "Cartões": 3945.69, "Financiamento Apto": 3167.91, "IPVA Carro": 0, "Plano Saúde": 392.34, "Internet/Cel": 210.67, "IRPF": 138.4, "Empréstimo": 0, "total": 7855.01}, {"mes": "Mai/25", "status": "A Pagar", "Cartões": 3143.28, "Financiamento Apto": 0, "IPVA Carro": 0, "Plano Saúde": 453.35, "Internet/Cel": 183.75, "IRPF": 154.47, "Empréstimo": 0, "total": 3934.85}, {"mes": "Jun/25", "status": "A Pagar", "Cartões": 2320.39, "Financiamento Apto": 0, "IPVA Carro": 0, "Plano Saúde": 426.63, "Internet/Cel": 170.09, "IRPF": 202.52, "Empréstimo": 0, "total": 3119.63}, {"mes": "Jul/25", "status": "A Pagar", "Cartões": 1576.29, "Financiamento Apto": 0, "IPVA Carro": 0, "Plano Saúde": 451.39, "Internet/Cel": 214.36, "IRPF": 163.85, "Empréstimo": 0, "total": 2405.89}, {"mes": "Ago/25", "status": "A Pagar", "Cartões": 3600.35, "Financiamento Apto": 0, "IPVA Carro": 0, "Plano Saúde": 494.65, "Internet/Cel": 208.9, "IRPF": 136.7, "Empréstimo": 0, "total": 4440.6}], "totais": {"pct_pago": 0.7505, "valor_divida": 212685.42, "total_pagar": 53057.04, "total_pago": 159628.38}}, "fastback": {"resumo": {"data_compra": "2023-03-15", "valor_compra": 78000, "valor_entrada": 25000, "iof": 1800, "registro": 650, "valor_total_impostos": 80450, "valor_financiado": 53000, "parcela_mensal": 1350, "valor_pago_entrada": 25000, "hoje": "2026-06-28", "dias_com_carro": 1200, "custo_total": 115000, "custo_por_dia_atual": 95.83}, "financiamento": [{"parcela": 1, "vencimento": "2023-01-10", "valor": 1350.0, "pago": 1350.0, "data_pagamento": "2023-01-12"}, {"parcela": 2, "vencimento": "2023-02-10", "valor": 1350.0, "pago": 1350.0, "data_pagamento": "2023-02-12"}, {"parcela": 3, "vencimento": "2023-03-10", "valor": 1350.0, "pago": 1350.0, "data_pagamento": "2023-03-12"}, {"parcela": 4, "vencimento": "2023-04-10", "valor": 1350.0, "pago": 1350.0, "data_pagamento": "2023-04-12"}, {"parcela": 5, "vencimento": "2023-05-10", "valor": 1350.0, "pago": 1350.0, "data_pagamento": "2023-05-12"}, {"parcela": 6, "vencimento": "2023-06-10", "valor": 1350.0, "pago": 1350.0, "data_pagamento": "2023-06-12"}, {"parcela": 7, "vencimento": "2023-07-10", "valor": 1350.0, "pago": 1350.0, "data_pagamento": "2023-07-12"}, {"parcela": 8, "vencimento": "2023-08-10", "valor": 1350.0, "pago": 1350.0, "data_pagamento": "2023-08-12"}, {"parcela": 9, "vencimento": "2023-09-10", "valor": 1350.0, "pago": 1350.0, "data_pagamento": "2023-09-12"}, {"parcela": 10, "vencimento": "2023-10-10", "valor": 1350.0, "pago": 1350.0, "data_pagamento": "2023-10-12"}, {"parcela": 11, "vencimento": "2023-11-10", "valor": 1350.0, "pago": 1350.0, "data_pagamento": "2023-11-12"}, {"parcela": 12, "vencimento": "2023-12-10", "valor": 1350.0, "pago": 1350.0, "data_pagamento": "2023-12-12"}, {"parcela": 13, "vencimento": "2024-01-10", "valor": 1350.0, "pago": 1350.0, "data_pagamento": "2024-01-12"}, {"parcela": 14, "vencimento": "2024-02-10", "valor": 1350.0, "pago": 1350.0, "data_pagamento": "2024-02-12"}, {"parcela": 15, "vencimento": "2024-03-10", "valor": 1350.0, "pago": 1350.0, "data_pagamento": "2024-03-12"}, {"parcela": 16, "vencimento": "2024-04-10", "valor": 1350.0, "pago": 1350.0, "data_pagamento": "2024-04-12"}, {"parcela": 17, "vencimento": "2024-05-10", "valor": 1350.0, "pago": 1350.0, "data_pagamento": "2024-05-12"}, {"parcela": 18, "vencimento": "2024-06-10", "valor": 1350.0, "pago": 1350.0, "data_pagamento": "2024-06-12"}, {"parcela": 19, "vencimento": "2024-07-10", "valor": 1350.0, "pago": 1350.0, "data_pagamento": "2024-07-12"}, {"parcela": 20, "vencimento": "2024-08-10", "valor": 1350.0, "pago": 1350.0, "data_pagamento": "2024-08-12"}, {"parcela": 21, "vencimento": "2024-09-10", "valor": 1350.0, "pago": 1350.0, "data_pagamento": "2024-09-12"}, {"parcela": 22, "vencimento": "2024-10-10", "valor": 1350.0, "pago": 1350.0, "data_pagamento": "2024-10-12"}, {"parcela": 23, "vencimento": "2024-11-10", "valor": 1350.0, "pago": 1350.0, "data_pagamento": "2024-11-12"}, {"parcela": 24, "vencimento": "2024-12-10", "valor": 1350.0, "pago": 1350.0, "data_pagamento": "2024-12-12"}, {"parcela": 25, "vencimento": "2025-01-10", "valor": 1350.0, "pago": 1350.0, "data_pagamento": "2025-01-12"}, {"parcela": 26, "vencimento": "2025-02-10", "valor": 1350.0, "pago": 1350.0, "data_pagamento": "2025-02-12"}, {"parcela": 27, "vencimento": "2025-03-10", "valor": 1350.0, "pago": 1350.0, "data_pagamento": "2025-03-12"}, {"parcela": 28, "vencimento": "2025-04-10", "valor": 1350.0, "pago": 1350.0, "data_pagamento": "2025-04-12"}, {"parcela": 29, "vencimento": "2025-05-10", "valor": 1350.0, "pago": 1350.0, "data_pagamento": "2025-05-12"}, {"parcela": 30, "vencimento": "2025-06-10", "valor": 1350.0, "pago": 1350.0, "data_pagamento": "2025-06-12"}, {"parcela": 31, "vencimento": "2025-07-10", "valor": 1350.0, "pago": null, "data_pagamento": null}, {"parcela": 32, "vencimento": "2025-08-10", "valor": 1350.0, "pago": null, "data_pagamento": null}, {"parcela": 33, "vencimento": "2025-09-10", "valor": 1350.0, "pago": null, "data_pagamento": null}, {"parcela": 34, "vencimento": "2025-10-10", "valor": 1350.0, "pago": null, "data_pagamento": null}, {"parcela": 35, "vencimento": "2025-11-10", "valor": 1350.0, "pago": null, "data_pagamento": null}, {"parcela": 36, "vencimento": "2025-12-10", "valor": 1350.0, "pago": null, "data_pagamento": null}, {"parcela": 37, "vencimento": "2026-01-10", "valor": 1350.0, "pago": null, "data_pagamento": null}, {"parcela": 38, "vencimento": "2026-02-10", "valor": 1350.0, "pago": null, "data_pagamento": null}, {"parcela": 39, "vencimento": "2026-03-10", "valor": 1350.0, "pago": null, "data_pagamento": null}, {"parcela": 40, "vencimento": "2026-04-10", "valor": 1350.0, "pago": null, "data_pagamento": null}, {"parcela": 41, "vencimento": "2026-05-10", "valor": 1350.0, "pago": null, "data_pagamento": null}, {"parcela": 42, "vencimento": "2026-06-10", "valor": 1350.0, "pago": null, "data_pagamento": null}, {"parcela": 43, "vencimento": "2026-07-10", "valor": 1350.0, "pago": null, "data_pagamento": null}, {"parcela": 44, "vencimento": "2026-08-10", "valor": 1350.0, "pago": null, "data_pagamento": null}, {"parcela": 45, "vencimento": "2026-09-10", "valor": 1350.0, "pago": null, "data_pagamento": null}, {"parcela": 46, "vencimento": "2026-10-10", "valor": 1350.0, "pago": null, "data_pagamento": null}, {"parcela": 47, "vencimento": "2026-11-10", "valor": 1350.0, "pago": null, "data_pagamento": null}, {"parcela": 48, "vencimento": "2026-12-10", "valor": 1350.0, "pago": null, "data_pagamento": null}], "ipva": [{"parcela": 1, "vencimento": "2023-01-15", "valor": 795.51, "ano": 2023, "data_pagamento": "2023-01-14"}, {"parcela": 2, "vencimento": "2023-04-15", "valor": 774.17, "ano": 2023, "data_pagamento": "2023-04-14"}, {"parcela": 3, "vencimento": "2023-07-15", "valor": 710.56, "ano": 2023, "data_pagamento": "2023-07-14"}, {"parcela": 4, "vencimento": "2023-10-15", "valor": 758.41, "ano": 2023, "data_pagamento": "2023-10-14"}, {"parcela": 5, "vencimento": "2024-01-15", "valor": 669.36, "ano": 2024, "data_pagamento": "2024-01-14"}, {"parcela": 6, "vencimento": "2024-04-15", "valor": 644.73, "ano": 2024, "data_pagamento": "2024-04-14"}, {"parcela": 7, "vencimento": "2024-07-15", "valor": 645.04, "ano": 2024, "data_pagamento": "2024-07-14"}, {"parcela": 8, "vencimento": "2024-10-15", "valor": 572.11, "ano": 2024, "data_pagamento": "2024-10-14"}, {"parcela": 9, "vencimento": "2025-01-15", "valor": 585.68, "ano": 2025, "data_pagamento": null}, {"parcela": 10, "vencimento": "2025-04-15", "valor": 879.07, "ano": 2025, "data_pagamento": null}, {"parcela": 11, "vencimento": "2025-07-15", "valor": 694.51, "ano": 2025, "data_pagamento": null}, {"parcela": 12, "vencimento": "2025-10-15", "valor": 590.62, "ano": 2025, "data_pagamento": null}], "seguro": [{"parcela": 1, "vencimento": "2023-01-20", "valor": 211.01, "ano": 2023}, {"parcela": 2, "vencimento": "2023-02-20", "valor": 206.17, "ano": 2023}, {"parcela": 3, "vencimento": "2023-03-20", "valor": 267.55, "ano": 2023}, {"parcela": 4, "vencimento": "2023-04-20", "valor": 208.09, "ano": 2023}, {"parcela": 5, "vencimento": "2023-05-20", "valor": 261.67, "ano": 2023}, {"parcela": 6, "vencimento": "2023-06-20", "valor": 266.81, "ano": 2023}, {"parcela": 7, "vencimento": "2023-07-20", "valor": 270.69, "ano": 2023}, {"parcela": 8, "vencimento": "2023-08-20", "valor": 203.02, "ano": 2023}, {"parcela": 9, "vencimento": "2023-09-20", "valor": 226.94, "ano": 2023}, {"parcela": 10, "vencimento": "2023-10-20", "valor": 261.3, "ano": 2023}, {"parcela": 11, "vencimento": "2023-11-20", "valor": 210.48, "ano": 2023}, {"parcela": 12, "vencimento": "2023-12-20", "valor": 230.14, "ano": 2023}, {"parcela": 13, "vencimento": "2024-01-20", "valor": 212.98, "ano": 2024}, {"parcela": 14, "vencimento": "2024-02-20", "valor": 266.51, "ano": 2024}, {"parcela": 15, "vencimento": "2024-03-20", "valor": 261.69, "ano": 2024}, {"parcela": 16, "vencimento": "2024-04-20", "valor": 264.72, "ano": 2024}, {"parcela": 17, "vencimento": "2024-05-20", "valor": 213.24, "ano": 2024}, {"parcela": 18, "vencimento": "2024-06-20", "valor": 235.01, "ano": 2024}, {"parcela": 19, "vencimento": "2024-07-20", "valor": 232.87, "ano": 2024}, {"parcela": 20, "vencimento": "2024-08-20", "valor": 254.11, "ano": 2024}, {"parcela": 21, "vencimento": "2024-09-20", "valor": 219.0, "ano": 2024}, {"parcela": 22, "vencimento": "2024-10-20", "valor": 235.54, "ano": 2024}, {"parcela": 23, "vencimento": "2024-11-20", "valor": 222.79, "ano": 2024}, {"parcela": 24, "vencimento": "2024-12-20", "valor": 259.88, "ano": 2024}, {"parcela": 25, "vencimento": "2025-01-20", "valor": 235.91, "ano": 2025}, {"parcela": 26, "vencimento": "2025-02-20", "valor": 242.72, "ano": 2025}, {"parcela": 27, "vencimento": "2025-03-20", "valor": 224.76, "ano": 2025}, {"parcela": 28, "vencimento": "2025-04-20", "valor": 264.69, "ano": 2025}, {"parcela": 29, "vencimento": "2025-05-20", "valor": 237.52, "ano": 2025}, {"parcela": 30, "vencimento": "2025-06-20", "valor": 266.81, "ano": 2025}, {"parcela": 31, "vencimento": "2025-07-20", "valor": 229.43, "ano": 2025}, {"parcela": 32, "vencimento": "2025-08-20", "valor": 275.77, "ano": 2025}, {"parcela": 33, "vencimento": "2025-09-20", "valor": 278.76, "ano": 2025}, {"parcela": 34, "vencimento": "2025-10-20", "valor": 236.93, "ano": 2025}, {"parcela": 35, "vencimento": "2025-11-20", "valor": 222.54, "ano": 2025}, {"parcela": 36, "vencimento": "2025-12-20", "valor": 230.55, "ano": 2025}], "custo_dia": [{"date": "2023-01-01", "custo_dia": 280.82}, {"date": "2023-02-01", "custo_dia": 292.79}, {"date": "2023-03-01", "custo_dia": 287.11}, {"date": "2023-04-01", "custo_dia": 285.44}, {"date": "2023-05-01", "custo_dia": 264.35}, {"date": "2023-06-01", "custo_dia": 266.5}, {"date": "2023-07-01", "custo_dia": 277.04}, {"date": "2023-08-01", "custo_dia": 282.82}, {"date": "2023-09-01", "custo_dia": 272.04}, {"date": "2023-10-01", "custo_dia": 257.28}, {"date": "2023-11-01", "custo_dia": 278.38}, {"date": "2023-12-01", "custo_dia": 277.33}, {"date": "2024-01-01", "custo_dia": 259.15}, {"date": "2024-02-01", "custo_dia": 272.29}, {"date": "2024-03-01", "custo_dia": 256.38}, {"date": "2024-04-01", "custo_dia": 274.16}, {"date": "2024-05-01", "custo_dia": 250.22}, {"date": "2024-06-01", "custo_dia": 257.72}, {"date": "2024-07-01", "custo_dia": 271.79}, {"date": "2024-08-01", "custo_dia": 248.86}, {"date": "2024-09-01", "custo_dia": 254.53}, {"date": "2024-10-01", "custo_dia": 250.29}, {"date": "2024-11-01", "custo_dia": 239.4}, {"date": "2024-12-01", "custo_dia": 239.0}, {"date": "2025-01-01", "custo_dia": 251.26}, {"date": "2025-02-01", "custo_dia": 242.07}, {"date": "2025-03-01", "custo_dia": 263.64}, {"date": "2025-04-01", "custo_dia": 243.85}, {"date": "2025-05-01", "custo_dia": 232.25}, {"date": "2025-06-01", "custo_dia": 258.12}, {"date": "2025-07-01", "custo_dia": 254.18}, {"date": "2025-08-01", "custo_dia": 247.3}, {"date": "2025-09-01", "custo_dia": 250.34}, {"date": "2025-10-01", "custo_dia": 229.53}, {"date": "2025-11-01", "custo_dia": 232.81}, {"date": "2025-12-01", "custo_dia": 247.89}, {"date": "2026-01-01", "custo_dia": 242.68}, {"date": "2026-02-01", "custo_dia": 224.76}, {"date": "2026-03-01", "custo_dia": 240.57}, {"date": "2026-04-01", "custo_dia": 231.66}, {"date": "2026-05-01", "custo_dia": 217.16}, {"date": "2026-06-01", "custo_dia": 218.18}], "gastos_mes": [{"mes": "Jan/23", "valor": 2332.7, "ano_label": null, "total_ano": null, "media_ano": null}, {"mes": "Fev/23", "valor": 3085.45, "ano_label": null, "total_ano": null, "media_ano": null}, {"mes": "Mar/23", "valor": 2713.45, "ano_label": null, "total_ano": null, "media_ano": null}, {"mes": "Abr/23", "valor": 2945.41, "ano_label": null, "total_ano": null, "media_ano": null}, {"mes": "Mai/23", "valor": 2686.1, "ano_label": null, "total_ano": null, "media_ano": null}, {"mes": "Jun/23", "valor": 2144.54, "ano_label": null, "total_ano": null, "media_ano": null}, {"mes": "Jul/23", "valor": 2374.53, "ano_label": null, "total_ano": null, "media_ano": null}, {"mes": "Ago/23", "valor": 2391.5, "ano_label": null, "total_ano": null, "media_ano": null}, {"mes": "Set/23", "valor": 2062.07, "ano_label": null, "total_ano": null, "media_ano": null}, {"mes": "Out/23", "valor": 2545.77, "ano_label": null, "total_ano": null, "media_ano": null}, {"mes": "Nov/23", "valor": 3032.07, "ano_label": null, "total_ano": null, "media_ano": null}, {"mes": "Dez/23", "valor": 2594.25, "ano_label": null, "total_ano": null, "media_ano": null}, {"mes": "Jan/24", "valor": 2144.12, "ano_label": null, "total_ano": null, "media_ano": null}, {"mes": "Fev/24", "valor": 3176.69, "ano_label": null, "total_ano": null, "media_ano": null}, {"mes": "Mar/24", "valor": 2775.76, "ano_label": null, "total_ano": null, "media_ano": null}, {"mes": "Abr/24", "valor": 2021.37, "ano_label": null, "total_ano": null, "media_ano": null}, {"mes": "Mai/24", "valor": 2669.99, "ano_label": null, "total_ano": null, "media_ano": null}, {"mes": "Jun/24", "valor": 2314.52, "ano_label": null, "total_ano": null, "media_ano": null}, {"mes": "Jul/24", "valor": 2186.65, "ano_label": null, "total_ano": null, "media_ano": null}, {"mes": "Ago/24", "valor": 2558.01, "ano_label": null, "total_ano": null, "media_ano": null}, {"mes": "Set/24", "valor": 2799.25, "ano_label": null, "total_ano": null, "media_ano": null}, {"mes": "Out/24", "valor": 2312.73, "ano_label": null, "total_ano": null, "media_ano": null}, {"mes": "Nov/24", "valor": 2541.54, "ano_label": null, "total_ano": null, "media_ano": null}, {"mes": "Dez/24", "valor": 2863.68, "ano_label": null, "total_ano": null, "media_ano": null}, {"mes": "Jan/25", "valor": 2111.3, "ano_label": null, "total_ano": null, "media_ano": null}, {"mes": "Fev/25", "valor": 3267.05, "ano_label": null, "total_ano": null, "media_ano": null}, {"mes": "Mar/25", "valor": 2087.98, "ano_label": null, "total_ano": null, "media_ano": null}, {"mes": "Abr/25", "valor": 2683.88, "ano_label": null, "total_ano": null, "media_ano": null}, {"mes": "Mai/25", "valor": 2659.53, "ano_label": null, "total_ano": null, "media_ano": null}, {"mes": "Jun/25", "valor": 3284.83, "ano_label": null, "total_ano": null, "media_ano": null}, {"mes": "Jul/25", "valor": 2720.4, "ano_label": null, "total_ano": null, "media_ano": null}, {"mes": "Ago/25", "valor": 2507.59, "ano_label": null, "total_ano": null, "media_ano": null}, {"mes": "Set/25", "valor": 2611.18, "ano_label": null, "total_ano": null, "media_ano": null}, {"mes": "Out/25", "valor": 2826.37, "ano_label": null, "total_ano": null, "media_ano": null}, {"mes": "Nov/25", "valor": 3275.35, "ano_label": null, "total_ano": null, "media_ano": null}, {"mes": "Dez/25", "valor": 2329.75, "ano_label": null, "total_ano": null, "media_ano": null}, {"mes": "Jan/26", "valor": 2021.11, "ano_label": null, "total_ano": null, "media_ano": null}, {"mes": "Fev/26", "valor": 3025.08, "ano_label": null, "total_ano": null, "media_ano": null}, {"mes": "Mar/26", "valor": 2448.24, "ano_label": null, "total_ano": null, "media_ano": null}, {"mes": "Abr/26", "valor": 2952.82, "ano_label": null, "total_ano": null, "media_ano": null}, {"mes": "Mai/26", "valor": 2816.73, "ano_label": null, "total_ano": null, "media_ano": null}, {"mes": "Jun/26", "valor": 3002.95, "ano_label": null, "total_ano": null, "media_ano": null}], "total_gastos": 109904.29, "semparar": [{"mes": "Jan/23", "valor": 552.02}, {"mes": "Fev/23", "valor": 403.03}, {"mes": "Mar/23", "valor": 296.4}, {"mes": "Abr/23", "valor": 482.03}, {"mes": "Mai/23", "valor": 581.0}, {"mes": "Jun/23", "valor": 344.78}, {"mes": "Jul/23", "valor": 568.28}, {"mes": "Ago/23", "valor": 451.91}, {"mes": "Set/23", "valor": 537.29}, {"mes": "Out/23", "valor": 513.74}, {"mes": "Nov/23", "valor": 580.25}, {"mes": "Dez/23", "valor": 303.35}, {"mes": "Jan/24", "valor": 567.19}, {"mes": "Fev/24", "valor": 449.34}, {"mes": "Mar/24", "valor": 388.57}, {"mes": "Abr/24", "valor": 296.21}, {"mes": "Mai/24", "valor": 353.8}, {"mes": "Jun/24", "valor": 295.51}, {"mes": "Jul/24", "valor": 625.35}, {"mes": "Ago/24", "valor": 470.69}, {"mes": "Set/24", "valor": 645.98}, {"mes": "Out/24", "valor": 480.92}, {"mes": "Nov/24", "valor": 373.73}, {"mes": "Dez/24", "valor": 558.72}, {"mes": "Jan/25", "valor": 350.71}, {"mes": "Fev/25", "valor": 412.08}, {"mes": "Mar/25", "valor": 568.91}, {"mes": "Abr/25", "valor": 600.35}, {"mes": "Mai/25", "valor": 402.81}, {"mes": "Jun/25", "valor": 326.06}, {"mes": "Jul/25", "valor": 416.17}, {"mes": "Ago/25", "valor": 609.11}, {"mes": "Set/25", "valor": 555.02}, {"mes": "Out/25", "valor": 611.02}, {"mes": "Nov/25", "valor": 423.06}, {"mes": "Dez/25", "valor": 640.28}], "total_semparar": 17035.67, "media_semparar": 460.0}, "payslip": {"2023": {"ano": 2023, "meses": [{"mes": "Janeiro/23", "mes_num": 1, "bruto": 11799.25, "liquido": 7820.25, "imposto": 3979.0, "pct_imposto": 0.3372}, {"mes": "Fevereiro/23", "mes_num": 2, "bruto": 11128.72, "liquido": 7441.13, "imposto": 3687.59, "pct_imposto": 0.3314}, {"mes": "Março/23", "mes_num": 3, "bruto": 23493.23, "liquido": 15686.95, "imposto": 7806.28, "pct_imposto": 0.3323}, {"mes": "Abril/23", "mes_num": 4, "bruto": 11798.86, "liquido": 7698.11, "imposto": 4100.75, "pct_imposto": 0.3476}, {"mes": "Maio/23", "mes_num": 5, "bruto": 11987.78, "liquido": 7890.65, "imposto": 4097.13, "pct_imposto": 0.3418}, {"mes": "Junho/23", "mes_num": 6, "bruto": 11655.59, "liquido": 7706.98, "imposto": 3948.61, "pct_imposto": 0.3388}, {"mes": "Julho/23", "mes_num": 7, "bruto": 11918.88, "liquido": 7882.68, "imposto": 4036.2, "pct_imposto": 0.3386}, {"mes": "Agosto/23", "mes_num": 8, "bruto": 11098.6, "liquido": 7030.01, "imposto": 4068.59, "pct_imposto": 0.3666}, {"mes": "Setembro/23", "mes_num": 9, "bruto": 11433.54, "liquido": 7376.25, "imposto": 4057.29, "pct_imposto": 0.3549}, {"mes": "Outubro/23", "mes_num": 10, "bruto": 23240.87, "liquido": 14707.02, "imposto": 8533.85, "pct_imposto": 0.3672}, {"mes": "Novembro/23", "mes_num": 11, "bruto": 11508.44, "liquido": 7428.93, "imposto": 4079.51, "pct_imposto": 0.3545}, {"mes": "Dezembro/23", "mes_num": 12, "bruto": 11444.7, "liquido": 7242.72, "imposto": 4201.98, "pct_imposto": 0.3672}], "total_bruto": 162508.46, "total_liquido": 105911.68, "total_imposto": 56596.78, "media_bruto": 13542.37, "media_liquido": 8825.97, "pct_imposto": 0.3483}, "2024": {"ano": 2024, "meses": [{"mes": "Janeiro/24", "mes_num": 1, "bruto": 13637.84, "liquido": 8644.16, "imposto": 4993.68, "pct_imposto": 0.3662}, {"mes": "Fevereiro/24", "mes_num": 2, "bruto": 13680.81, "liquido": 9203.97, "imposto": 4476.84, "pct_imposto": 0.3272}, {"mes": "Março/24", "mes_num": 3, "bruto": 25351.81, "liquido": 16614.39, "imposto": 8737.42, "pct_imposto": 0.3446}, {"mes": "Abril/24", "mes_num": 4, "bruto": 13150.78, "liquido": 8649.48, "imposto": 4501.3, "pct_imposto": 0.3423}, {"mes": "Maio/24", "mes_num": 5, "bruto": 13585.2, "liquido": 9167.21, "imposto": 4417.99, "pct_imposto": 0.3252}, {"mes": "Junho/24", "mes_num": 6, "bruto": 13133.65, "liquido": 8805.99, "imposto": 4327.66, "pct_imposto": 0.3295}, {"mes": "Julho/24", "mes_num": 7, "bruto": 13400.43, "liquido": 8657.7, "imposto": 4742.73, "pct_imposto": 0.3539}, {"mes": "Agosto/24", "mes_num": 8, "bruto": 13167.83, "liquido": 8395.06, "imposto": 4772.77, "pct_imposto": 0.3625}, {"mes": "Setembro/24", "mes_num": 9, "bruto": 12621.67, "liquido": 8016.97, "imposto": 4604.7, "pct_imposto": 0.3648}, {"mes": "Outubro/24", "mes_num": 10, "bruto": 25726.85, "liquido": 16649.69, "imposto": 9077.16, "pct_imposto": 0.3528}, {"mes": "Novembro/24", "mes_num": 11, "bruto": 13482.9, "liquido": 8834.37, "imposto": 4648.53, "pct_imposto": 0.3448}, {"mes": "Dezembro/24", "mes_num": 12, "bruto": 12767.78, "liquido": 8201.86, "imposto": 4565.92, "pct_imposto": 0.3576}], "total_bruto": 183707.55, "total_liquido": 119840.85, "total_imposto": 63866.7, "media_bruto": 15308.96, "media_liquido": 9986.74, "pct_imposto": 0.3477}, "2025": {"ano": 2025, "meses": [{"mes": "Janeiro/25", "mes_num": 1, "bruto": 14707.88, "liquido": 9589.11, "imposto": 5118.77, "pct_imposto": 0.348}, {"mes": "Fevereiro/25", "mes_num": 2, "bruto": 14833.67, "liquido": 9462.95, "imposto": 5370.72, "pct_imposto": 0.3621}, {"mes": "Março/25", "mes_num": 3, "bruto": 26611.82, "liquido": 17141.86, "imposto": 9469.96, "pct_imposto": 0.3559}, {"mes": "Abril/25", "mes_num": 4, "bruto": 14664.98, "liquido": 9487.04, "imposto": 5177.94, "pct_imposto": 0.3531}, {"mes": "Maio/25", "mes_num": 5, "bruto": 14944.87, "liquido": 10005.01, "imposto": 4939.86, "pct_imposto": 0.3305}, {"mes": "Junho/25", "mes_num": 6, "bruto": 15018.01, "liquido": 9510.84, "imposto": 5507.17, "pct_imposto": 0.3667}, {"mes": "Julho/25", "mes_num": 7, "bruto": 14199.87, "liquido": 9427.56, "imposto": 4772.31, "pct_imposto": 0.3361}, {"mes": "Agosto/25", "mes_num": 8, "bruto": 14480.54, "liquido": 9646.74, "imposto": 4833.8, "pct_imposto": 0.3338}, {"mes": "Setembro/25", "mes_num": 9, "bruto": 15031.71, "liquido": 10151.17, "imposto": 4880.54, "pct_imposto": 0.3247}, {"mes": "Outubro/25", "mes_num": 10, "bruto": 27352.45, "liquido": 17687.96, "imposto": 9664.49, "pct_imposto": 0.3533}, {"mes": "Novembro/25", "mes_num": 11, "bruto": 14922.45, "liquido": 9506.67, "imposto": 5415.78, "pct_imposto": 0.3629}, {"mes": "Dezembro/25", "mes_num": 12, "bruto": 14577.73, "liquido": 9889.31, "imposto": 4688.42, "pct_imposto": 0.3216}], "total_bruto": 201345.98, "total_liquido": 131506.22, "total_imposto": 69839.76, "media_bruto": 16778.83, "media_liquido": 10958.85, "pct_imposto": 0.3469}, "2026": {"ano": 2026, "meses": [{"mes": "Janeiro/26", "mes_num": 1, "bruto": 16317.57, "liquido": 10599.86, "imposto": 5717.71, "pct_imposto": 0.3504}, {"mes": "Fevereiro/26", "mes_num": 2, "bruto": 16152.07, "liquido": 10933.34, "imposto": 5218.73, "pct_imposto": 0.3231}, {"mes": "Março/26", "mes_num": 3, "bruto": 27695.33, "liquido": 17969.67, "imposto": 9725.66, "pct_imposto": 0.3512}, {"mes": "Abril/26", "mes_num": 4, "bruto": 16466.66, "liquido": 11043.52, "imposto": 5423.14, "pct_imposto": 0.3293}, {"mes": "Maio/26", "mes_num": 5, "bruto": 16272.19, "liquido": 10925.93, "imposto": 5346.26, "pct_imposto": 0.3286}], "total_bruto": 92903.82, "total_liquido": 61472.32, "total_imposto": 31431.5, "media_bruto": 18580.76, "media_liquido": 12294.46, "pct_imposto": 0.3383}}, "investimentos": {"dates": ["2026-03-27", "2026-04-26"], "investments": [{"empresa": "Nubank", "tipo": "CDB", "snapshots": {"2026-03-27": 18500, "2026-04-26": 19200}}, {"empresa": "XP", "tipo": "Tesouro Direto", "snapshots": {"2026-03-27": 32000, "2026-04-26": 33500}}, {"empresa": "Rico", "tipo": "FII", "snapshots": {"2026-03-27": 8800, "2026-04-26": 9100}}, {"empresa": "Binance", "tipo": "Bitcoin", "snapshots": {"2026-03-27": 4200, "2026-04-26": 5100}}, {"empresa": "Inter", "tipo": "CDB", "snapshots": {"2026-03-27": 12000, "2026-04-26": 12800}}, {"empresa": "Itaú", "tipo": "PGBL", "snapshots": {"2026-03-27": 22000, "2026-04-26": 23500}}, {"empresa": "Wise", "tipo": "Dólar", "snapshots": {"2026-03-27": 5600, "2026-04-26": 5900}}, {"empresa": "Ouro (B3)", "tipo": "Ouro", "snapshots": {"2026-03-27": 3200, "2026-04-26": 3800}}], "totals": {"2026-03-27": 106300, "2026-04-26": 112900}, "latest_date": "2026-04-26", "prev_date": "2026-03-27"}};
+
+// ===========================
+// XLSX PARSER (browser-side)
+// ===========================
+const ASSETS = ['Apto Centro','Carro','Terreno Interior','FGTS','99 Pay','Itau CDB','Itau - Fundos/PGBL/Cripto','Split (Saldo Credor)','Criptos (Bitibank, Binance, ByBit)','Mercado Pago','Nomad/Wise','Cash','Itaú CC','RICO','Santander CC','Santander Poupança','PicPay','CEF (Poup)','Itaú Poupança'];
+const CATS = ['Cartões','Carro','IPVA/Licenciam.','Plano Med. Mãe','Telefone/Internet','Riachuelo','IRPF','C&A','AgroRancho','Seguro Casa','Apto Centro','Terreno Interior','Aniversário'];
+const CAT_COLS = [2,3,4,5,6,7,8,9,11,12,13,14,15]; // 0-based col indices in Dívidas sheet
+
+function excelDateToISO(serial) {
+  if (!serial || typeof serial !== 'number') return null;
+  // Use pure UTC math to avoid timezone shifts (Brazil = UTC-3 would shift dates back)
+  const days = Math.round(serial - 25569);
+  const totalMs = days * 86400000;
+  const d = new Date(totalMs);
+  const y = d.getUTCFullYear();
+  const m = String(d.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(d.getUTCDate()).padStart(2, '0');
+  if (y < 2010 || y > 2040) return null;
+  return `${y}-${m}-${day}`;
+}
+
+function parseInventario(ws) {
+  const getData = (r,c) => { const cell = ws[XLSX.utils.encode_cell({r,c})]; return cell ? cell.v : null; };
+
+  // Parse any date format used in the sheet:
+  // 1. Excel serial number  → excelDateToISO()
+  // 2. "dd/mm/yyyy"
+  // 3. "DD de Mês de YYYY"  (Portuguese text)
+  // 4. ISO string "YYYY-MM-DD" or datetime string
+  const MESES = {janeiro:1,fevereiro:2,'março':3,marco:3,abril:4,maio:5,junho:6,
+                 julho:7,agosto:8,setembro:9,outubro:10,novembro:11,dezembro:12};
+  const parseAnyDate = v => {
+    if (!v) return null;
+    if (typeof v === 'number') return excelDateToISO(v);
+    if (typeof v === 'string') {
+      // dd/mm/yyyy
+      let m = v.match(/^(\d{1,2})\/(\d{2})\/(\d{4})/);
+      if (m) return `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
+      // DD de Mês de YYYY
+      m = v.match(/^(\d{1,2})\s+de\s+(\w+)\s+de\s+(\d{4})/i);
+      if (m) {
+        const mo = MESES[m[2].toLowerCase()];
+        if (mo) return `${m[3]}-${String(mo).padStart(2,'0')}-${m[1].padStart(2,'0')}`;
+      }
+      // ISO or datetime string
+      m = v.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if (m) return `${m[1]}-${m[2]}-${m[3]}`;
+    }
+    // SheetJS may return a Date object string — check for it
+    if (typeof v === 'object' && v instanceof Date) {
+      const y=v.getUTCFullYear(), mo=String(v.getUTCMonth()+1).padStart(2,'0'), d=String(v.getUTCDate()).padStart(2,'0');
+      if (y>=2010&&y<=2040) return `${y}-${mo}-${d}`;
+    }
+    return null;
+  };
+
+  // Find total row: scan col 0 for 'Total' label
+  const maxRow = ws['!ref'] ? XLSX.utils.decode_range(ws['!ref']).e.r : 120;
+  const maxCol = ws['!ref'] ? XLSX.utils.decode_range(ws['!ref']).e.c : 120;
+  let totalRow = 24; // default
+  for (let r = 20; r <= Math.min(maxRow, 35); r++) {
+    const v = getData(r, 0);
+    if (v && typeof v === 'string' && v.trim().toLowerCase() === 'total') { totalRow = r; break; }
+  }
+
+  // Asset rows: row 4 to totalRow-1, col 0 has asset name
+  const assetNames = [];
+  for (let r = 4; r < totalRow; r++) {
+    const v = getData(r, 0);
+    if (v && typeof v === 'string' && v.trim() && !['Bens','Liquidez','Categoria'].includes(v.trim()))
+      assetNames.push({ name: v.trim(), row: r });
+  }
+
+  // Scan columns for valid snapshots
+  const timeline = [];
+  for (let col = 2; col <= maxCol; col++) {
+    const dateVal = getData(3, col);   // dates in row 3
+    const totalVal = getData(totalRow, col);
+    if (!dateVal || !totalVal) continue;
+    if (typeof totalVal !== 'number' || totalVal < 10000) continue;
+    const isoDate = parseAnyDate(dateVal);
+    if (!isoDate) continue;
+
+    const assets = {};
+    assetNames.forEach(({name, row}) => {
+      const v = getData(row, col);
+      assets[name] = (typeof v === 'number' && !isNaN(v)) ? Math.round(v * 100) / 100 : 0;
+    });
+
+    const [y,mo,d] = isoDate.split('-');
+    timeline.push({ date: isoDate, label: `${d}/${mo}/${y.slice(2)}`, total: Math.round(totalVal * 100) / 100, assets });
+  }
+
+  timeline.sort((a,b) => a.date.localeCompare(b.date));
+
+  // Remove duplicate dates keeping the latest entry per date
+  const seen = new Set();
+  const deduped = [];
+  for (const snap of timeline) {
+    if (!seen.has(snap.date)) { seen.add(snap.date); deduped.push(snap); }
+  }
+
+  // Yearly stats
+  const byYear = {};
+  deduped.forEach(r => {
+    const yr = r.date.split('-')[0];
+    if (!byYear[yr]) byYear[yr] = [];
+    byYear[yr].push(r);
+  });
+  const yearly = Object.entries(byYear).map(([yr, rows]) => ({
+    year: parseInt(yr), start: rows[0].total, end: rows[rows.length-1].total,
+    growth: Math.round((rows[rows.length-1].total / rows[0].total - 1) * 10000) / 10000
+  }));
+
+  const first = deduped[0], last = deduped[deduped.length-1];
+  if (!first || !last) return null;
+  return {
+    timeline: deduped, yearly,
+    assets: assetNames.map(a => a.name),
+    stats: {
+      current_total: last.total,
+      prev_total: deduped[deduped.length-2]?.total ?? last.total,
+      first_total: first.total,
+      growth_total_pct: Math.round((last.total / first.total - 1) * 1000) / 10,
+      total_snapshots: deduped.length,
+      last_date: last.date,
+      first_date: first.date
+    }
+  };
+}
+
+function parseDividas(ws) {
+  const getData = (r,c) => { const cell = ws[XLSX.utils.encode_cell({r,c})]; return cell ? cell.v : null; };
+  const fv = v => (typeof v === 'number' && !isNaN(v)) ? Math.round(v*100)/100 : 0;
+  const maxRow = ws['!ref'] ? XLSX.utils.decode_range(ws['!ref']).e.r : 70;
+  const maxCol = ws['!ref'] ? XLSX.utils.decode_range(ws['!ref']).e.c : 40;
+
+  // Find header row (col 0 = 'Mês')
+  let hdr = 6;
+  for (let r = 0; r <= 10; r++) {
+    const v = getData(r, 0);
+    if (v && String(v).trim() === 'Mês') { hdr = r; break; }
+  }
+
+  // Build cat→col from header row (skip utility cols AND subcategory cols > col 19)
+  const SKIP = new Set(['Mês','Valor','Status','Cartão','Data','% Pago','Valor da Dívida','Total a Pagar','Total Pago','Média > ']);
+  const catCols = {};
+  let statusCol = 18;
+  for (let c = 1; c <= Math.min(maxCol, 19); c++) {  // cap at col 19 to exclude card breakdowns
+    const v = getData(hdr, c);
+    if (!v || typeof v !== 'string') continue;
+    const name = v.trim();
+    if (!name) continue;
+    if (name === 'Status') { statusCol = c; continue; }
+    if (SKIP.has(name) || /^\d{4}/.test(name)) continue;
+    catCols[name] = c;
+  }
+  // Also scan for Status col beyond 19
+  for (let c = 1; c <= maxCol; c++) {
+    const v = getData(hdr, c);
+    if (v && String(v).trim() === 'Status') { statusCol = c; break; }
+  }
+  const CATS = Object.keys(catCols);
+
+  // Summary rows: hdr-5=pct, hdr-4=valor, hdr-3=pagar, hdr-2=pago, hdr-1=dias
+  const summary = {};
+  CATS.forEach(cat => {
+    const col = catCols[cat];
+    summary[cat] = {
+      pct_pago:     fv(getData(hdr-5, col)),
+      valor_divida: fv(getData(hdr-4, col)),
+      total_pagar:  fv(getData(hdr-3, col)),
+      total_pago:   fv(getData(hdr-2, col)),
+      dias_prox:    (() => { const dp = getData(hdr-1, col); return (typeof dp === 'number' && dp > 0 && dp < 365 && Number.isInteger(dp)) ? dp : null; })(),
+    };
+  });
+  const totais = {
+    pct_pago:     fv(getData(hdr-5, 1)),
+    valor_divida: fv(getData(hdr-4, 1)),
+    total_pagar:  fv(getData(hdr-3, 1)),
+    total_pago:   fv(getData(hdr-2, 1)),
+  };
+
+  // Monthly data rows
+  const monthly = [];
+  for (let r = hdr+1; r <= maxRow; r++) {
+    const mes = getData(r, 0);
+    if (!mes || typeof mes !== 'string') continue;
+    const total = fv(getData(r, 1));
+    const statusRaw = getData(r, statusCol);
+    const status = statusRaw ? String(statusRaw).trim() : '';
+    if (total === 0 && status === 'A Pagar') continue;
+    const row = { mes: String(mes).trim(), total, status };
+    CATS.forEach(cat => {
+      const v = getData(r, catCols[cat]);
+      row[cat] = (typeof v === 'number' && !isNaN(v)) ? Math.round(v*100)/100 : 0;
+    });
+    monthly.push(row);
+  }
+
+  return { summary, totais, monthly, cats: CATS };
+}
+
+
+function parseFastback(ws) {
+  const getData = (r,c) => { const cell = ws[XLSX.utils.encode_cell({r,c})]; return cell ? cell.v : null; };
+  const fv = v => (v !== null && typeof v === 'number' && !isNaN(v)) ? Math.round(v*100)/100 : null;
+  const sv = v => (v !== null && v !== undefined && String(v).trim() !== '' && String(v) !== 'NaN') ? String(v).trim() : null;
+  const dt = v => {
+    if (!v || typeof v !== 'number') return null;
+    const days = Math.round(v - 25569);
+    const d = new Date(days * 86400000);
+    const y=d.getUTCFullYear(), m=String(d.getUTCMonth()+1).padStart(2,'0'), day=String(d.getUTCDate()).padStart(2,'0');
+    if (y < 2020 || y > 2040) return null;
+    return `${y}-${m}-${day}`;
+  };
+  const dtAny = v => {
+    if (typeof v === 'number') return dt(v);
+    if (typeof v === 'string') {
+      const m = v.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+      if (m) { const y=parseInt(m[3]); return (y>=2020&&y<=2040)?`${m[3]}-${m[2]}-${m[1]}`:null; }
+      if (v.match(/^\d{4}-\d{2}-\d{2}$/)) return v;
+    }
+    return null;
+  };
+
+  const maxRow = ws['!ref'] ? XLSX.utils.decode_range(ws['!ref']).e.r : 120;
+
+  const resumo = {
+    data_compra: dt(getData(1,1)), valor_compra: fv(getData(2,1)),
+    valor_entrada: fv(getData(3,1)), registro: fv(getData(4,1)),
+    iof: fv(getData(5,1)), valor_total_impostos: fv(getData(6,1)),
+    valor_financiado: fv(getData(7,1)), parcela_mensal: fv(getData(8,1)),
+    valor_pago_entrada: fv(getData(9,1)), hoje: dt(getData(0,4)),
+    dias_com_carro: getData(0,8)||null,
+    custo_total: fv(getData(3,6)), custo_por_dia_atual: fv(getData(3,7)),
+  };
+
+  const financiamento=[];
+  for(let r=12;r<Math.min(48,maxRow+1);r++){
+    const p=getData(r,0); const valor=fv(getData(r,2)); const pago=fv(getData(r,3));
+    if(p!==null&&typeof p==='number'&&valor!==null)
+      financiamento.push({parcela:Math.round(p),vencimento:dt(getData(r,1)),valor,pago,data_pagamento:dt(getData(r,4))});
+  }
+  const ipva=[];
+  for(let r=12;r<Math.min(30,maxRow+1);r++){
+    const p=getData(r,6); const valor=fv(getData(r,8)); const ano=getData(r,9);
+    const vRaw=getData(r,7); const venc=dtAny(vRaw);
+    const dpRaw=getData(r,10); const dpv=dtAny(dpRaw);
+    if(p!==null&&valor!==null) ipva.push({parcela:p,vencimento:venc,valor,ano:ano||null,data_pagamento:dpv});
+  }
+  const seguro=[];
+  for(let r=12;r<Math.min(42,maxRow+1);r++){
+    const p=getData(r,12); const valor=fv(getData(r,14)); const ano=getData(r,15);
+    const vRaw=getData(r,13); const venc=dtAny(vRaw);
+    if(p!==null&&valor!==null) seguro.push({parcela:p,vencimento:venc,valor,ano:ano||null});
+  }
+  const custo_dia=[];
+  for(let r=53;r<=maxRow;r++){
+    const dv=getData(r,0); const cv=fv(getData(r,1));
+    const d=dt(dv); if(d&&cv!==null) custo_dia.push({date:d,custo_dia:cv});
+  }
+
+  // Gastos totais por mês (cols 25-29)
+  const total_gastos = fv(getData(1,26));
+  const gastos_mes = [];
+  for(let r=3;r<=Math.min(maxRow,50);r++){
+    const mes=sv(getData(r,25)); const valor=fv(getData(r,26));
+    if(!mes||valor===null) continue;
+    gastos_mes.push({mes, valor,
+      ano_label: sv(getData(r,27)),
+      total_ano: fv(getData(r,28)),
+      media_ano: fv(getData(r,29))
+    });
+  }
+
+  // Sem Parar + Combustível (cols 22-23)
+  const total_semparar = fv(getData(10,23));
+  const media_semparar = fv(getData(9,23));
+  const semparar = [];
+  for(let r=12;r<=Math.min(maxRow,50);r++){
+    const mes=sv(getData(r,22)); const valor=fv(getData(r,23));
+    if(!mes||valor===null) continue;
+    semparar.push({mes, valor});
+  }
+
+  return {resumo, financiamento, ipva, seguro, custo_dia,
+          gastos_mes, total_gastos, semparar, total_semparar, media_semparar};
+}
+
+function parsePayslip(ws) {
+  const getData = (r,c) => { const cell = ws[XLSX.utils.encode_cell({r,c})]; return cell ? cell.v : null; };
+  const fv = v => (v !== null && typeof v === 'number' && !isNaN(v) && v !== 0) ? Math.round(v*10000)/10000 : null;
+  const mCols = [5,7,9,11,13,15,17,19,21,23,25,27];
+  const mesMap = {janeiro:1,fevereiro:2,'março':3,marco:3,abril:4,maio:5,junho:6,julho:7,agosto:8,setembro:9,outubro:10,novembro:11,dezembro:12};
+
+  // Detect year blocks dynamically: col 0 has a year number (2020-2040)
+  const maxRow = ws['!ref'] ? XLSX.utils.decode_range(ws['!ref']).e.r : 50;
+  const yearBlocks = [];
+  for (let r = 0; r <= maxRow; r++) {
+    const v = getData(r, 0);
+    if (typeof v === 'number' && v >= 2020 && v <= 2040 && Number.isInteger(v)) {
+      // Find data row: next row where col 0 === 'Mês'
+      let dataRow = null;
+      for (let offset = 1; offset <= 4; offset++) {
+        const label = getData(r + offset, 0);
+        if (label === 'Mês' || label === 'Mes') { dataRow = r + offset; break; }
+      }
+      if (dataRow !== null) yearBlocks.push({ year: v, hdrRow: r, dataRow });
+    }
+  }
+
+  const payslip = {};
+  yearBlocks.forEach(({ year, hdrRow, dataRow }) => {
+    const months = [];
+    mCols.forEach(col => {
+      const name = getData(hdrRow, col);
+      if (!name || typeof name !== 'string') return;
+      const bruto = fv(getData(dataRow, col));
+      const liquido = fv(getData(dataRow, col + 1));
+      if (!bruto || bruto <= 100) return;
+      const lower = name.toLowerCase();
+      const mesNum = Object.entries(mesMap).find(([k]) => lower.includes(k))?.[1] || null;
+      months.push({ mes: name, mes_num: mesNum, bruto, liquido,
+        imposto: bruto && liquido ? Math.round((bruto - liquido)*10000)/10000 : null,
+        pct_imposto: bruto && liquido ? Math.round((bruto - liquido)/bruto*10000)/10000 : null });
+    });
+    const get30 = c => { const v = getData(dataRow, c); return (typeof v === 'number' && !isNaN(v) && v > 0) ? Math.round(v*100)/100 : null; };
+    payslip[String(year)] = {
+      ano: year, meses: months,
+      total_bruto: get30(30), total_liquido: get30(31), total_imposto: get30(32),
+      media_bruto: fv(getData(dataRow, 2)), media_liquido: fv(getData(dataRow, 3)),
+      pct_imposto: fv(getData(hdrRow, 4))
+    };
+  });
+  return payslip;
+}
+
+function parseInvestimentos(ws) {
+  const getData = (r,c) => { const cell = ws[XLSX.utils.encode_cell({r,c})]; return cell ? cell.v : null; };
+  const fv = v => (v !== null && typeof v === 'number' && !isNaN(v)) ? Math.round(v*10000)/10000 : null;
+  const dtSerial = v => {
+    if (!v || typeof v !== 'number') return null;
+    const days = Math.round(v - 25569);
+    const d = new Date(days * 86400000);
+    const y=d.getUTCFullYear(), m=String(d.getUTCMonth()+1).padStart(2,'0'), day=String(d.getUTCDate()).padStart(2,'0');
+    if (y < 2020 || y > 2040) return null;
+    return `${y}-${m}-${day}`;
+  };
+  const dtStr = v => typeof v === 'string' && v.match(/^\d{4}-\d{2}-\d{2}$/) ? v : null;
+  const parseDate = v => dtSerial(v) || dtStr(v);
+
+  const maxCol = ws['!ref'] ? XLSX.utils.decode_range(ws['!ref']).e.c : 20;
+  const maxRow = ws['!ref'] ? XLSX.utils.decode_range(ws['!ref']).e.r : 40;
+
+  // 1. Find the date-header row: first row where col 2+ has parseable dates
+  let dateHeaderRow = -1;
+  const dates = [];
+  for (let r = 0; r <= Math.min(maxRow, 5); r++) {
+    const found = [];
+    for (let c = 2; c <= maxCol; c++) {
+      const d = parseDate(getData(r, c));
+      if (d) found.push({col: c, date: d});
+    }
+    if (found.length > 0) { dateHeaderRow = r; found.forEach(f => dates.push(f)); break; }
+  }
+  if (!dates.length) return null;
+
+  // 2. Investment rows: rows after dateHeaderRow where col 0 is a non-empty string
+  //    AND col 0 is NOT 'Total' / 'TOTAL'
+  const investments = [];
+  const totals = {};
+  for (let r = dateHeaderRow + 1; r <= maxRow; r++) {
+    const empresa = getData(r, 0);
+    if (!empresa) continue;
+    const empresaStr = String(empresa).trim();
+    if (!empresaStr) continue;
+
+    // Detect Total row (at top OR bottom): col 0 is 'Total'/'TOTAL'/'Investimentos'
+    const isTotal = /^(total|investimentos)$/i.test(empresaStr);
+    if (isTotal) {
+      dates.forEach(({col, date}) => { const v = fv(getData(r, col)); if (v) totals[date] = v; });
+      continue;
+    }
+
+    // Also detect header row (col 0 = 'Empresa')
+    if (/^empresa$/i.test(empresaStr)) continue;
+
+    const tipo = getData(r, 1);
+    const snapshots = {};
+    dates.forEach(({col, date}) => {
+      const v = fv(getData(r, col));
+      if (v !== null && v > 0) snapshots[date] = v;  // only include non-zero values
+    });
+    if (Object.keys(snapshots).length > 0)  // include ativo if it has any non-zero snapshot
+      investments.push({ empresa: empresaStr, tipo: tipo ? String(tipo).trim() : '', snapshots });
+  }
+
+  // 3. Also check row 0 for totals (old format where total was at top header)
+  if (Object.keys(totals).length === 0) {
+    dates.forEach(({col, date}) => { const v = fv(getData(0, col)); if (v) totals[date] = v; });
+  }
+
+  // 4. If still no totals, compute from investments
+  if (Object.keys(totals).length === 0) {
+    dates.forEach(({date}) => {
+      totals[date] = investments.reduce((s,i) => s + (i.snapshots[date] || 0), 0);
+    });
+  }
+
+  const dateList = dates.map(d => d.date).sort();
+  return {
+    dates: dateList, investments, totals,
+    latest_date: dateList[dateList.length-1] || null,
+    prev_date: dateList.length > 1 ? dateList[dateList.length-2] : null,
+  };
+}
+
+// ===========================
+// UTILS + CHART HELPERS
+// ===========================
+const fmt = (v,d=0) => 'R$ '+v.toLocaleString('pt-BR',{minimumFractionDigits:d,maximumFractionDigits:d});
+const fmtK = v => v>=1e6?'R$ '+(v/1e6).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+'M':v>=1000?'R$ '+(v/1000).toFixed(0)+'k':fmt(v);
+const pctFmtInv = v => (v*100).toFixed(1)+'%';
+const pal = ['#3b82f6','#00d4aa','#f59e0b','#8b5cf6','#ef4444','#ec4899','#06b6d4','#84cc16','#f97316','#14b8a6'];
+const catColors = {'Cartões':'#3b82f6','Carro':'#f59e0b','IPVA/Licenciam.':'#8b5cf6','Apto Centro':'#00d4aa','Serra Negra':'#22c55e','Plano Médico Mãe':'#ec4899','Plano Med. Mãe':'#ec4899','Telefone/Internet':'#06b6d4','Riachuelo':'#f97316','IRPF':'#ef4444','C&A':'#84cc16','AgroRancho':'#14b8a6','Seguro Casa':'#a78bfa','Niver Cris':'#fbbf24','Monte Verde':'#34d399'};
+const cBase = {responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:'#1a2235',borderColor:'#1f2d45',borderWidth:1,titleColor:'#6b7a96',bodyColor:'#e8eaf0'}},scales:{x:{ticks:{color:'#6b7a96',font:{family:'DM Mono',size:10},maxTicksLimit:12},grid:{color:'#1f2d45'}},y:{ticks:{color:'#6b7a96',font:{family:'DM Mono',size:10},callback:v=>fmtK(v)},grid:{color:'#1f2d45'}}}};
+
+const chartInstances = {};
+function destroyAllCharts(){Object.values(chartInstances).forEach(c=>{try{c.destroy();}catch(e){}});Object.keys(chartInstances).forEach(k=>delete chartInstances[k]);}
+function makeChart(id,config){if(chartInstances[id]){try{chartInstances[id].destroy();}catch(e){}}chartInstances[id]=new Chart(document.getElementById(id).getContext('2d'),config);return chartInstances[id];}
+
+// ===========================
+// MODAL / TOAST
+// ===========================
+function openModal(){document.getElementById('uploadProgress').style.display='none';document.getElementById('progressFill').style.width='0%';document.getElementById('progressFill').style.background='var(--accent)';document.getElementById('uploadMsg').textContent='';document.getElementById('uploadIcon').textContent='📂';document.getElementById('modal').classList.add('open');}
+function closeModal(){document.getElementById('modal').classList.remove('open');}
+document.getElementById('modal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeModal();});
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.remove('err');t.classList.add('show');setTimeout(()=>t.classList.remove('show'),4500);}
+const uz=document.getElementById('uploadZone');
+uz.addEventListener('dragover',e=>{e.preventDefault();uz.classList.add('drag');});
+uz.addEventListener('dragleave',()=>uz.classList.remove('drag'));
+uz.addEventListener('drop',e=>{e.preventDefault();uz.classList.remove('drag');const f=e.dataTransfer.files[0];if(f)processXlsx(f);});
+
+// ===========================
+// processXlsx
+// ===========================
+function processXlsx(file) {
+  if(!file) return;
+  const prog=document.getElementById('uploadProgress');
+  const fill=document.getElementById('progressFill');
+  const msg=document.getElementById('uploadMsg');
+  const icon=document.getElementById('uploadIcon');
+  prog.style.display='block'; msg.className='upload-status-msg'; msg.textContent='Lendo arquivo...'; fill.style.width='20%';
+  const reader=new FileReader();
+  reader.onload=(e)=>{
+    try{
+      fill.style.width='50%'; msg.textContent='Processando planilhas...';
+      const workbook=XLSX.read(e.target.result,{type:'array',cellDates:false});
+      fill.style.width='75%';
+      const sheetNames=workbook.SheetNames;
+      const findSheet=(name)=>sheetNames.find(s=>s.toLowerCase().includes(name.toLowerCase()));
+      const newData={...ALL_DATA};
+      const invSheet=findSheet('invent');
+      if(invSheet){msg.textContent='Processando Inventário...';newData.inventario=parseInventario(workbook.Sheets[invSheet]);}
+      const divSheet=findSheet('dívid')||findSheet('divid');
+      if(divSheet){msg.textContent='Processando Dívidas...';newData.dividas=parseDividas(workbook.Sheets[divSheet]);}
+      const fbSheet=findSheet('FastBack')||findSheet('fastback');
+      if(fbSheet){msg.textContent='Processando Veículo...';newData.fastback=parseFastback(workbook.Sheets[fbSheet]);}
+      const psSheet=findSheet('PaySlip')||findSheet('payslip');
+      if(psSheet){msg.textContent='Processando PaySlip...';newData.payslip=parsePayslip(workbook.Sheets[psSheet]);}
+      const invSheet2=findSheet('Investimentos')||findSheet('investimentos')||findSheet('Criptos')||findSheet('criptos');
+      if(invSheet2){msg.textContent='Processando Investimentos...';const parsed=parseInvestimentos(workbook.Sheets[invSheet2]);if(parsed)newData.investimentos=parsed;}
+      fill.style.width='100%'; msg.className='upload-status-msg ok';
+      msg.textContent=`✓ Dados carregados! ${newData.inventario.timeline.length} snaps · ${newData.dividas.monthly.filter(m=>m.total>0).length} meses · Veículo · PaySlip · Investimentos ✓`;
+      icon.textContent='✅';
+      ALL_DATA=newData;
+      destroyAllCharts();
+      renderAll();
+      setTimeout(()=>{closeModal();showToast(`✓ Dashboard atualizado!\nÚltimo snapshot: ${newData.inventario.stats.last_date}`);},900);
+    }catch(err){
+      fill.style.width='100%'; fill.style.background='var(--red)';
+      const msg2=document.getElementById('uploadMsg'); msg2.className='upload-status-msg err'; msg2.textContent='✗ Erro: '+err.message;
+      document.getElementById('uploadIcon').textContent='❌'; console.error(err);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// ===========================
+// RENDER INVENTÁRIO
+// ===========================
+let mChartMode='total';
+function renderInventario(){
+  const INV=ALL_DATA.inventario;
+  const tl=INV.timeline,last=tl[tl.length-1],prev=tl[tl.length-2];
+  const fmtLabel=d=>{const[y,m,day]=d.date.split('-');return`${day}/${m}/${y.slice(2)}`;};
+  const tlLabels=tl.map(fmtLabel),tlTotals=tl.map(d=>d.total);
+  document.getElementById('hdr-total').textContent=fmt(last.total);
+  document.getElementById('hdr-date').textContent=last.date.split('-').reverse().join('/');
+  const mom=((last.total/prev.total)-1)*100;
+  document.getElementById('inv-total').textContent=fmtK(last.total);
+  document.getElementById('inv-total-sub').textContent='Snapshot de '+last.date.substring(0,7).split('-').reverse().join('/');
+  document.getElementById('inv-mom').textContent=(mom>=0?'+':'')+mom.toFixed(1)+'% vs anterior';
+  document.getElementById('inv-growth').textContent='+'+INV.stats.growth_total_pct+'%';
+  document.getElementById('inv-growth-sub').textContent='Desde '+INV.stats.first_date.split('-').reverse().join('/');
+  document.getElementById('inv-snaps').textContent=INV.stats.total_snapshots+' snapshots';
+  const richSnap=[...tl].reverse().find(r=>Object.values(r.assets).filter(v=>v>0).length>=5)||last;
+  const richLabel=fmtLabel(richSnap);
+  const casaVal=richSnap.assets['Apto Centro']||0;
+  document.getElementById('inv-casa-sub').textContent=fmt(casaVal)+' · '+(casaVal/richSnap.total*100).toFixed(1)+'% do total';
+  document.getElementById('inv-comp-date').textContent=richLabel;
+  document.getElementById('inv-asset-date').textContent=richLabel;
+  renderMainChart(mChartMode,tlLabels,tlTotals,tl);
+  const topA=Object.entries(richSnap.assets).filter(([,v])=>v>500).sort((a,b)=>b[1]-a[1]).slice(0,7);
+  makeChart('donutChart',{type:'doughnut',data:{labels:topA.map(([k])=>k),datasets:[{data:topA.map(([,v])=>v),backgroundColor:pal,borderWidth:0,hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,cutout:'68%',plugins:{legend:{display:false},tooltip:{backgroundColor:'#1a2235',borderColor:'#1f2d45',borderWidth:1,titleColor:'#6b7a96',bodyColor:'#e8eaf0',callbacks:{label:c=>fmt(c.parsed)}}}}});
+  const dl=document.getElementById('donutLegend');dl.innerHTML='';
+  topA.forEach(([n,v],i)=>{const p=(v/richSnap.total*100).toFixed(1);dl.innerHTML+=`<div class="donut-legend-item"><div class="donut-name"><div class="donut-dot" style="background:${pal[i]}"></div>${n}</div><div style="display:flex;align-items:center"><span style="color:var(--muted)">${fmtK(v)}</span><span class="donut-pct">${p}%</span></div></div>`;});
+  const yt=document.getElementById('yearlyTable');yt.innerHTML='<tr><th>Ano</th><th>Início</th><th>Fim</th><th>Crescimento</th><th>Ganho</th></tr>';
+  const mxG=Math.max(...INV.yearly.map(y=>y.growth));
+  INV.yearly.forEach(y=>{const g=(y.growth*100).toFixed(1),bw=Math.round(y.growth/mxG*70);yt.innerHTML+=`<tr><td>${y.year}</td><td>${fmtK(y.start)}</td><td>${fmtK(y.end)}</td><td class="pos">${g}%<span class="bar-inner" style="width:${bw}px"></span></td><td class="pos">+${fmtK(y.end-y.start)}</td></tr>`;});
+  const msEl=document.getElementById('milestones');msEl.innerHTML='';
+  const milestones=[{t:'Primeiro Registro',d:fmtLabel(tl[0]),v:fmtK(tl[0].total),g:false}];
+  [300000,400000,500000,700000,1000000].forEach(thresh=>{const hit=tl.find(r=>r.total>=thresh);if(hit)milestones.push({t:`${thresh>=1e6?'🚀 R$ 1 Milhão!':'R$ '+(thresh/1000).toFixed(0)+'k atingido'}`,d:fmtLabel(hit),v:fmtK(hit.total),g:thresh>=1000000});});
+  const snAcq=tl.find(r=>r.assets['Serra Negra']>0);
+  if(snAcq)milestones.splice(2,0,{t:'Serra Negra adquirida',d:fmtLabel(snAcq),v:fmtK(snAcq.assets['Serra Negra']),g:true});
+  milestones.forEach(m=>{msEl.innerHTML+=`<div class="milestone"><div class="ms-dot${m.g?' gold':''}"></div><div class="ms-info"><div class="ms-title">${m.t}</div><div class="ms-date">${m.d}</div></div><div class="ms-val${m.g?' gold':''}">${m.v}</div></div>`;});
+  const at=document.getElementById('assetTable');at.innerHTML='<tr><th>Ativo</th><th>Valor</th><th>% Total</th></tr>';
+  const bensSet=new Set(['Apto Centro','Carro','Terreno Interior']);
+  Object.entries(richSnap.assets).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]).forEach(([n,v])=>{const p=(v/richSnap.total*100),iB=bensSet.has(n);at.innerHTML+=`<tr><td>${n}<span class="cat-tag ${iB?'tag-bens':'tag-din'}">${iB?'Bem':'Liq.'}</span></td><td>${fmt(v)}</td><td>${p.toFixed(1)}%<span style="display:inline-block;height:3px;border-radius:2px;background:${iB?'#3b82f6':'#00d4aa'};width:${Math.max(4,p*1.2)}px;margin-left:6px;vertical-align:middle;opacity:0.6"></span></td></tr>`;});
+  const iEl=document.getElementById('invInsights');iEl.innerHTML='';
+  const total1M=tl.find(r=>r.total>=1e6);
+  const liquidez=last.total-(last.assets['Apto Centro']||0)-(last.assets['Carro']||0)-(last.assets['Serra Negra']||0);
+  [{t:total1M?'ipos':'info',text:total1M?`<strong>R$ 1 Milhão atingido!</strong> Crescimento de +${INV.stats.growth_total_pct}% desde ${INV.stats.first_date.split('-')[0]}.`:`<strong>Crescimento de +${INV.stats.growth_total_pct}%</strong> desde ${INV.stats.first_date.split('-')[0]}.`},
+  {t:'warn',text:`<strong>Alta concentração:</strong> ${(casaVal/richSnap.total*100).toFixed(1)}% em Apto Centro. Diversificação reduz risco.`},
+  {t:'info',text:`<strong>Serra Negra:</strong> Valor atual ${fmtK(richSnap.assets['Serra Negra']||0)} no portfólio.`},
+  {t:'warn',text:`<strong>Liquidez:</strong> ${(liquidez/last.total*100).toFixed(1)}% do patrimônio em ativos líquidos (${fmtK(liquidez)}).`},
+  {t:'ipos',text:`<strong>Crescimento consistente:</strong> Todos os ${INV.yearly.length} anos com resultado positivo.`}].forEach(i=>{iEl.innerHTML+=`<div class="insight ${i.t}">${i.text}</div>`;});
+  // Top 5 assets by value in the richSnap (most complete recent snapshot)
+  const top5 = Object.entries(richSnap.assets).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([k])=>k);
+  const bC5 = ['#3b82f6','#f59e0b','#8b5cf6','#00d4aa','#ef4444'];
+  makeChart('bensChart',{type:'line',data:{labels:tlLabels,datasets:top5.map((a,i)=>({label:a,data:tl.map(d=>d.assets[a]||0),borderColor:bC5[i],backgroundColor:bC5[i]+'15',fill:false,tension:0.3,pointRadius:1,borderWidth:2}))},options:{...cBase,plugins:{...cBase.plugins,legend:{display:true,labels:{color:'#c8cdd8',font:{family:'DM Mono',size:11},boxWidth:10}}}}});
+  const BENS_SET = new Set(['Apto Centro','Carro','Terreno Interior']);
+  const liqColors = ['#00d4aa','#06b6d4','#22c55e','#84cc16','#f97316','#a78bfa','#ec4899'];
+  const top5Liq = Object.entries(richSnap.assets).filter(([k,v])=>v>0&&!BENS_SET.has(k)).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([k])=>k);
+  makeChart('liquidezChart',{type:'line',data:{labels:tlLabels,datasets:top5Liq.map((a,i)=>({label:a.length>16?a.slice(0,16)+'…':a,data:tl.map(d=>d.assets[a]||0),borderColor:liqColors[i],backgroundColor:liqColors[i]+'15',fill:false,tension:0.3,pointRadius:1,borderWidth:2}))},options:{...cBase,plugins:{...cBase.plugins,legend:{display:true,labels:{color:'#c8cdd8',font:{family:'DM Mono',size:11},boxWidth:10}}}}});
+}
+
+function renderMainChart(mode,tlLabels,tlTotals,tl){
+  mChartMode=mode;
+  let cfg;
+  if(mode==='total'){cfg={type:'line',data:{labels:tlLabels,datasets:[{data:tlTotals,borderColor:'#00d4aa',backgroundColor:'rgba(0,212,170,0.06)',fill:true,tension:0.35,pointRadius:2,borderWidth:2}]},options:{...cBase,plugins:{...cBase.plugins,tooltip:{...cBase.plugins.tooltip,callbacks:{label:c=>fmt(c.parsed.y)}}}}};}
+  else if(mode==='stacked'){const richS=[...tl].reverse().find(r=>Object.values(r.assets).filter(v=>v>0).length>=5)||last;const ba=Object.entries(richS.assets).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([k])=>k);const bc5=['#3b82f6','#f59e0b','#8b5cf6','#00d4aa','#ec4899'];const liq=tl.map(d=>{let s=0;Object.keys(d.assets).forEach(k=>{if(!ba.includes(k))s+=(d.assets[k]||0)});return s;});cfg={type:'bar',data:{labels:tlLabels,datasets:[...ba.map((a,i)=>({label:a,data:tl.map(d=>d.assets[a]||0),backgroundColor:bc5[i]+'cc',stack:'s'})),{label:'Demais ativos',data:liq,backgroundColor:'#ffffff18',borderColor:'#ffffff22',stack:'s'}]},options:{...cBase,plugins:{...cBase.plugins,legend:{display:true,labels:{color:'#c8cdd8',font:{family:'DM Mono',size:11},boxWidth:12}}},scales:{x:{...cBase.scales.x,stacked:true},y:{...cBase.scales.y,stacked:true}}}};}
+  else{const g=tlTotals.map((v,i)=>i===0?0:((v-tlTotals[0])/tlTotals[0]*100));cfg={type:'line',data:{labels:tlLabels,datasets:[{data:g,borderColor:'#22c55e',backgroundColor:'rgba(34,197,94,0.06)',fill:true,tension:0.35,pointRadius:2,borderWidth:2}]},options:{...cBase,plugins:{...cBase.plugins,tooltip:{...cBase.plugins.tooltip,callbacks:{label:c=>c.parsed.y.toFixed(1)+'%'}}},scale:{x:cBase.scales.x,y:{...cBase.scales.y,ticks:{...cBase.scales.y.ticks,callback:v=>v.toFixed(0)+'%'}}}}};}
+  makeChart('mainChart',cfg);
+}
+function switchMainChart(t,btn){document.querySelectorAll('#page-inventario .tab-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');const tl=ALL_DATA.inventario.timeline;const fl=d=>{const[y,m,day]=d.date.split('-');return`${day}/${m}/${y.slice(2)}`;};renderMainChart(t,tl.map(fl),tl.map(d=>d.total),tl);}
+
+// ===========================
+// RENDER DÍVIDAS
+// ===========================
+let dChartMode='mensal';
+function renderDividas(){
+  const DIV=ALL_DATA.dividas;
+  const tot=DIV.totais;
+  document.getElementById('hdr-debt').textContent='Dívidas restantes: '+fmt(tot.total_pagar);
+  document.getElementById('div-total').textContent=fmtK(tot.valor_divida);
+  document.getElementById('div-pct').textContent=pctFmtInv(tot.pct_pago)+' pago';
+  document.getElementById('div-pagar').textContent=fmtK(tot.total_pagar);
+  document.getElementById('div-pagar-pct').textContent=(100-tot.pct_pago*100).toFixed(1)+'% restante';
+  document.getElementById('div-pago').textContent=fmtK(tot.total_pago);
+  const cart=DIV.summary['Cartões'];
+  document.getElementById('div-cart-sub').textContent=fmt(cart.total_pagar)+' restantes';
+  document.getElementById('div-cart-days').textContent=cart.dias_prox?`Vence em ${cart.dias_prox}d`:'—';
+  renderDivChart(dChartMode);
+  const dpEl=document.getElementById('debtProgress');dpEl.innerHTML='';
+  Object.entries(DIV.summary).filter(([,s])=>s.total_pagar>0).sort((a,b)=>b[1].total_pagar-a[1].total_pagar).forEach(([n,s])=>{const c=catColors[n]||'#6b7a96',ds=s.dias_prox?`<span style="color:var(--accent3);font-size:10px"> · vence em ${s.dias_prox}d</span>`:'';dpEl.innerHTML+=`<div class="progress-wrap"><div class="progress-label"><span>${n}${ds}</span><span style="color:var(--muted)">${pctFmtInv(s.pct_pago)} · falta ${fmtK(s.total_pagar)}</span></div><div class="progress-bar"><div class="progress-fill" style="width:${(s.pct_pago*100).toFixed(1)}%;background:${c}"></div></div></div>`;});
+  const dmtEl=document.getElementById('divMonthlyTable');dmtEl.innerHTML='<tr><th>Mês</th><th>Total</th><th>Cartões</th><th>Carro</th><th>Apto Centro</th><th>Status</th></tr>';
+  DIV.monthly.filter(m=>m.total>0).forEach(m=>{const sc=m.status==='Pago'?'pos':m.status==='A Pagar'?'neg':'';const icon=m.status==='Pago'?'✓':'↗';dmtEl.innerHTML+=`<tr><td>${m.mes}</td><td>${fmt(m.total)}</td><td>${m['Cartões']>0?fmt(m['Cartões']):'—'}</td><td>${m['Carro']>0?fmt(m['Carro']):'—'}</td><td>${m['Apto Centro']>0?fmt(m['Apto Centro']):'—'}</td><td class="${sc}" style="font-size:10px">${icon} ${m.status}</td></tr>`;});
+  const pf=DIV.monthly.filter(m=>m.status==='A Pagar'&&m.total>0);
+  makeChart('projChart',{type:'line',data:{labels:pf.map(m=>m.mes),datasets:[{data:pf.map(m=>m.total),borderColor:'#f59e0b',backgroundColor:'rgba(245,158,11,0.08)',fill:true,tension:0.4,pointRadius:4,borderWidth:2}]},options:{...cBase,plugins:{...cBase.plugins,tooltip:{...cBase.plugins.tooltip,callbacks:{label:c=>fmt(c.parsed.y)}}}}});
+  const calEl=document.getElementById('divCalendar');calEl.innerHTML='';
+  Object.entries(DIV.summary).filter(([,s])=>s.dias_prox&&s.total_pagar>0).sort((a,b)=>a[1].dias_prox-b[1].dias_prox).forEach(([n,s])=>{const urg=s.dias_prox<=10?'var(--red)':s.dias_prox<=20?'var(--accent3)':'var(--green)';calEl.innerHTML+=`<div class="milestone"><div class="ms-dot" style="background:${urg};box-shadow:0 0 8px ${urg}44"></div><div class="ms-info"><div class="ms-title">${n}</div><div class="ms-date">${fmt(s.total_pagar)} restantes</div></div><div class="ms-val" style="color:${urg}">${s.dias_prox}d</div></div>`;});
+  const diEl=document.getElementById('divInsights');diEl.innerHTML='';
+  const activeDivs=Object.entries(DIV.summary).filter(([,s])=>s.total_pagar>0);
+  const lastPayMonth=[...DIV.monthly].reverse().find(m=>m.total>0);
+  const lowestPct=activeDivs.sort((a,b)=>a[1].pct_pago-b[1].pct_pago)[0];
+  [{t:'ineg',text:`<strong>Cartões — maior dívida ativa:</strong> ${fmt(cart.total_pagar)} a pagar (${pctFmtInv(cart.pct_pago)} quitado).`},
+  lowestPct&&lowestPct[1].pct_pago<0.5?{t:'warn',text:`<strong>${lowestPct[0]} em atraso:</strong> Apenas ${pctFmtInv(lowestPct[1].pct_pago)} pago — prioridade urgente.`}:null,
+  {t:'ipos',text:`<strong>Dívidas quitadas:</strong> ${Object.entries(DIV.summary).filter(([,s])=>s.pct_pago>=1).length} dívidas 100% pagas — progresso geral de ${pctFmtInv(tot.pct_pago)}.`},
+  pf.length>0?{t:'info',text:`<strong>Projeção:</strong> Dívidas se encerram em ${pf[pf.length-1].mes} com total de ${fmt(pf.reduce((s,m)=>s+m.total,0))}.`}:null,
+  {t:'warn',text:`<strong>Último mês:</strong> ${lastPayMonth?.mes||'—'} — total de ${lastPayMonth?fmt(lastPayMonth.total):'—'}.`}].filter(Boolean).forEach(i=>{diEl.innerHTML+=`<div class="insight ${i.t}">${i.text}</div>`;});
+}
+
+function renderDivChart(mode){
+  dChartMode=mode;
+  const DIV=ALL_DATA.dividas;
+  const actM=DIV.monthly.filter(m=>m.total>0);
+  let cfg;
+  if(mode==='mensal'){cfg={type:'bar',data:{labels:actM.map(m=>m.mes),datasets:DIV.cats.map(cat=>({label:cat,data:actM.map(m=>m[cat]||0),backgroundColor:(catColors[cat]||'#6b7a96')+'cc',stack:'s'}))},options:{...cBase,plugins:{...cBase.plugins,legend:{display:false}},scales:{x:{...cBase.scales.x,stacked:true},y:{...cBase.scales.y,stacked:true}}}};}
+  else if(mode==='projecao'){const f=DIV.monthly.filter(m=>m.status==='A Pagar'&&m.total>0);cfg={type:'bar',data:{labels:f.map(m=>m.mes),datasets:DIV.cats.map(cat=>({label:cat,data:f.map(m=>m[cat]||0),backgroundColor:(catColors[cat]||'#6b7a96')+'cc',stack:'s'}))},options:{...cBase,plugins:{...cBase.plugins,legend:{display:false},tooltip:{...cBase.plugins.tooltip,callbacks:{title:i=>`${f[i[0].dataIndex]?.mes} — ${fmt(f[i[0].dataIndex]?.total||0)}`,label:c=>c.parsed.y>0?`${c.dataset.label}: ${fmt(c.parsed.y)}`:null}}},scales:{x:{...cBase.scales.x,stacked:true},y:{...cBase.scales.y,stacked:true}}}};}
+  else{const SUBCATS=new Set(['Laranja 9463','4343','6074','7949','Porto','Mercado P','Santander','Gasto por dia com cartão']);const mainCats=DIV.cats.filter(c=>!SUBCATS.has(c));const s={};mainCats.forEach(c=>{s[c]=actM.reduce((a,m)=>a+(m[c]||0),0);});const sr=Object.entries(s).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);cfg={type:'bar',data:{labels:sr.map(([k])=>k),datasets:[{data:sr.map(([,v])=>v),backgroundColor:sr.map(([k])=>(catColors[k]||'#6b7a96')+'cc'),borderRadius:4}]},options:{...cBase,plugins:{...cBase.plugins,tooltip:{...cBase.plugins.tooltip,callbacks:{label:c=>fmt(c.parsed.y)}}}}};}
+  makeChart('divChart',cfg);
+}
+function switchDivChart(t,btn){document.querySelectorAll('#page-dividas .tab-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderDivChart(t);}
+
+// ===========================
+// RENDER FASTBACK
+// ===========================
+function renderFastback(){
+  const FB=ALL_DATA.fastback;
+  if(!FB) return;
+  const R=FB.resumo;
+  const fmt2=(v,d=0)=>'R$ '+v.toLocaleString('pt-BR',{minimumFractionDigits:d,maximumFractionDigits:d});
+  const fmtK2=v=>v>=1e6?'R$ '+(v/1e6).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+'M':v>=1000?'R$ '+(v/1000).toFixed(0)+'k':fmt2(v);
+  const financPagas=FB.financiamento.filter(f=>f.pago),financPend=FB.financiamento.filter(f=>!f.pago);
+  const totalFinancPago=financPagas.reduce((s,f)=>s+(f.pago||0),0),totalFinancFalta=financPend.reduce((s,f)=>s+(f.valor||0),0);
+  const ipvaPago=FB.ipva.filter(x=>x.data_pagamento).reduce((s,x)=>s+x.valor,0),ipvaPend=FB.ipva.filter(x=>!x.data_pagamento).reduce((s,x)=>s+x.valor,0);
+  const seguroTotal=FB.seguro.reduce((s,x)=>s+x.valor,0);
+  const lastCpd=FB.custo_dia[FB.custo_dia.length-1];
+  document.getElementById('fb-valor-atual').textContent=fmt2(R.valor_compra||0);
+  document.getElementById('fb-dias').textContent=`${R.dias_com_carro||0} dias com o carro`;
+  document.getElementById('fb-data-compra').textContent='Comprado em '+(R.data_compra||'').split('-').reverse().join('/');
+  document.getElementById('fb-custo-total').textContent=fmtK2(R.custo_total||0);
+  document.getElementById('fb-custo-dia').textContent='R$ '+(R.custo_por_dia_atual||0).toFixed(2)+'/dia';
+  document.getElementById('fb-financ-pago').textContent=fmtK2(totalFinancPago);
+  document.getElementById('fb-financ-sub').textContent=`${financPagas.length} de ${FB.financiamento.length} parcelas pagas`;
+  document.getElementById('fb-financ-falta').textContent=`falta ${fmt2(totalFinancFalta)}`;
+  document.getElementById('fb-ipva-seg').textContent=fmtK2(ipvaPago+seguroTotal);
+  document.getElementById('fb-ipva-sub').textContent=`IPVA: ${fmt2(ipvaPago)} · Seguro: ${fmt2(seguroTotal)}`;
+  document.getElementById('fb-encargos-pend').textContent=ipvaPend>0?`IPVA pendente: ${fmt2(ipvaPend)}`:'IPVA em dia';
+  document.getElementById('fb-financ-pill').textContent=`${FB.financiamento.length}x ${fmt2(R.parcela_mensal||1799)}`;
+  document.getElementById('fb-cpd-atual').textContent=`Atual: R$ ${lastCpd?.custo_dia?.toFixed(2)||'—'}/dia`;
+  document.getElementById('fb-ipva-total-pill').textContent=fmt2(FB.ipva.reduce((s,x)=>s+x.valor,0));
+  document.getElementById('fb-seg-total-pill').textContent=fmt2(seguroTotal);
+  const cpdDates=FB.custo_dia.map(x=>{const[y,m,d]=x.date.split('-');return`${d}/${m}/${y.slice(2)}`;});
+  makeChart('fbCpdChart',{type:'line',data:{labels:cpdDates,datasets:[{data:FB.custo_dia.map(x=>x.custo_dia),borderColor:'#f59e0b',backgroundColor:'rgba(245,158,11,0.08)',fill:true,tension:0.4,pointRadius:3,pointHoverRadius:5,borderWidth:2}]},options:{...cBase,plugins:{...cBase.plugins,tooltip:{...cBase.plugins.tooltip,callbacks:{label:c=>'R$ '+c.parsed.y.toFixed(2)+'/dia'}}},scales:{x:{...cBase.scales.x,ticks:{...cBase.scales.x.ticks,maxTicksLimit:10}},y:{...cBase.scales.y,ticks:{...cBase.scales.y.ticks,callback:v=>'R$ '+v.toFixed(0)}}}}});
+  const totalPago=(R.valor_entrada||0)+totalFinancPago+ipvaPago+seguroTotal;
+  const compos=[{label:'Entrada',val:R.valor_entrada||0,color:'#3b82f6'},{label:'Financiamento',val:totalFinancPago,color:'#f59e0b'},{label:'IPVA',val:ipvaPago,color:'#8b5cf6'},{label:'Seguro',val:seguroTotal,color:'#00d4aa'}];
+  makeChart('fbComposChart',{type:'doughnut',data:{labels:compos.map(c=>c.label),datasets:[{data:compos.map(c=>c.val),backgroundColor:compos.map(c=>c.color),borderWidth:0,hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,cutout:'68%',plugins:{legend:{display:false},tooltip:{backgroundColor:'#1a2235',borderColor:'#1f2d45',borderWidth:1,callbacks:{label:c=>fmt2(c.parsed)}}}}});
+  const cl=document.getElementById('fbComposLegend');cl.innerHTML='';
+  compos.forEach(c=>{const p=(c.val/totalPago*100).toFixed(1);cl.innerHTML+=`<div class="donut-legend-item"><div class="donut-name"><div class="donut-dot" style="background:${c.color}"></div>${c.label}</div><div style="display:flex;align-items:center"><span style="color:var(--muted)">${fmtK2(c.val)}</span><span class="donut-pct">${p}%</span></div></div>`;});
+  const ft=document.getElementById('fbFinancTable');ft.innerHTML='<tr><th>#</th><th>Vencimento</th><th>Valor</th><th>Pago</th><th>Status</th></tr>';
+  FB.financiamento.forEach(f=>{const pago=f.pago!==null;const dp=f.data_pagamento?f.data_pagamento.split('-').reverse().join('/'):'—';ft.innerHTML+=`<tr><td>${f.parcela}</td><td>${f.vencimento?f.vencimento.split('-').reverse().join('/'):'—'}</td><td>${fmt2(f.valor)}</td><td>${pago?fmt2(f.pago):'—'}</td><td class="${pago?'pos':'neg'}" style="font-size:10px">${pago?'✓ '+dp:'↗ Pendente'}</td></tr>`;});
+  const fp=document.getElementById('fbFinancProgress');
+  const pctFinanc=(financPagas.length/FB.financiamento.length*100),pctVal=(totalFinancPago/(totalFinancPago+totalFinancFalta)*100);
+  fp.innerHTML=`<div class="progress-wrap"><div class="progress-label"><span>Parcelas pagas</span><span style="color:var(--muted)">${financPagas.length}/${FB.financiamento.length} · ${pctFinanc.toFixed(0)}%</span></div><div class="progress-bar"><div class="progress-fill" style="width:${pctFinanc.toFixed(1)}%;background:#f59e0b"></div></div></div><div class="progress-wrap"><div class="progress-label"><span>Valor pago</span><span style="color:var(--muted)">${fmt2(totalFinancPago)} de ${fmt2(totalFinancPago+totalFinancFalta)}</span></div><div class="progress-bar"><div class="progress-fill" style="width:${pctVal.toFixed(1)}%;background:#00d4aa"></div></div></div><div class="progress-wrap" style="margin-top:12px"><div class="progress-label"><span>IPVA pago</span><span style="color:var(--muted)">${fmt2(ipvaPago)} ${ipvaPend>0?'· falta '+fmt2(ipvaPend):' — 100%'}</span></div><div class="progress-bar"><div class="progress-fill" style="width:${(ipvaPago/(ipvaPago+ipvaPend)*100).toFixed(1)}%;background:#8b5cf6"></div></div></div>`;
+  const yearMap={};
+  FB.financiamento.filter(f=>f.pago&&f.data_pagamento).forEach(f=>{const y=f.data_pagamento.split('-')[0];yearMap[y]=(yearMap[y]||0)+(f.pago||0);});
+  FB.ipva.forEach(x=>{if(x.ano){const y=String(x.ano);yearMap[y]=(yearMap[y]||0)+x.valor;}});
+  FB.seguro.forEach(x=>{if(x.ano){const y=String(x.ano);yearMap[y]=(yearMap[y]||0)+x.valor;}});
+  const yYears=Object.keys(yearMap).sort();
+  makeChart('fbAnualChart',{type:'bar',data:{labels:yYears,datasets:[{data:yYears.map(y=>yearMap[y]),backgroundColor:'rgba(245,158,11,0.7)',borderColor:'#f59e0b',borderWidth:1}]},options:{...cBase,plugins:{...cBase.plugins,tooltip:{...cBase.plugins.tooltip,callbacks:{label:c=>fmt2(c.parsed.y)}}}}});
+  const yearFinanc={},yearIpva={},yearSeg={};
+  FB.financiamento.filter(f=>f.pago&&f.data_pagamento).forEach(f=>{const y=f.data_pagamento.split('-')[0];yearFinanc[y]=(yearFinanc[y]||0)+(f.pago||0);});
+  FB.ipva.forEach(x=>{if(x.ano){const y=String(x.ano);yearIpva[y]=(yearIpva[y]||0)+x.valor;}});
+  FB.seguro.forEach(x=>{if(x.ano){const y=String(x.ano);yearSeg[y]=(yearSeg[y]||0)+x.valor;}});
+  const allYears=[...new Set([...Object.keys(yearFinanc),...Object.keys(yearIpva),...Object.keys(yearSeg)])].sort();
+  makeChart('fbYearChart',{type:'bar',data:{labels:allYears,datasets:[{label:'Financiamento',data:allYears.map(y=>yearFinanc[y]||0),backgroundColor:'rgba(245,158,11,0.8)',stack:'s'},{label:'IPVA',data:allYears.map(y=>yearIpva[y]||0),backgroundColor:'rgba(139,92,246,0.8)',stack:'s'},{label:'Seguro',data:allYears.map(y=>yearSeg[y]||0),backgroundColor:'rgba(0,212,170,0.7)',stack:'s'}]},options:{...cBase,plugins:{...cBase.plugins,legend:{display:true,labels:{color:'#c8cdd8',font:{family:'DM Mono',size:11},boxWidth:12}}},scales:{x:{...cBase.scales.x,stacked:true},y:{...cBase.scales.y,stacked:true}}}});
+  const it=document.getElementById('fbIpvaTable');it.innerHTML='<tr><th>#</th><th>Vencimento</th><th>Valor</th><th>Ano</th><th>Status</th></tr>';
+  FB.ipva.forEach(x=>{const pago=!!x.data_pagamento;it.innerHTML+=`<tr><td>${x.parcela}</td><td>${x.vencimento||'—'}</td><td>${fmt2(x.valor)}</td><td>${x.ano||'—'}</td><td class="${pago?'pos':'neg'}" style="font-size:10px">${pago?'✓ Pago':'↗ Pend.'}</td></tr>`;});
+  const st=document.getElementById('fbSegTable');st.innerHTML='<tr><th>#</th><th>Vencimento</th><th>Valor</th><th>Ano</th></tr>';
+  FB.seguro.forEach(x=>{st.innerHTML+=`<tr><td>${x.parcela}</td><td>${x.vencimento||'—'}</td><td>${fmt2(x.valor)}</td><td>${x.ano||'—'}</td></tr>`;});
+
+  // ── Gastos por Mês ──
+  const gm = FB.gastos_mes || [];
+  const sp = FB.semparar || [];
+  document.getElementById('fb-gastos-total').textContent = FB.total_gastos ? fmt2(FB.total_gastos) : '—';
+  document.getElementById('fb-sp-total').textContent = FB.total_semparar ? fmt2(FB.total_semparar) : '—';
+
+  // Ano summaries
+  const anoSumEl = document.getElementById('fb-anos-summary'); anoSumEl.innerHTML='';
+  const anos = gm.filter(x=>x.ano_label);
+  anos.forEach(a=>{
+    anoSumEl.innerHTML+=`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px">
+      <div style="color:var(--accent);font-size:10px;letter-spacing:1px;text-transform:uppercase">${a.ano_label}</div>
+      <div style="font-family:'DM Serif Display',serif;font-size:20px;margin:4px 0">${fmt2(a.total_ano||0)}</div>
+      <div style="color:var(--muted);font-size:11px">Média: ${fmt2(a.media_ano||0)}/mês</div>
+    </div>`;
+  });
+
+  // Gastos chart — bar colored by ano
+  const anoColors = ['#3b82f6','#00d4aa','#f59e0b','#8b5cf6'];
+  let anoIdx = -1; const anoBreaks = gm.map((x,i)=>x.ano_label?i:-1).filter(i=>i>=0);
+  const gmColors = gm.map((x,i)=>{
+    if(x.ano_label) anoIdx++;
+    return anoColors[anoIdx % anoColors.length]+'cc';
+  });
+  makeChart('fbGastosChart',{type:'bar',data:{
+    labels:gm.map(x=>x.mes.replace('/23','').replace('/24','').replace('/25','').replace('/26','')),
+    datasets:[{data:gm.map(x=>x.valor),backgroundColor:gmColors,borderRadius:3}]
+  },options:{...cBase,plugins:{...cBase.plugins,
+    tooltip:{...cBase.plugins.tooltip,callbacks:{
+      title:items=>`${gm[items[0].dataIndex].mes}`,
+      label:c=>['Valor: '+fmt2(c.parsed.y)].concat(gm[c.dataIndex].ano_label?[gm[c.dataIndex].ano_label+': '+fmt2(gm[c.dataIndex].total_ano||0)]:[])
+    }}}}});
+
+  // Sem Parar KPIs
+  const spTotalCalc = sp.reduce((s,x)=>s+(x.valor||0),0);
+  const spMedia = sp.length ? spTotalCalc/sp.length : 0;
+  const spMax = sp.length ? sp.reduce((a,b)=>b.valor>a.valor?b:a) : null;
+  const spMin = sp.length ? sp.reduce((a,b)=>b.valor<a.valor?b:a) : null;
+  const spEl = document.getElementById('fb-sp-kpis'); spEl.innerHTML=`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px">
+        <div style="color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:1px">Média/Mês</div>
+        <div style="font-family:'DM Serif Display',serif;font-size:18px;margin-top:4px">${fmt2(spMedia)}</div>
+      </div>
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px">
+        <div style="color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:1px">Maior Gasto</div>
+        <div style="font-family:'DM Serif Display',serif;font-size:18px;margin-top:4px;color:var(--red)">${spMax?fmt2(spMax.valor):'—'}</div>
+        <div style="color:var(--muted);font-size:10px">${spMax?.mes||''}</div>
+      </div>
+    </div>`;
+
+  // Sem Parar chart
+  const spColors = sp.map(x=>x.valor > spMedia*1.3?'rgba(239,68,68,0.75)':x.valor<spMedia*0.7?'rgba(34,197,94,0.75)':'rgba(0,212,170,0.65)');
+  makeChart('fbSemPararChart',{type:'bar',data:{
+    labels:sp.map(x=>x.mes.replace('/23','').replace('/24','').replace('/25','').replace('/26','')),
+    datasets:[{data:sp.map(x=>x.valor),backgroundColor:spColors,borderRadius:3},
+      {type:'line',data:sp.map(()=>spMedia),borderColor:'#f59e0b',borderDash:[4,4],borderWidth:1.5,pointRadius:0,label:'Média'}]
+  },options:{...cBase,plugins:{...cBase.plugins,
+    tooltip:{...cBase.plugins.tooltip,callbacks:{title:items=>`${sp[items[0].dataIndex]?.mes}`,label:c=>fmt2(c.parsed.y)}}}}});
+
+  // Sem Parar table
+  const spTbl = document.getElementById('fbSemPararTable'); spTbl.innerHTML='<tr><th>Mês</th><th>Valor</th><th>vs Média</th></tr>';
+  [...sp].reverse().slice(0,12).forEach(x=>{
+    const diff=x.valor-spMedia; const cls=diff>0?'neg':'pos';
+    spTbl.innerHTML+=`<tr><td>${x.mes}</td><td>${fmt2(x.valor)}</td><td class="${cls}">${diff>=0?'+':''}${fmt2(diff)}</td></tr>`;
+  });
+
+      const ins=document.getElementById('fbInsights');ins.innerHTML='';
+  const diasStr=R.dias_com_carro||0;
+  [{t:'info',text:`<strong>${diasStr} dias com o carro</strong> — custo atual de R$ ${(R.custo_por_dia_atual||0).toFixed(2)}/dia, caindo consistentemente.`},
+  {t:'ipos',text:`<strong>Financiamento quase quitado:</strong> ${financPagas.length} de ${FB.financiamento.length} parcelas pagas. Faltam ${financPend.length} (${fmt2(totalFinancFalta)}).`},
+  {t:'warn',text:`<strong>Custo total acumulado:</strong> ${fmt2(R.custo_total||0)} considerando toda a vida do veículo.`},
+  ipvaPend>0?{t:'warn',text:`<strong>IPVA pendente:</strong> ${fmt2(ipvaPend)} a pagar em ${FB.ipva.filter(x=>!x.data_pagamento).length} parcela(s).`}:{t:'ipos',text:'<strong>IPVA em dia!</strong> Todas as parcelas de IPVA estão pagas.'},
+  {t:'info',text:`<strong>Entrada de ${fmtK2(R.valor_entrada||0)}</strong> representou ${((R.valor_entrada||0)/(R.valor_compra||1)*100).toFixed(0)}% do valor total de compra.`}].forEach(i=>{ins.innerHTML+=`<div class="insight ${i.t}">${i.text}</div>`;});
+}
+
+// ===========================
+// RENDER PAYSLIP
+// ===========================
+let psChartMode = 'mensal';
+
+function renderPayslip() {
+  const PS = ALL_DATA.payslip;
+  if (!PS) return;
+  const fmt2 = (v,d=0) => 'R$ '+v.toLocaleString('pt-BR',{minimumFractionDigits:d,maximumFractionDigits:d});
+  const fmtK2 = v => v>=1e6?'R$ '+(v/1e6).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+'M':v>=1000?'R$ '+(v/1000).toFixed(0)+'k':fmt2(v);
+
+  const years = Object.keys(PS).sort();
+  const allMeses = years.flatMap(yr => (PS[yr].meses||[]).map(m => ({...m, ano: yr})));
+  const lastYear = PS[years[years.length-1]];
+  const firstYear = PS[years[0]];
+
+  // Compute overall averages across all available months
+  const allBruto = allMeses.map(m=>m.bruto).filter(Boolean);
+  const allLiq = allMeses.map(m=>m.liquido).filter(Boolean);
+  const mediaB = allBruto.reduce((s,v)=>s+v,0)/allBruto.length;
+  const mediaL = allLiq.reduce((s,v)=>s+v,0)/allLiq.length;
+  const mediaI = mediaB - mediaL;
+  const pctImp = mediaI/mediaB;
+
+  // Growth: last year total bruto vs first year
+  const crescYoY = firstYear.total_bruto && lastYear.total_bruto
+    ? ((lastYear.total_bruto / firstYear.total_bruto) - 1)*100 : 0;
+
+  // KPIs
+  document.getElementById('ps-media-bruto').textContent = fmt2(mediaB);
+  document.getElementById('ps-media-sub').textContent = `Média ${allBruto.length} meses · ${years.join(', ')}`;
+  document.getElementById('ps-crescimento').textContent = (crescYoY>=0?'+':'')+crescYoY.toFixed(1)+'% vs primeiro ano';
+  document.getElementById('ps-media-liq').textContent = fmt2(mediaL);
+  document.getElementById('ps-liq-sub').textContent = 'Após IR e descontos';
+  document.getElementById('ps-liq-badge').textContent = (mediaL/mediaB*100).toFixed(1)+'% do bruto';
+  document.getElementById('ps-imposto').textContent = fmt2(mediaI);
+  document.getElementById('ps-imp-sub').textContent = 'Média mensal retida pelo IR';
+  document.getElementById('ps-imp-pct').textContent = (pctImp*100).toFixed(1)+'% do bruto';
+  document.getElementById('ps-total-2025').textContent = fmtK2(lastYear.total_bruto||0);
+  const lastYearLabel = years[years.length-1];
+  document.getElementById('ps-total-sub').textContent = `Total bruto ${lastYearLabel} (${lastYear.meses.length} meses)`;
+  document.getElementById('ps-total-badge').textContent = lastYear.total_liquido ? fmt2(lastYear.total_liquido)+' líquido' : '—';
+  document.getElementById('ps-comp-year').textContent = years.join(' + ');
+
+  // Main chart
+  renderPsChart(psChartMode, allMeses, PS, years);
+
+  // Donut: total líquido vs imposto (all years combined)
+  const totBAll = allBruto.reduce((s,v)=>s+v,0);
+  const totLAll = allLiq.reduce((s,v)=>s+v,0);
+  const totIAll = totBAll - totLAll;
+  makeChart('psDonut',{type:'doughnut',data:{
+    labels:['Líquido Recebido','Impostos Retidos'],
+    datasets:[{data:[totLAll,totIAll],backgroundColor:['#00d4aa','#ef4444'],borderWidth:0,hoverOffset:6}]
+  },options:{responsive:true,maintainAspectRatio:false,cutout:'68%',plugins:{legend:{display:false},
+    tooltip:{backgroundColor:'#1a2235',borderColor:'#1f2d45',borderWidth:1,callbacks:{label:c=>fmt2(c.parsed)}}}}});
+  const dl=document.getElementById('psDonutLegend'); dl.innerHTML='';
+  [{l:'Líquido',v:totLAll,c:'#00d4aa'},{l:'Impostos',v:totIAll,c:'#ef4444'}].forEach(x=>{
+    const p=(x.v/totBAll*100).toFixed(1);
+    dl.innerHTML+=`<div class="donut-legend-item"><div class="donut-name"><div class="donut-dot" style="background:${x.c}"></div>${x.l}</div><div style="display:flex;align-items:center"><span style="color:var(--muted)">${fmtK2(x.v)}</span><span class="donut-pct">${p}%</span></div></div>`;
+  });
+
+  // Table: all months chronologically
+  const tbl=document.getElementById('psTable');
+  tbl.innerHTML='<tr><th>Mês</th><th>Bruto</th><th>Líquido</th><th>Imposto</th><th>% IR</th></tr>';
+  allMeses.forEach(m=>{
+    const pct=m.bruto?((m.imposto||0)/m.bruto*100).toFixed(1):'—';
+    const isHigh=m.bruto>mediaB*1.3;
+    const anoBadge=`<span class="cat-tag" style="background:rgba(59,130,246,0.15);color:#60a5fa">${m.ano}</span>`;
+    tbl.innerHTML+=`<tr><td>${m.mes}${anoBadge}${isHigh?'<span class="cat-tag" style="background:rgba(245,158,11,0.15);color:#f59e0b">pico</span>':''}</td><td>${fmt2(m.bruto)}</td><td class="pos">${fmt2(m.liquido||0)}</td><td class="neg">${fmt2(m.imposto||0)}</td><td class="neg">${pct}%</td></tr>`;
+  });
+
+  // Por hora: líquido diário por mês
+  const horaLabels=allMeses.map(m=>m.mes.replace(/\/\d+/,''));
+  const liqDia=allMeses.map(m=>Math.round((m.liquido||0)/30*10)/10);
+  const yearColors={'2024':'#3b82f6','2025':'#00d4aa','2026':'#f59e0b','2027':'#a78bfa'};
+  makeChart('psPorHoraChart',{type:'bar',data:{labels:horaLabels,datasets:[{
+    label:'Líq/dia',
+    data:liqDia,
+    backgroundColor:allMeses.map(m=>(yearColors[m.ano]||'#a78bfa')+'cc'),
+    borderRadius:3
+  }]},options:{...cBase,plugins:{...cBase.plugins,
+    legend:{display:true,labels:{color:'#c8cdd8',font:{family:'DM Mono',size:12},boxWidth:14,
+      generateLabels:()=>years.map(y=>({text:y,fillStyle:yearColors[y]||'#a78bfa',strokeStyle:'transparent',fontColor:'#c8cdd8'}))}},
+    tooltip:{...cBase.plugins.tooltip,callbacks:{title:items=>allMeses[items[0].dataIndex]?.mes||'',label:c=>'R$ '+c.parsed.y.toFixed(2)+'/dia'}}}}});
+
+  // Resumo anual
+  const ra=document.getElementById('psAnoResumo'); ra.innerHTML='';
+  years.forEach((yr,i)=>{
+    const d=PS[yr]; const tB=d.total_bruto||0;
+    const tL=d.total_liquido||d.meses.reduce((s,m)=>s+(m.liquido||0),0);
+    const tI=tB-tL; const n=d.meses.length;
+    const isLast=i===years.length-1;
+    ra.innerHTML+=`<div class="milestone">
+      <div class="ms-dot${isLast?' gold':''}"></div>
+      <div class="ms-info">
+        <div class="ms-title">${yr} — ${n} meses registrados</div>
+        <div class="ms-date">Bruto: ${fmt2(tB)} · Líq: ${fmt2(tL)} · IR: ${fmt2(tI)} (${tB?((tI/tB)*100).toFixed(1):0}%)</div>
+        <div class="ms-date" style="margin-top:2px">Média bruto: ${fmt2(d.media_bruto||tB/Math.max(n,1))} · Média líq: ${fmt2(d.media_liquido||tL/Math.max(n,1))}</div>
+      </div>
+    </div>`;
+  });
+
+  // Insights
+  const ins=document.getElementById('psInsights'); ins.innerHTML='';
+  const maxMes=allMeses.reduce((a,b)=>b.bruto>a.bruto?b:a);
+  const pctImp25=Math.abs(lastYear.pct_imposto||0)*100;
+  const yrGrowth=years.length>=2?((PS[years[years.length-1]].media_bruto||0)/(PS[years[0]].media_bruto||1)-1)*100:0;
+  [
+    {t:'info',text:`<strong>Maior salário registrado:</strong> ${maxMes.mes} (${maxMes.ano}) com bruto de ${fmt2(maxMes.bruto)} — provável bônus ou PLR.`},
+    {t:'warn',text:`<strong>IR médio atual: ${pctImp25.toFixed(1)}%</strong> (${lastYear.ano}) — crescendo junto com o salário.`},
+    {t:'ipos',text:`<strong>Evolução salarial:</strong> Média bruta cresceu ${yrGrowth>=0?'+':''}${yrGrowth.toFixed(1)}% entre ${years[0]} e ${years[years.length-1]}.`},
+    {t:'info',text:`<strong>Líquido diário (${lastYear.ano}):</strong> R$ ${((lastYear.media_liquido||0)/30).toFixed(2)}/dia — ${fmt2((lastYear.media_liquido||0)/730)} por hora.`},
+    {t:'warn',text:`<strong>Março e Outubro costumam ser picos</strong> em todos os anos — provável 13°, PLR ou bônus. IR dispara nesses meses.`}
+  ].forEach(i=>{ ins.innerHTML+=`<div class="insight ${i.t}">${i.text}</div>`; });
+}
+
+function renderPsChart(mode, allMeses, PS, years) {
+  psChartMode = mode;
+  const fmt2 = (v) => 'R$ '+v.toLocaleString('pt-BR',{minimumFractionDigits:0,maximumFractionDigits:0});
+  const yearColors = {'2024':'rgba(59,130,246,','2025':'rgba(0,212,170,','2026':'rgba(245,158,11,','2027':'rgba(139,92,246,'};
+  const getColor = (yr,alpha) => (yearColors[yr]||'rgba(236,72,153,')+alpha+')';
+
+  const labels = allMeses.map(m=>m.mes.replace(/\/\d+/,''));
+  let cfg;
+
+  if (mode === 'mensal') {
+    // Bruto + Líquido stacked, colored by year
+    cfg={type:'bar',data:{labels,datasets:[
+      {label:'Bruto',data:allMeses.map(m=>m.bruto||0),backgroundColor:allMeses.map(m=>getColor(m.ano,'0.55')),borderRadius:2},
+      {label:'Líquido',data:allMeses.map(m=>m.liquido||0),backgroundColor:allMeses.map(m=>getColor(m.ano,'0.85')),borderRadius:2}
+    ]},options:{...cBase,plugins:{...cBase.plugins,
+      legend:{display:true,labels:{color:'#c8cdd8',font:{family:'DM Mono',size:11},
+        generateLabels:()=>[
+          {text:'▓ Bruto',fillStyle:'rgba(180,180,180,0.5)',strokeStyle:'transparent',fontColor:'#c8cdd8'},
+          {text:'█ Líquido',fillStyle:'rgba(180,180,180,0.9)',strokeStyle:'transparent',fontColor:'#c8cdd8'},
+          ...years.map(y=>({text:'● '+y,fillStyle:getColor(y,'0.9'),strokeStyle:'transparent',fontColor:'#c8cdd8'}))
+        ]}},
+      tooltip:{...cBase.plugins.tooltip,callbacks:{label:c=>c.dataset.label+': '+fmt2(c.parsed.y)}}}}};
+
+  } else if (mode === 'comparativo') {
+    // Compare same month across all years - show Jan→Dez on X, one line per year
+    const mNames=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+    const lineColors={'2024':'#3b82f6','2025':'#00d4aa','2026':'#f59e0b','2027':'#8b5cf6'};
+    const datasets = years.map(yr => {
+      const meses = PS[yr].meses||[];
+      const data = Array(12).fill(null);
+      meses.forEach(m => { if(m.mes_num) data[m.mes_num-1]=m.bruto; });
+      return {
+        label: yr, data,
+        borderColor: lineColors[yr]||'#ec4899',
+        backgroundColor: (lineColors[yr]||'#ec4899')+'22',
+        tension: 0.35, pointRadius: 5, pointHoverRadius: 7, borderWidth: 2.5,
+        spanGaps: false
+      };
+    });
+    cfg={type:'line',data:{labels:mNames,datasets},options:{...cBase,
+      plugins:{...cBase.plugins,legend:{display:true,labels:{color:'#c8cdd8',font:{family:'DM Mono',size:11},boxWidth:14}}},
+      scales:{x:cBase.scales.x,y:{...cBase.scales.y,ticks:{...cBase.scales.y.ticks,callback:v=>'R$ '+(v/1000).toFixed(0)+'k'}}}}};
+
+  } else if (mode === 'imposto') {
+    cfg={type:'bar',data:{labels,datasets:[
+      {label:'Imposto',data:allMeses.map(m=>m.imposto||0),backgroundColor:allMeses.map(m=>getColor(m.ano,'0.7')),borderRadius:3},
+    ]},options:{...cBase,plugins:{...cBase.plugins,
+      legend:{display:false},
+      tooltip:{...cBase.plugins.tooltip,callbacks:{title:items=>items[0].label+' '+allMeses[items[0].dataIndex]?.ano,
+        label:c=>['Imposto: '+fmt2(c.parsed.y),'Bruto: '+fmt2(allMeses[c.dataIndex]?.bruto||0),'% IR: '+(((allMeses[c.dataIndex]?.imposto||0)/(allMeses[c.dataIndex]?.bruto||1))*100).toFixed(1)+'%']}}}}};
+
+  } else if (mode === 'anual') {
+    // Total por ano - side by side bars
+    cfg={type:'bar',data:{
+      labels:years,
+      datasets:[
+        {label:'Bruto',data:years.map(yr=>PS[yr].total_bruto||0),backgroundColor:years.map(yr=>getColor(yr,'0.7')),borderRadius:4},
+        {label:'Líquido',data:years.map(yr=>PS[yr].total_liquido||PS[yr].meses.reduce((s,m)=>s+(m.liquido||0),0)),backgroundColor:years.map(yr=>getColor(yr,'0.95')),borderRadius:4}
+      ]
+    },options:{...cBase,plugins:{...cBase.plugins,
+      legend:{display:true,labels:{color:'#c8cdd8',font:{family:'DM Mono',size:11},boxWidth:12}},
+      tooltip:{...cBase.plugins.tooltip,callbacks:{label:c=>c.dataset.label+': '+fmt2(c.parsed.y)}}}}};
+  }
+  makeChart('psMainChart', cfg);
+}
+
+function switchPsChart(t,btn) {
+  document.querySelectorAll('#page-payslip .tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  const PS=ALL_DATA.payslip;
+  const years=Object.keys(PS).sort();
+  const allMeses=years.flatMap(yr=>(PS[yr].meses||[]).map(m=>({...m,ano:yr})));
+  renderPsChart(t,allMeses,PS,years);
+}
+
+// ===========================
+// RENDER INVESTIMENTOS
+// ===========================
+const INV_TYPE_COLORS = {
+  'CDB':            '#3b82f6',
+  'Bitcoin':        '#f59e0b',
+  'PGBL':           '#8b5cf6',
+  'Dólar':          '#00d4aa',
+  'Euro':           '#06b6d4',
+  'Ouro':           '#d4a017',
+  'Espécie':        '#6b7a96',
+  'Ações':          '#22c55e',
+  'FII':            '#ec4899',
+  'Tesouro Direto': '#84cc16',
+  'LCA':            '#34d399',
+  'LCI':            '#10b981',
+  'CRI':            '#059669',
+  'CRA':            '#047857',
+};
+const INV_RISK = {
+  'CDB':'Baixo', 'Espécie':'Baixo', 'Tesouro Direto':'Baixo', 'LCA':'Baixo', 'LCI':'Baixo', 'CRI':'Baixo', 'CRA':'Baixo',
+  'PGBL':'Médio', 'Dólar':'Médio', 'Euro':'Médio', 'Ouro':'Médio', 'FII':'Médio',
+  'Bitcoin':'Alto', 'Ações':'Alto',
+};
+function getTypeColor(tipo) { return INV_TYPE_COLORS[tipo] || '#a78bfa'; }
+function getRisk(tipo) { return INV_RISK[tipo] || 'Médio'; }
+
+let invChartMode = 'barras';
+
+function renderInvestimentos() {
+  const INV = ALL_DATA.investimentos;
+  if (!INV) return;
+  const fmt2 = (v,d=0) => 'R$ '+v.toLocaleString('pt-BR',{minimumFractionDigits:d,maximumFractionDigits:d});
+  const fmtK2 = v => v>=1e6?'R$ '+(v/1e6).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+'M':v>=1000?'R$ '+(v/1000).toFixed(1)+'k':fmt2(v,2);
+  const pctFmt = v => (v>=0?'+':'')+v.toFixed(2)+'%';
+
+  const ld = INV.latest_date, pd = INV.prev_date;
+  const invs = INV.investments || [];
+  const totalLatest = INV.totals?.[ld] || invs.reduce((s,i)=>s+(i.snapshots[ld]||0),0);
+  const totalPrev   = INV.totals?.[pd] || invs.reduce((s,i)=>s+(i.snapshots[pd]||0),0);
+  const varTotal = totalPrev ? (totalLatest - totalPrev) / totalPrev * 100 : 0;
+  const varAbs = totalLatest - totalPrev;
+
+  // Sort by latest value
+  const sorted = [...invs].filter(i=>i.snapshots[ld]).sort((a,b)=>(b.snapshots[ld]||0)-(a.snapshots[ld]||0));
+
+  // Performance: % change per investment
+  const perf = invs.map(i => {
+    const cur = i.snapshots[ld]||0, prev = i.snapshots[pd]||0;
+    const pct = prev ? (cur-prev)/prev*100 : 0;
+    return {...i, cur, prev, pct, varAbs: cur-prev};
+  }).filter(i=>i.cur>0&&i.prev>0);
+
+  const best = perf.length ? perf.reduce((a,b)=>b.pct>a.pct?b:a) : null;
+  const worst = perf.length ? perf.reduce((a,b)=>b.pct<a.pct?b:a) : null;
+  const maior = sorted[0];
+
+  // ── KPIs ──
+  document.getElementById('invest-total').textContent = fmtK2(totalLatest);
+  document.getElementById('invest-total-sub').textContent = ld?.split('-').reverse().join('/') + ' · ' + invs.length + ' ativos';
+  document.getElementById('inv-total-var').textContent = (varAbs>=0?'+':'')+fmt2(varAbs)+' ('+pctFmt(varTotal)+')';
+  document.getElementById('inv-total-var').className = 'kpi-badge '+(varAbs>=0?'badge-green':'badge-red');
+
+  if (maior) {
+    document.getElementById('inv-maior-nome').textContent = maior.empresa;
+    document.getElementById('inv-maior-sub').textContent = maior.tipo + ' · ' + fmt2(maior.snapshots[ld]||0);
+    document.getElementById('inv-maior-pct').textContent = ((maior.snapshots[ld]||0)/totalLatest*100).toFixed(1)+'% da carteira';
+  }
+  if (best) {
+    document.getElementById('inv-best-nome').textContent = best.empresa;
+    document.getElementById('inv-best-sub').textContent = best.tipo + ' · ' + fmt2(best.cur);
+    document.getElementById('inv-best-var').textContent = pctFmt(best.pct)+' ('+fmt2(best.varAbs)+')';
+  }
+  if (worst) {
+    document.getElementById('inv-worst-nome').textContent = worst.empresa;
+    document.getElementById('inv-worst-sub').textContent = worst.tipo + ' · ' + fmt2(worst.cur);
+    document.getElementById('inv-worst-var').textContent = pctFmt(worst.pct)+' ('+fmt2(worst.varAbs)+')';
+    document.getElementById('inv-worst-var').className = 'kpi-badge badge-red';
+  }
+
+  // Pills
+  document.getElementById('invest-comp-date').textContent = ld?.split('-').reverse().join('/') || '—';
+  document.getElementById('inv-table-date').textContent = ld?.split('-').reverse().join('/') || '—';
+  if (pd && ld) document.getElementById('inv-var-dates').textContent = pd.split('-').reverse().join('/') + ' → ' + ld.split('-').reverse().join('/');
+
+  // ── Main chart ──
+  renderInvChart(invChartMode, sorted, perf, INV);
+
+  // ── Donut by tipo ──
+  const tipoMap = {};
+  sorted.forEach(i => { const t=i.tipo||'Outro'; tipoMap[t]=(tipoMap[t]||0)+(i.snapshots[ld]||0); });
+  const tipoEntries = Object.entries(tipoMap).sort((a,b)=>b[1]-a[1]);
+  makeChart('invDonut',{type:'doughnut',data:{
+    labels:tipoEntries.map(([k])=>k),
+    datasets:[{data:tipoEntries.map(([,v])=>v),backgroundColor:tipoEntries.map(([k])=>getTypeColor(k)),borderWidth:0,hoverOffset:6}]
+  },options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{display:false},
+    tooltip:{backgroundColor:'#1a2235',borderColor:'#1f2d45',borderWidth:1,callbacks:{
+      label:c=>`${c.label}: ${fmt2(c.parsed)} (${(c.parsed/totalLatest*100).toFixed(1)}%)`}}}}});
+  const dl=document.getElementById('invDonutLegend'); dl.innerHTML='';
+  tipoEntries.forEach(([k,v])=>{
+    const p=(v/totalLatest*100).toFixed(1);
+    dl.innerHTML+=`<div class="donut-legend-item"><div class="donut-name"><div class="donut-dot" style="background:${getTypeColor(k)}"></div>${k}</div><div style="display:flex;align-items:center"><span style="color:var(--muted)">${fmtK2(v)}</span><span class="donut-pct">${p}%</span></div></div>`;
+  });
+
+  // ── Position table ──
+  const pt=document.getElementById('invPosTable');
+  pt.innerHTML='<tr><th>Empresa</th><th>Tipo</th><th>Valor</th><th>% Carteira</th><th>Risco</th></tr>';
+  sorted.forEach(i=>{
+    const v=i.snapshots[ld]||0, p=(v/totalLatest*100);
+    const risco=getRisk(i.tipo);
+    const rCls=risco==='Baixo'?'pos':risco==='Alto'?'neg':'';
+    const barW=Math.max(4,p*1.5);
+    pt.innerHTML+=`<tr>
+      <td><strong>${i.empresa}</strong></td>
+      <td><span style="color:${getTypeColor(i.tipo)}">${i.tipo}</span></td>
+      <td>${fmt2(v)}</td>
+      <td>${p.toFixed(1)}%<span style="display:inline-block;height:3px;border-radius:2px;background:${getTypeColor(i.tipo)};width:${barW}px;margin-left:6px;vertical-align:middle;opacity:0.7"></span></td>
+      <td class="${rCls}" style="font-size:10px">● ${risco}</td>
+    </tr>`;
+  });
+
+  // ── Diversification score ──
+  const n = sorted.length;
+  const hhi = sorted.reduce((s,i)=>{ const p=(i.snapshots[ld]||0)/totalLatest; return s+p*p; }, 0);
+  const score = Math.round((1 - hhi) * 100);
+  const scoreColor = score>=70?'var(--green)':score>=50?'var(--accent3)':'var(--red)';
+  const scoreLabel = score>=70?'Bem diversificada':score>=50?'Moderada':'Concentrada';
+  const types = Object.keys(tipoMap).length;
+  const ds = document.getElementById('invDiversScore'); ds.innerHTML='';
+  ds.innerHTML=`
+    <div style="text-align:center;margin-bottom:14px">
+      <div style="font-family:'DM Serif Display',serif;font-size:42px;color:${scoreColor};line-height:1">${score}</div>
+      <div style="color:${scoreColor};font-size:12px;margin-top:4px">${scoreLabel}</div>
+      <div style="color:var(--muted);font-size:10px;margin-top:2px">${n} ativos · ${types} classes</div>
+    </div>
+    ${tipoEntries.map(([k,v])=>{const p=(v/totalLatest*100);return`<div class="progress-wrap"><div class="progress-label"><span style="color:${getTypeColor(k)}">${k}</span><span style="color:var(--muted)">${p.toFixed(1)}%</span></div><div class="progress-bar"><div class="progress-fill" style="width:${p.toFixed(1)}%;background:${getTypeColor(k)}"></div></div></div>`}).join('')}
+  `;
+
+  // ── Risk allocation chart ──
+  const riskMap = {Baixo:0, Médio:0, Alto:0};
+  sorted.forEach(i=>{ const r=getRisk(i.tipo); riskMap[r]+=(i.snapshots[ld]||0); });
+  makeChart('invRiscoChart',{type:'bar',data:{
+    labels:Object.keys(riskMap),
+    datasets:[{data:Object.values(riskMap),backgroundColor:['#22c55e','#f59e0b','#ef4444'],borderRadius:6,barPercentage:0.6}]
+  },options:{...cBase,indexAxis:'y',plugins:{...cBase.plugins,legend:{display:false},
+    tooltip:{...cBase.plugins.tooltip,callbacks:{label:c=>fmt2(c.parsed.x)+' ('+((c.parsed.x/totalLatest)*100).toFixed(1)+'%)'}}},
+    scales:{x:{...cBase.scales.x,ticks:{...cBase.scales.x.ticks,callback:v=>fmtK2(v)}},y:{ticks:{color:'#6b7a96',font:{family:'DM Mono',size:11}},grid:{display:false}}}}});
+
+  // ── Variation table ──
+  const vt=document.getElementById('invVarTable');
+  vt.innerHTML='<tr><th>Ativo</th><th>Tipo</th><th>Anterior</th><th>Atual</th><th>Variação</th><th>%</th></tr>';
+  perf.sort((a,b)=>b.pct-a.pct).forEach(i=>{
+    const cls=i.pct>=0?'pos':'neg';
+    vt.innerHTML+=`<tr>
+      <td>${i.empresa}</td>
+      <td style="color:${getTypeColor(i.tipo)}">${i.tipo}</td>
+      <td style="color:var(--muted)">${fmt2(i.prev)}</td>
+      <td>${fmt2(i.cur)}</td>
+      <td class="${cls}">${i.varAbs>=0?'+':''}${fmt2(i.varAbs)}</td>
+      <td class="${cls}" style="font-weight:600">${pctFmt(i.pct)}</td>
+    </tr>`;
+  });
+
+  // ── Classe chart ──
+  makeChart('invClasseChart',{type:'bar',data:{
+    labels:tipoEntries.map(([k])=>k),
+    datasets:[{
+      label:'Valor atual',
+      data:tipoEntries.map(([,v])=>v),
+      backgroundColor:tipoEntries.map(([k])=>getTypeColor(k)+'cc'),
+      borderRadius:5, barPercentage:0.7
+    }]
+  },options:{...cBase,plugins:{...cBase.plugins,legend:{display:false},
+    tooltip:{...cBase.plugins.tooltip,callbacks:{label:c=>fmt2(c.parsed.y)+' ('+((c.parsed.y/totalLatest)*100).toFixed(1)+'%)'}}}}});
+
+  // ── Recommendations ──
+  buildRecomendacoes(tipoMap, totalLatest, riskMap);
+
+  // ── Insights ──
+  buildInsights(sorted, perf, best, worst, tipoMap, totalLatest, riskMap, score, fmt2, fmtK2, pctFmt, ld, pd);
+}
+
+function buildRecomendacoes(tipoMap, total, riskMap) {
+  const el = document.getElementById('invRecomendacoes'); el.innerHTML='';
+  const recs = [];
+  const pctB = (riskMap.Baixo||0)/total*100;
+  const pctM = (riskMap.Médio||0)/total*100;
+  const pctA = (riskMap.Alto||0)/total*100;
+
+  // Check missing asset classes
+  const hasAcoes = tipoMap['Ações']||tipoMap['Acoes'];
+  const hasFII = tipoMap['FII'];
+  const hasTesouro = tipoMap['Tesouro'];
+  const hasCripto = (tipoMap['Bitcoin']||0) > 0;
+
+  if (!hasAcoes) recs.push({icon:'📊', t:'warn', title:'Ações — classe ausente', desc:'Adicionar ações nacionais/internacionais pode aumentar o potencial de retorno no longo prazo. Sugestão: 10-20% da carteira.'});
+  if (!hasFII) recs.push({icon:'🏢', t:'warn', title:'FIIs — sem exposição', desc:'Fundos Imobiliários oferecem renda passiva mensal e diversificação imobiliária sem precisar de imóvel físico.'});
+  if (!hasTesouro) recs.push({icon:'🏛️', t:'info', title:'Tesouro Direto — considerar', desc:'Tesouro IPCA+ protege contra inflação com garantia governamental. Ideal para reserva de emergência de longo prazo.'});
+  if (pctA > 30) recs.push({icon:'⚠️', t:'neg', title:'Alto risco acima de 30%', desc:`${pctA.toFixed(1)}% em ativos de alto risco (cripto/ações). Considere rebalancear para reduzir volatilidade da carteira.`});
+  if (pctB > 70) recs.push({icon:'💤', t:'info', title:'Carteira muito conservadora', desc:`${pctB.toFixed(1)}% em risco baixo. Alguma exposição a ativos de maior retorno pode acelerar o crescimento patrimonial.`});
+  if ((tipoMap['CDB']||0)/total > 0.5) recs.push({icon:'🏦', t:'warn', title:'CDB concentrado (>50%)', desc:'Considere distribuir entre diferentes emissores e tipos de renda fixa para não depender de um único banco.'});
+  if (recs.length === 0) recs.push({icon:'✅', t:'ipos', title:'Carteira bem distribuída!', desc:'Você já possui exposição a múltiplas classes de ativos. Continue acompanhando os rebalanceamentos periódicos.'});
+
+  recs.slice(0,5).forEach(r=>{
+    el.innerHTML+=`<div class="insight ${r.t}" style="margin-bottom:8px">
+      <div style="font-size:13px;margin-bottom:4px">${r.icon} <strong>${r.title}</strong></div>
+      <div style="font-size:11px;color:var(--muted);line-height:1.5">${r.desc}</div>
+    </div>`;
+  });
+}
+
+function buildInsights(sorted, perf, best, worst, tipoMap, total, riskMap, score, fmt2, fmtK2, pctFmt, ld, pd) {
+  const el=document.getElementById('investInsights'); el.innerHTML='';
+  const insights=[];
+  const pctA=(riskMap.Alto||0)/total*100;
+  const pctB=(riskMap.Baixo||0)/total*100;
+  const maior=sorted[0];
+  const concentrado=maior?(maior.snapshots[ld]||0)/total*100:0;
+
+  if (best) insights.push({t:'ipos', text:`<strong>${best.empresa} (${best.tipo})</strong> foi o melhor desempenho: <strong>${pctFmt(best.pct)}</strong> no período (${fmt2(best.varAbs)} de ganho).`});
+  if (worst && worst.pct < 0) insights.push({t:'ineg', text:`<strong>${worst.empresa} (${worst.tipo})</strong> teve queda de <strong>${pctFmt(worst.pct)}</strong> — acompanhe se é tendência ou volatilidade pontual.`});
+  if (concentrado > 35) insights.push({t:'warn', text:`<strong>${maior.empresa} representa ${concentrado.toFixed(1)}%</strong> da carteira — concentração elevada. Considere reduzir para menos de 30%.`});
+  insights.push({t:'info', text:`<strong>Score de diversificação: ${score}/100</strong> — ${score>=70?'carteira bem equilibrada entre as classes.':score>=50?'moderada, há espaço para diversificar mais.':'concentrada, recomenda-se redistribuir entre mais classes.'}`});
+  if (pctA > 20) insights.push({t:'warn', text:`<strong>${pctA.toFixed(1)}% em risco alto</strong> (${fmtK2((riskMap.Alto||0))}). Ideal manter entre 10-20% dependendo do perfil de risco.`});
+  else insights.push({t:'ipos', text:`<strong>Exposição a risco alto: ${pctA.toFixed(1)}%</strong> — dentro do limite recomendado (até 20% para perfil moderado).`});
+
+  insights.forEach(i=>{ el.innerHTML+=`<div class="insight ${i.t}">${i.text}</div>`; });
+}
+
+function renderInvChart(mode, sorted, perf, INV) {
+  invChartMode = mode;
+  const fmt2 = (v,d=0) => 'R$ '+v.toLocaleString('pt-BR',{minimumFractionDigits:d,maximumFractionDigits:d});
+  const ld=INV.latest_date, pd=INV.prev_date;
+  const totalLatest = INV.totals?.[ld] || sorted.reduce((s,i)=>s+(i.snapshots[ld]||0),0);
+
+  if (mode==='barras') {
+    const labels=sorted.map(i=>`${i.empresa}\n${i.tipo}`);
+    makeChart('invMainChart',{type:'bar',data:{
+      labels:sorted.map(i=>i.empresa),
+      datasets:[
+        {label:'Valor Atual',data:sorted.map(i=>i.snapshots[ld]||0),backgroundColor:sorted.map(i=>getTypeColor(i.tipo)+'cc'),borderRadius:5},
+        pd?{label:'Snapshot Anterior',data:sorted.map(i=>i.snapshots[pd]||0),backgroundColor:sorted.map(i=>getTypeColor(i.tipo)+'44'),borderRadius:5}:null
+      ].filter(Boolean)
+    },options:{...cBase,plugins:{...cBase.plugins,legend:{display:true,labels:{color:'#c8cdd8',font:{family:'DM Mono',size:11},boxWidth:12}},
+      tooltip:{...cBase.plugins.tooltip,callbacks:{label:c=>c.dataset.label+': '+fmt2(c.parsed.y)+' ('+((c.parsed.y/totalLatest)*100).toFixed(1)+'%)'}}}}});
+
+  } else if (mode==='variacao') {
+    const pf=perf.sort((a,b)=>b.pct-a.pct);
+    makeChart('invMainChart',{type:'bar',data:{
+      labels:pf.map(i=>i.empresa),
+      datasets:[{
+        label:'Variação %',data:pf.map(i=>i.pct),
+        backgroundColor:pf.map(i=>i.pct>=0?'rgba(34,197,94,0.75)':'rgba(239,68,68,0.75)'),
+        borderRadius:5
+      }]
+    },options:{...cBase,plugins:{...cBase.plugins,legend:{display:false},
+      tooltip:{...cBase.plugins.tooltip,callbacks:{label:c=>(c.parsed.y>=0?'+':'')+c.parsed.y.toFixed(2)+'%'}}},
+      scales:{x:cBase.scales.x,y:{...cBase.scales.y,ticks:{...cBase.scales.y.ticks,callback:v=>v.toFixed(1)+'%'}}}}});
+
+  } else if (mode==='evolucao') {
+    const dates=INV.dates||[];
+    makeChart('invMainChart',{type:'line',data:{
+      labels:dates.map(d=>d.split('-').reverse().join('/')),
+      datasets:INV.investments.filter(i=>i.snapshots[ld]).map((i,idx)=>({
+        label:i.empresa,
+        data:dates.map(d=>i.snapshots[d]||null),
+        borderColor:getTypeColor(i.tipo),
+        backgroundColor:getTypeColor(i.tipo)+'15',
+        tension:0.3, pointRadius:5, borderWidth:2, spanGaps:false
+      }))
+    },options:{...cBase,plugins:{...cBase.plugins,legend:{display:true,labels:{color:'#c8cdd8',font:{family:'DM Mono',size:11},boxWidth:10}},
+      tooltip:{...cBase.plugins.tooltip,callbacks:{label:c=>c.dataset.label+': '+fmt2(c.parsed.y)}}}}});
+  }
+}
+
+function switchInvChart(t,btn) {
+  document.querySelectorAll('#page-investimentos .tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  const INV=ALL_DATA.investimentos;
+  if(!INV) return;
+  const ld=INV.latest_date;
+  const sorted=[...INV.investments].filter(i=>i.snapshots[ld]).sort((a,b)=>(b.snapshots[ld]||0)-(a.snapshots[ld]||0));
+  const pd=INV.prev_date;
+  const perf=INV.investments.map(i=>{
+    const cur=i.snapshots[ld]||0,prev=i.snapshots[pd]||0;
+    const pct=prev?(cur-prev)/prev*100:0;
+    return {...i,cur,prev,pct,varAbs:cur-prev};
+  }).filter(i=>i.cur>0&&i.prev>0);
+  renderInvChart(t,sorted,perf,INV);
+}
+
+
+// ===========================
+// PAGE SWITCH
+// ===========================
+function switchPage(id, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ===========================
+// RENDER ALL
+// ===========================
+function renderAll() {
+  renderInventario();
+  renderDividas();
+  renderFastback();
+  renderPayslip();
+  renderInvestimentos();
+  updateFooter();
+}
+
+function updateFooter() {
+  const last = ALL_DATA.inventario.stats.last_date;
+  document.getElementById('footer-text').textContent = `PATRIMONY DASHBOARD · DEMO · DADOS: ${ALL_DATA.inventario.stats.first_date.split('-').reverse().join('/')} – ${last.split('-').reverse().join('/')} · ${ALL_DATA.inventario.stats.total_snapshots} SNAPSHOTS`;
+}
+
+// ===========================
+// BOOT
+// ===========================
+renderAll();
+</script>
+</body>
+</html>
