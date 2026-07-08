@@ -259,7 +259,10 @@
 
   <div class="grid" style="grid-template-columns:1fr 1fr;">
     <div class="card">
-      <h3>📸 Foto de Hoje</h3>
+      <h3>📸 Foto do Dia</h3>
+      <div style="margin-bottom:12px;">
+        <input type="date" id="photoDateInput" style="width:100%; padding:9px; background:var(--panel-2); border:1px solid var(--line); border-radius:6px; color:var(--text); font-size:13.5px;">
+      </div>
       <img id="photoPreview" class="photo-preview" style="display:none;">
       <div id="photoButtons" style="display:flex; gap:10px;">
         <label class="photo-upload" style="flex:1; padding:16px 10px;">
@@ -271,7 +274,8 @@
           <input type="file" id="photoGalleryInput" accept="image/*" style="display:none;">
         </label>
       </div>
-      <button class="save-btn" id="photoSaveBtn" style="display:none; margin-top:10px;">Salvar foto de hoje</button>
+      <button class="save-btn" id="photoSaveBtn" style="display:none; margin-top:10px;">Salvar foto</button>
+      <button class="save-btn" id="photoRetakeBtn" style="display:none; margin-top:10px; background:var(--panel-2); color:var(--text);">Trocar foto deste dia</button>
     </div>
 
     <div class="card">
@@ -683,20 +687,40 @@ function compressImage(file, maxWidth=700, quality=0.6){
 }
 
 function renderPhotoUpload(){
-  const t = todayKey();
+  const dateInput = document.getElementById("photoDateInput");
+  if(!dateInput.value) dateInput.value = todayKey();
+  dateInput.max = todayKey();
+
   const preview = document.getElementById("photoPreview");
   const buttons = document.getElementById("photoButtons");
   const saveBtn = document.getElementById("photoSaveBtn");
+  const retakeBtn = document.getElementById("photoRetakeBtn");
 
-  if(PHOTOS[t]){
-    preview.src = PHOTOS[t];
-    preview.style.display = "block";
-    buttons.style.display = "none";
-    saveBtn.style.display = "none";
-  } else {
+  const refreshView = ()=>{
+    const d = dateInput.value;
+    pendingPhotoDataUrl = null;
+    if(PHOTOS[d]){
+      preview.src = PHOTOS[d];
+      preview.style.display = "block";
+      buttons.style.display = "none";
+      saveBtn.style.display = "none";
+      retakeBtn.style.display = "block";
+    } else {
+      preview.style.display = "none";
+      buttons.style.display = "flex";
+      saveBtn.style.display = "none";
+      retakeBtn.style.display = "none";
+    }
+  };
+  refreshView();
+
+  dateInput.onchange = refreshView;
+
+  retakeBtn.onclick = ()=>{
     preview.style.display = "none";
     buttons.style.display = "flex";
-  }
+    retakeBtn.style.display = "none";
+  };
 
   const handleFile = async (file)=>{
     if(!file) return;
@@ -712,12 +736,14 @@ function renderPhotoUpload(){
 
   saveBtn.onclick = async ()=>{
     if(!pendingPhotoDataUrl) return;
-    PHOTOS[t] = pendingPhotoDataUrl;
+    const d = dateInput.value;
+    PHOTOS[d] = pendingPhotoDataUrl;
     saveBtn.textContent = "Salvando...";
     await dbSet("skincare_photos", PHOTOS);
-    saveBtn.style.display = "none";
+    saveBtn.textContent = "Salvar foto";
     renderComparison();
     renderTimeline();
+    refreshView();
   };
 }
 
