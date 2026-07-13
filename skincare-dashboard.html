@@ -168,8 +168,14 @@
       <h1>Painel de Acompanhamento</h1>
     </div>
     <div class="daycount">
-      <div class="num" id="dayCount">1</div>
-      <div class="label">dia de uso</div>
+      <div style="display:flex; align-items:center; gap:10px;">
+        <button id="dayPrev" style="background:var(--panel-2); border:1px solid var(--line); color:var(--text); border-radius:6px; width:30px; height:30px; cursor:pointer;">‹</button>
+        <div>
+          <div class="num" id="dayCount">1</div>
+          <div class="label" id="dayDateLabel">dia de uso</div>
+        </div>
+        <button id="dayNext" style="background:var(--panel-2); border:1px solid var(--line); color:var(--text); border-radius:6px; width:30px; height:30px; cursor:pointer;">›</button>
+      </div>
     </div>
   </div>
 
@@ -189,6 +195,12 @@
       <span style="font-size:13.5px; color:var(--laranja);">✏️ Editando dia: <strong id="editingDateLabel"></strong></span>
       <button class="save-btn" id="backToTodayBtn" style="width:auto; padding:8px 14px; margin:0;">Voltar para hoje</button>
     </div>
+  </div>
+
+  <div class="card" style="margin-bottom:28px;">
+    <h3>📝 Observações do dia</h3>
+    <textarea id="notesInput" placeholder="Como a pele reagiu hoje? Ardência, vermelhidão, descamação, sensação..." style="width:100%; min-height:90px; background:var(--panel-2); border:1px solid var(--line); border-radius:8px; color:var(--text); font-size:13.5px; padding:12px; font-family:inherit; resize:vertical;"></textarea>
+    <button class="save-btn" id="notesSaveBtn" style="margin-top:10px;">Salvar observação</button>
   </div>
 
   <div class="card" style="margin-bottom:28px;">
@@ -311,24 +323,30 @@
 const FIREBASE_DB_URL = "https://skincare-andrey-default-rtdb.firebaseio.com";
 
 const PRODUCTS = {
-  limpeza:  { label:"Limpador Antioleosidade",    sw:"sw-amarelo",  cost:54.89 },
-  protetor: { label:"Protetor Solar FPS 60",      sw:"sw-branco",   cost:69.89 },
-  vitc:     { label:"Vitamina C Gold",            sw:"sw-laranja",  cost:143.89 },
-  vichy:    { label:"Vichy Liftactiv Collagen",   sw:"sw-vermelho", cost:0 },
-  ahagel:   { label:"Creamy Gel 7% AHA",          sw:"sw-roxo",     cost:0 },
-  retinal:  { label:"Sérum Retinal",              sw:"sw-vermelho", cost:134.89 },
+  limpeza:     { label:"Limpador Antioleosidade",    sw:"sw-amarelo",  cost:54.89 },
+  protetor:    { label:"Protetor Solar FPS 60",      sw:"sw-branco",   cost:69.89 },
+  vitc:        { label:"Vitamina C Gold",            sw:"sw-laranja",  cost:143.89 },
+  vichy:       { label:"Vichy Liftactiv Collagen",   sw:"sw-vermelho", cost:0 },
+  ahagel:      { label:"Creamy Gel 7% AHA",          sw:"sw-roxo",     cost:0 },
+  retinal:     { label:"Sérum Retinal",              sw:"sw-vermelho", cost:134.89 },
+  eyecream:    { label:"Creamy Eye Cream",           sw:"sw-branco",   cost:139.89 },
+  calming:     { label:"Creamy Calming Cream",       sw:"sw-vermelho", cost:56.89 },
+  glicerinado: { label:"Limpador Facial Glicerinado", sw:"sw-amarelo", cost:64.99 },
 };
 
 const MORNING_STEPS = [
-  {key:"limpeza",  label:"Gel de Limpeza"},
-  {key:"vitc",     label:"Vitamina C Gold"},
-  {key:"protetor", label:"Protetor Solar FPS 60"},
+  {key:"limpeza",     label:"Limpador Antioleosidade", sub:"2x/dia · manhã e noite (troque pelo Glicerinado em dias sensíveis)"},
+  {key:"vitc",        label:"Vitamina C Gold", sub:"1x/dia · manhã"},
+  {key:"eyecream",    label:"Creamy Eye Cream", sub:"1x/dia · manhã, área dos olhos"},
+  {key:"protetor",    label:"Protetor Solar FPS 60", sub:"1x/dia · manhã"},
 ];
 const NIGHT_STEPS = [
-  {key:"limpeza",  label:"Gel de Limpeza"},
-  {key:"retinal",  label:"Sérum Retinal", sub:"alterne com o Gel AHA — 2-3x/semana cada"},
-  {key:"ahagel",   label:"Creamy Gel 7% AHA", sub:"nas noites sem Retinal"},
-  {key:"vichy",    label:"Vichy Liftactiv Collagen"},
+  {key:"limpeza",     label:"Limpador Antioleosidade", sub:"2x/dia · manhã e noite (troque pelo Glicerinado em dias sensíveis)"},
+  {key:"retinal",     label:"Sérum Retinal", sub:"2-3x/semana · alterne com o Gel AHA"},
+  {key:"ahagel",      label:"Creamy Gel 7% AHA", sub:"2-3x/semana · nas noites sem Retinal"},
+  {key:"vichy",       label:"Vichy Liftactiv Collagen", sub:"diário · noite"},
+  {key:"eyecream",    label:"Creamy Eye Cream", sub:"1x/dia · noite, área dos olhos"},
+  {key:"calming",     label:"Creamy Calming Cream", sub:"quando a pele estiver irritada/sensível"},
 ];
 
 const MILESTONES = [
@@ -364,10 +382,27 @@ function todayKey(){
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
 }
 
-let CHECKLIST = {};   // { "2026-07-07": { manha:{limpeza:true,...}, noite:{...} } }
-let AVALIACAO = {};    // { "2026-07-07": { vico:7, textura:6, firmeza:5, oleo:4 } }
-let CONFIG = {};       // { startDate: "2026-07-07" }
+let CHECKLIST = {};
+let AVALIACAO = {};
+let CONFIG = {};
+let NOTES = {}; // { "2026-07-07": "texto da observação" }
 let selectedDate = todayKey();
+
+function renderNotes(){
+  const t = selectedDate;
+  document.getElementById("notesInput").value = NOTES[t] || "";
+  document.getElementById("notesSaveBtn").textContent = "Salvar observação";
+}
+
+document.getElementById("notesSaveBtn").addEventListener("click", async ()=>{
+  const t = selectedDate;
+  const btn = document.getElementById("notesSaveBtn");
+  NOTES[t] = document.getElementById("notesInput").value.trim();
+  await dbSet("skincare_notes", NOTES);
+  btn.textContent = "Salvo ✓";
+  btn.classList.add("saved");
+  setTimeout(()=>{ btn.textContent="Salvar observação"; btn.classList.remove("saved"); }, 1800);
+});
 
 /* ============ RENDER: CHECKLIST ============ */
 function renderChecklist(){
@@ -429,9 +464,30 @@ function renderChecklist(){
   });
 }
 
-document.getElementById("backToTodayBtn").addEventListener("click", ()=>{
-  selectedDate = todayKey();
+function goToDate(d){
+  selectedDate = d;
   renderChecklist();
+  renderRings();
+  renderCalendar();
+  renderNotes();
+}
+
+document.getElementById("backToTodayBtn").addEventListener("click", ()=>{
+  goToDate(todayKey());
+});
+
+document.getElementById("dayPrev").addEventListener("click", ()=>{
+  const start = CONFIG.startDate || todayKey();
+  const d = new Date(parseLocalDate(selectedDate)); d.setDate(d.getDate()-1);
+  const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+  if(key < start) return;
+  goToDate(key);
+});
+document.getElementById("dayNext").addEventListener("click", ()=>{
+  const d = new Date(parseLocalDate(selectedDate)); d.setDate(d.getDate()+1);
+  const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+  if(key > todayKey()) return;
+  goToDate(key);
 });
 
 /* ============ RENDER: DAY COUNT + RINGS ============ */
@@ -440,17 +496,17 @@ function parseLocalDate(dateStr){
   return new Date(y, m-1, d); // meia-noite local, evita bug de fuso UTC
 }
 
-function daysSince(dateStr){
+function daysSince(dateStr, asOfStr){
   const start = parseLocalDate(dateStr);
-  const now = parseLocalDate(todayKey());
-  return Math.max(1, Math.round((now - start)/86400000) + 1);
+  const asOf = parseLocalDate(asOfStr || todayKey());
+  return Math.max(1, Math.round((asOf - start)/86400000) + 1);
 }
 
-function skippedCountSince(dateStr){
+function skippedCountSince(dateStr, asOfStr){
   const start = parseLocalDate(dateStr);
-  const now = parseLocalDate(todayKey());
+  const asOf = parseLocalDate(asOfStr || todayKey());
   let weight = 0;
-  for(let d = new Date(start); d <= now; d.setDate(d.getDate()+1)){
+  for(let d = new Date(start); d <= asOf; d.setDate(d.getDate()+1)){
     const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
     const day = CHECKLIST[key];
     if(!day) continue;
@@ -462,10 +518,21 @@ function skippedCountSince(dateStr){
 
 function renderRings(){
   const start = CONFIG.startDate || todayKey();
-  const calendarDays = daysSince(start);
-  const skipped = skippedCountSince(start);
+  const asOf = selectedDate;
+  const calendarDays = daysSince(start, asOf);
+  const skipped = skippedCountSince(start, asOf);
   const dayN = Math.max(1, calendarDays - skipped);
   document.getElementById("dayCount").textContent = dayN;
+  const dowNames = ["Domingo","Segunda","Terça","Quarta","Quinta","Sexta","Sábado"];
+  const asOfDate = parseLocalDate(asOf);
+  const dowLabel = dowNames[asOfDate.getDay()];
+  const [yy,mm,dd] = asOf.split("-");
+  document.getElementById("dayDateLabel").textContent =
+    `${dd}/${mm} - ${dowLabel}${asOf === todayKey() ? " · hoje" : ""}`;
+  document.getElementById("dayNext").disabled = asOf >= todayKey();
+  document.getElementById("dayNext").style.opacity = asOf >= todayKey() ? .35 : 1;
+  document.getElementById("dayPrev").disabled = asOf <= start;
+  document.getElementById("dayPrev").style.opacity = asOf <= start ? .35 : 1;
 
   const ringsWrap = document.getElementById("ringsWrap");
   ringsWrap.innerHTML = MILESTONES.map(m=>{
@@ -685,8 +752,7 @@ function renderCalendar(){
     el.addEventListener("click", ()=>{
       const d = el.dataset.date;
       if(d > todayKey()) return;
-      selectedDate = d;
-      renderChecklist();
+      goToDate(d);
       document.getElementById("checklistAnchor").scrollIntoView({behavior:"smooth", block:"start"});
     });
   });
@@ -899,6 +965,7 @@ async function init(){
   AVALIACAO = await dbGet("skincare_avaliacao");
   CONFIG = await dbGet("skincare_config");
   PHOTOS = await dbGet("skincare_photos");
+  NOTES = await dbGet("skincare_notes");
   if(!CONFIG.startDate){
     CONFIG.startDate = todayKey();
     await dbSet("skincare_config", CONFIG);
@@ -913,6 +980,7 @@ async function init(){
   renderPhotoUpload();
   renderComparison();
   renderTimeline();
+  renderNotes();
 }
 init();
 </script>
