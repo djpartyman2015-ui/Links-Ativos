@@ -331,7 +331,7 @@ const PRODUCTS = {
   retinal:     { label:"Sérum Retinal",              sw:"sw-vermelho", cost:134.89 },
   eyecream:    { label:"Creamy Eye Cream",           sw:"sw-branco",   cost:139.89 },
   calming:     { label:"Creamy Calming Cream",       sw:"sw-vermelho", cost:56.89 },
-  glicerinado: { label:"Limpador Facial Glicerinado", sw:"sw-amarelo", cost:64.99 },
+  glicerinado: { label:"Limpador Facial Glicerinado", sw:"sw-amarelo", cost:69.89 },
 };
 
 const MORNING_STEPS = [
@@ -350,9 +350,9 @@ const NIGHT_STEPS = [
 ];
 
 const MILESTONES = [
-  { key:"vico",    label:"Viço (Vit. C)",      targetDays:10,  color:"#E8722C" },
-  { key:"textura", label:"Textura (Retinal)",  targetDays:35,  color:"#D6483F" },
-  { key:"firmeza", label:"Firmeza (geral)",    targetDays:70,  color:"#3A8FD9" },
+  { key:"vico",    label:"Viço (Vit. C)",      productKeys:["vitc"],           targetUses:12, color:"#E8722C" },
+  { key:"textura", label:"Textura (Retinal)",  productKeys:["retinal","ahagel"], targetUses:12, color:"#D6483F" },
+  { key:"firmeza", label:"Firmeza (Vichy)",    productKeys:["vichy"],          targetUses:60, color:"#3A8FD9" },
 ];
 
 /* ============ STORAGE LAYER ============ */
@@ -516,6 +516,17 @@ function skippedCountSince(dateStr, asOfStr){
   return weight;
 }
 
+function countUsesUpTo(productKeys, asOfStr){
+  let count = 0;
+  Object.entries(CHECKLIST).forEach(([date, day])=>{
+    if(date > asOfStr) return;
+    ["manha","noite"].forEach(p=>{
+      productKeys.forEach(k=>{ if(day[p]?.[k]) count++; });
+    });
+  });
+  return count;
+}
+
 function renderRings(){
   const start = CONFIG.startDate || todayKey();
   const asOf = selectedDate;
@@ -536,10 +547,12 @@ function renderRings(){
 
   const ringsWrap = document.getElementById("ringsWrap");
   ringsWrap.innerHTML = MILESTONES.map(m=>{
-    const pct = Math.min(100, Math.round((dayN / m.targetDays) * 100));
+    const uses = countUsesUpTo(m.productKeys, asOf);
+    const pct = Math.min(100, Math.round((uses / m.targetUses) * 100));
     const r = 40, circ = 2*Math.PI*r;
     const offset = circ - (pct/100)*circ;
-    const status = pct >= 100 ? "Alcançado 🎉" : `${m.targetDays - dayN > 0 ? m.targetDays - dayN : 0} dias restantes`;
+    const remaining = m.targetUses - uses;
+    const status = pct >= 100 ? "Alcançado 🎉" : `${remaining > 0 ? remaining : 0} usos restantes`;
     return `<div class="ring-item">
       <svg viewBox="0 0 100 100">
         <circle cx="50" cy="50" r="${r}" fill="none" stroke="#31353F" stroke-width="9"/>
