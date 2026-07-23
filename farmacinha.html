@@ -316,7 +316,7 @@ const BASE = FIREBASE_URL + "/farmacinha";
 const NECESSIDADES = [
   "Dor de cabeça","Dor de barriga","Febre","Gripe/Resfriado","Alergia",
   "Dor muscular","Digestão/Azia","Pressão alta","Diabetes","Colesterol",
-  "Ansiedade/Sono","Antibiótico","Vitamina/Suplemento","Ferimento/Curativo","Outro"
+  "Ansiedade/Sono","Antibiótico","Vitamina/Suplemento","Ferimento/Curativo"
 ];
 
 /* ============ STATE ============ */
@@ -527,9 +527,13 @@ function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':
 /* ============ FORM (novo/editar) ============ */
 function renderTagPickerForm(){
   const el = document.getElementById('f_tags');
-  el.innerHTML = NECESSIDADES.map(t=>
+  const predefinidas = NECESSIDADES.map(t=>
     `<span class="chip ${tagsSelecionadasForm.has(t)?'active':''}" onclick="toggleTagForm('${t}')">${t}</span>`
   ).join('');
+  const personalizadas = [...tagsSelecionadasForm].filter(t=>!NECESSIDADES.includes(t)).map(t=>
+    `<span class="chip active" onclick="toggleTagForm('${t.replace(/'/g,"\\'")}')">${escapeHtml(t)} ✕</span>`
+  ).join('');
+  el.innerHTML = predefinidas + personalizadas;
 }
 function toggleTagForm(t){
   if(tagsSelecionadasForm.has(t)) tagsSelecionadasForm.delete(t); else tagsSelecionadasForm.add(t);
