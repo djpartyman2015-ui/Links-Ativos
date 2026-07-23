@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Farmacinha</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F4F7F5;
+  --paper:#FFFFFF;
+  --ink:#182420;
+  --ink-soft:#5B6B65;
+  --pine:#1F3D3B;
+  --pine-deep:#122624;
+  --sage:#6B8F87;
+  --sage-pale:#DCEAE5;
+  --amber:#E2870F;
+  --amber-pale:#FBEBD3;
+  --danger:#C0392B;
+  --danger-pale:#FBE1DD;
+  --ok:#3C8562;
+  --ok-pale:#DDEEE3;
+  --line:#DDE5E1;
+  --radius:14px;
+  --shadow:0 1px 2px rgba(18,38,36,.06), 0 6px 20px -8px rgba(18,38,36,.12);
+}
+*{box-sizing:border-box;}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans',sans-serif;-webkit-font-smoothing:antialiased;}
+h1,h2,h3,.display{font-family:'Fraunces',serif;}
+.mono{font-family:'IBM Plex Mono',monospace;}
+a{color:inherit;}
+button{font-family:inherit;cursor:pointer;}
+
+/* ===== Header ===== */
+header{
+  background:var(--pine);
+  color:#fff;
+  padding:18px 24px;
+  display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
+  position:sticky; top:0; z-index:20;
+  box-shadow:var(--shadow);
+}
+.brand{display:flex; align-items:center; gap:12px;}
+.brand-mark{
+  width:38px;height:38px;border-radius:10px;
+  background:var(--amber);
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;
+  box-shadow:inset 0 -3px 0 rgba(0,0,0,.15);
+}
+.brand h1{margin:0;font-size:22px;font-weight:600;letter-spacing:.2px;}
+.brand small{display:block;font-size:11px;color:#BFD4CF;letter-spacing:.08em;text-transform:uppercase;font-family:'IBM Plex Mono',monospace;}
+.person-box{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.08);padding:6px 10px 6px 14px;border-radius:999px;}
+.person-box span{font-size:13px;color:#DCEAE5;}
+.person-box b{font-weight:600;}
+.person-box button{background:rgba(255,255,255,.14);border:none;color:#fff;padding:6px 12px;border-radius:999px;font-size:12px;font-weight:500;}
+.person-box button:hover{background:rgba(255,255,255,.25);}
+
+main{max-width:1180px;margin:0 auto;padding:24px;}
+
+/* ===== Alert summary ===== */
+.alerts{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:24px;}
+.alert-card{background:var(--paper);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow);border-left:5px solid var(--line);}
+.alert-card.warn{border-left-color:var(--amber);}
+.alert-card.danger{border-left-color:var(--danger);}
+.alert-card.ok{border-left-color:var(--ok);}
+.alert-card .num{font-family:'Fraunces',serif;font-size:30px;font-weight:600;line-height:1;}
+.alert-card .lbl{font-size:12.5px;color:var(--ink-soft);margin-top:4px;}
+.alert-card ul{margin:10px 0 0;padding:0;list-style:none;font-size:12.5px;max-height:80px;overflow-y:auto;}
+.alert-card li{padding:2px 0;color:var(--ink-soft);}
+
+/* ===== Toolbar ===== */
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px;}
+.search-input{flex:1;min-width:200px;padding:11px 14px;border-radius:10px;border:1px solid var(--line);background:var(--paper);font-size:14px;}
+.search-input:focus{outline:2px solid var(--sage);outline-offset:1px;}
+.btn{border:none;border-radius:10px;padding:11px 18px;font-weight:600;font-size:14px;}
+.btn-primary{background:var(--pine);color:#fff;}
+.btn-primary:hover{background:var(--pine-deep);}
+.btn-ghost{background:var(--paper);color:var(--pine);border:1px solid var(--line);}
+.btn-ghost:hover{background:var(--sage-pale);}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px;}
+.chip{padding:6px 13px;border-radius:999px;background:var(--paper);border:1px solid var(--line);font-size:12.5px;color:var(--ink-soft);font-weight:500;}
+.chip.active{background:var(--pine);color:#fff;border-color:var(--pine);}
+.chip:hover{border-color:var(--sage);}
+
+/* ===== Grid of medicine "labels" ===== */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px;}
+.card{
+  background:var(--paper);border-radius:var(--radius);box-shadow:var(--shadow);
+  overflow:hidden;display:flex;flex-direction:column;position:relative;
+  border-top:6px solid var(--sage);
+}
+.card.status-danger{border-top-color:var(--danger);}
+.card.status-warn{border-top-color:var(--amber);}
+.card .card-body{padding:16px 16px 12px;flex:1;}
+.card h3{margin:0 0 2px;font-size:18px;font-weight:600;}
+.card .desc{font-size:12.5px;color:var(--ink-soft);margin:0 0 10px;min-height:16px;}
+.tags{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px;}
+.tag{font-size:10.5px;padding:3px 8px;border-radius:6px;background:var(--sage-pale);color:var(--pine-deep);font-weight:600;letter-spacing:.02em;text-transform:uppercase;}
+.stock-row{display:flex;align-items:center;justify-content:space-between;font-size:12.5px;color:var(--ink-soft);margin-bottom:6px;}
+.stock-row b{color:var(--ink);font-family:'IBM Plex Mono',monospace;font-size:13px;}
+.bar{height:6px;border-radius:99px;background:var(--line);overflow:hidden;margin-bottom:10px;}
+.bar-fill{height:100%;background:var(--ok);}
+.bar-fill.warn{background:var(--amber);}
+.bar-fill.danger{background:var(--danger);}
+.meta-row{display:flex;justify-content:space-between;font-size:11.5px;color:var(--ink-soft);font-family:'IBM Plex Mono',monospace;}
+.badge{display:inline-block;padding:2px 8px;border-radius:6px;font-size:10.5px;font-weight:700;letter-spacing:.03em;}
+.badge.ok{background:var(--ok-pale);color:var(--ok);}
+.badge.warn{background:var(--amber-pale);color:#8A5A05;}
+.badge.danger{background:var(--danger-pale);color:var(--danger);}
+.card-actions{display:flex;border-top:1px dashed var(--line);}
+.card-actions button{flex:1;border:none;background:none;padding:11px 8px;font-size:12.5px;font-weight:600;color:var(--pine);border-right:1px dashed var(--line);}
+.card-actions button:last-child{border-right:none;}
+.card-actions button:hover{background:var(--sage-pale);}
+.card-actions button.use-btn{color:var(--amber);}
+.card-actions button.use-btn:hover{background:var(--amber-pale);}
+
+.empty{text-align:center;padding:60px 20px;color:var(--ink-soft);}
+.empty .display{font-size:22px;color:var(--ink);margin-bottom:6px;}
+
+/* ===== Modal ===== */
+.overlay{position:fixed;inset:0;background:rgba(18,38,36,.45);display:none;align-items:flex-start;justify-content:center;padding:40px 16px;overflow-y:auto;z-index:100;}
+.overlay.show{display:flex;}
+.modal{background:var(--paper);border-radius:16px;max-width:520px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.25);}
+.modal-header{padding:20px 24px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;}
+.modal-header h2{margin:0;font-size:20px;}
+.modal-header button{background:none;border:none;font-size:20px;color:var(--ink-soft);}
+.modal-body{padding:20px 24px;}
+.modal-footer{padding:16px 24px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:10px;}
+.field{margin-bottom:14px;}
+.field label{display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:5px;}
+.field input,.field select,.field textarea{width:100%;padding:9px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;font-family:inherit;background:#fcfdfd;}
+.field input:focus,.field select:focus,.field textarea:focus{outline:2px solid var(--sage);outline-offset:0;}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.tag-picker{display:flex;flex-wrap:wrap;gap:6px;}
+.tag-picker .chip{cursor:pointer;user-select:none;}
+.history-list{list-style:none;margin:0;padding:0;max-height:220px;overflow-y:auto;}
+.history-list li{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px dashed var(--line);font-size:13px;}
+.history-list li span.who{font-weight:600;}
+.history-list li span.when{color:var(--ink-soft);font-family:'IBM Plex Mono',monospace;font-size:11.5px;}
+.divider{border:none;border-top:1px dashed var(--line);margin:16px 0;}
+.hint{font-size:11.5px;color:var(--ink-soft);margin-top:4px;}
+.loading{text-align:center;padding:60px;color:var(--ink-soft);}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--pine-deep);color:#fff;padding:12px 22px;border-radius:999px;font-size:13.5px;font-weight:500;box-shadow:var(--shadow);z-index:200;opacity:0;transition:opacity .25s, transform .25s;pointer-events:none;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(-4px);}
+.danger-text{color:var(--danger);}
+@media(max-width:520px){ .row2{grid-template-columns:1fr;} }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="brand-mark">💊</div>
+    <div>
+      <h1>Farmacinha</h1>
+      <small>Estoque de medicamentos de casa</small>
+    </div>
+  </div>
+  <div class="person-box" id="personBox">
+    <span>Olá, <b id="personName">—</b></span>
+    <button onclick="trocarPessoa()">trocar</button>
+  </div>
+</header>
+
+<main>
+  <div class="alerts" id="alertsRow"></div>
+
+  <div class="toolbar">
+    <input type="text" class="search-input" id="searchInput" placeholder="Buscar por nome, sintoma ou local... ex: dor de barriga">
+    <button class="btn btn-primary" onclick="abrirFormNovo()">+ Novo medicamento</button>
+  </div>
+
+  <div class="chips" id="tagChips"></div>
+
+  <div id="content" class="loading">Carregando estoque…</div>
+</main>
+
+<!-- Modal: form medicamento -->
+<div class="overlay" id="formOverlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="formTitle">Novo medicamento</h2>
+      <button onclick="fecharModal('formOverlay')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="f_id">
+      <div class="field">
+        <label>Nome do medicamento</label>
+        <input type="text" id="f_nome" placeholder="Ex: Dorflex, Buscopan, Paracetamol 750mg">
+      </div>
+      <div class="field">
+        <label>Para que serve / sintomas (marque quantos precisar)</label>
+        <div class="tag-picker" id="f_tags"></div>
+        <input type="text" id="f_tag_custom" placeholder="Adicionar outro (Enter para incluir)" style="margin-top:8px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:13px;width:100%;">
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label>Qtde comprada</label>
+          <input type="number" id="f_qtdeComprada" min="0" placeholder="30">
+        </div>
+        <div class="field">
+          <label>Qtde atual (sobrando)</label>
+          <input type="number" id="f_qtdeAtual" min="0" placeholder="30">
+        </div>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label>Unidade</label>
+          <select id="f_unidade">
+            <option>comprimidos</option>
+            <option>cápsulas</option>
+            <option>ml</option>
+            <option>gotas</option>
+            <option>sachês</option>
+            <option>doses</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Avisar quando restar</label>
+          <input type="number" id="f_estoqueMinimo" min="0" placeholder="5">
+        </div>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label>Data da compra</label>
+          <input type="date" id="f_dataCompra">
+        </div>
+        <div class="field">
+          <label>Validade</label>
+          <input type="date" id="f_validade">
+        </div>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label>Valor pago (R$)</label>
+          <input type="number" id="f_valor" min="0" step="0.01" placeholder="18.90">
+        </div>
+        <div class="field">
+          <label>Onde está guardado</label>
+          <input type="text" id="f_local" placeholder="Armário do banheiro, gaveta da cozinha...">
+        </div>
+      </div>
+      <div class="field">
+        <label>Observações</label>
+        <textarea id="f_obs" rows="2" placeholder="Posologia, cuidados, quem pode usar..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="fecharModal('formOverlay')">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarMedicamento()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: detalhe / uso / historico -->
+<div class="overlay" id="detailOverlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="d_nome">—</h2>
+      <button onclick="fecharModal('detailOverlay')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="tags" id="d_tags"></div>
+      <p class="hint" id="d_obs" style="margin-top:-4px;"></p>
+      <div class="row2" style="margin-top:8px;">
+        <div>
+          <div class="hint">Local</div>
+          <div id="d_local" class="mono" style="font-size:13px;"></div>
+        </div>
+        <div>
+          <div class="hint">Validade</div>
+          <div id="d_validade" class="mono" style="font-size:13px;"></div>
+        </div>
+      </div>
+      <div class="row2" style="margin-top:10px;">
+        <div>
+          <div class="hint">Comprado em / valor</div>
+          <div id="d_compra" class="mono" style="font-size:13px;"></div>
+        </div>
+        <div>
+          <div class="hint">Restam</div>
+          <div id="d_restam" class="mono" style="font-size:13px;"></div>
+        </div>
+      </div>
+
+      <hr class="divider">
+      <div class="field" style="display:flex;gap:10px;align-items:flex-end;">
+        <div style="flex:1;">
+          <label>Registrar uso agora</label>
+          <input type="number" id="d_qtdeUso" min="1" value="1">
+        </div>
+        <button class="btn btn-primary" onclick="registrarUso()">Usar / baixar estoque</button>
+      </div>
+
+      <hr class="divider">
+      <div class="hint" style="margin-bottom:8px;font-weight:600;color:var(--ink);">Histórico de uso</div>
+      <ul class="history-list" id="d_history"><li>Nenhum uso registrado ainda.</li></ul>
+    </div>
+    <div class="modal-footer" style="justify-content:space-between;">
+      <button class="btn btn-ghost danger-text" onclick="excluirMedicamento()">Excluir medicamento</button>
+      <button class="btn btn-ghost" onclick="editarAtual()">Editar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============ CONFIG ============ */
+const FIREBASE_URL = "https://medicos-andrey-default-rtdb.firebaseio.com";
+const BASE = FIREBASE_URL + "/farmacinha";
+
+const NECESSIDADES = [
+  "Dor de cabeça","Dor de barriga","Febre","Gripe/Resfriado","Alergia",
+  "Dor muscular","Digestão/Azia","Pressão alta","Diabetes","Colesterol",
+  "Ansiedade/Sono","Antibiótico","Vitamina/Suplemento","Ferimento/Curativo","Outro"
+];
+
+/* ============ STATE ============ */
+let medicamentos = {};
+let usos = {};
+let filtroTexto = "";
+let filtroTag = null;
+let tagsSelecionadasForm = new Set();
+let detalheAtualId = null;
+
+/* ============ PESSOA ============ */
+function getPessoa(){ return localStorage.getItem('farmacinha_pessoa') || null; }
+function setPessoa(nome){ localStorage.setItem('farmacinha_pessoa', nome); document.getElementById('personName').textContent = nome; }
+function trocarPessoa(){
+  const nome = prompt("Quem é você?", getPessoa() || "");
+  if(nome && nome.trim()) setPessoa(nome.trim());
+}
+(function initPessoa(){
+  let p = getPessoa();
+  if(!p){
+    p = prompt("Bem-vindo(a) à Farmacinha! Como você se chama?");
+    if(!p || !p.trim()) p = "Alguém da casa";
+    setPessoa(p.trim());
+  } else {
+    document.getElementById('personName').textContent = p;
+  }
+})();
+
+/* ============ TOAST ============ */
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+/* ============ FIREBASE HELPERS ============ */
+async function fbGet(path){
+  const r = await fetch(`${BASE}/${path}.json`);
+  if(!r.ok) throw new Error('Erro ao ler '+path);
+  return r.json();
+}
+async function fbPost(path, data){
+  const r = await fetch(`${BASE}/${path}.json`,{method:'POST',body:JSON.stringify(data)});
+  return r.json();
+}
+async function fbPatch(path, data){
+  const r = await fetch(`${BASE}/${path}.json`,{method:'PATCH',body:JSON.stringify(data)});
+  return r.json();
+}
+async function fbPut(path, data){
+  const r = await fetch(`${BASE}/${path}.json`,{method:'PUT',body:JSON.stringify(data)});
+  return r.json();
+}
+async function fbDelete(path){
+  await fetch(`${BASE}/${path}.json`,{method:'DELETE'});
+}
+
+/* ============ LOAD ============ */
+async function loadAll(){
+  document.getElementById('content').innerHTML = '<div class="loading">Carregando estoque…</div>';
+  try{
+    const [m, u] = await Promise.all([fbGet('medicamentos'), fbGet('usos')]);
+    medicamentos = m || {};
+    usos = u || {};
+  }catch(e){
+    document.getElementById('content').innerHTML = '<div class="empty"><div class="display">Não foi possível carregar</div>Verifique a conexão com o Firebase e recarregue a página.</div>';
+    return;
+  }
+  renderTagChips();
+  renderAlerts();
+  renderGrid();
+}
+
+/* ============ HELPERS ============ */
+function diasAte(dataStr){
+  if(!dataStr) return null;
+  const hoje = new Date(); hoje.setHours(0,0,0,0);
+  const alvo = new Date(dataStr+'T00:00:00');
+  return Math.round((alvo-hoje)/86400000);
+}
+function fmtData(dataStr){
+  if(!dataStr) return '—';
+  const [y,m,d] = dataStr.split('-');
+  return `${d}/${m}/${y}`;
+}
+function statusValidade(m){
+  const dias = diasAte(m.validade);
+  if(dias===null) return {level:'ok', label:'sem validade cadastrada'};
+  if(dias<0) return {level:'danger', label:`vencido há ${Math.abs(dias)}d`};
+  if(dias<=30) return {level:'warn', label:`vence em ${dias}d`};
+  return {level:'ok', label:`válido (${fmtData(m.validade)})`};
+}
+function statusEstoque(m){
+  const atual = Number(m.qtdeAtual||0);
+  const min = Number(m.estoqueMinimo||0);
+  if(atual<=0) return 'danger';
+  if(min>0 && atual<=min) return 'warn';
+  return 'ok';
+}
+function usosDoMedicamento(id){
+  return Object.entries(usos||{})
+    .filter(([k,v])=>v.medicamentoId===id)
+    .map(([k,v])=>({id:k,...v}))
+    .sort((a,b)=> (b.data||'').localeCompare(a.data||'') || (b.criadoEm||0)-(a.criadoEm||0));
+}
+
+/* ============ ALERTS ============ */
+function renderAlerts(){
+  const list = Object.entries(medicamentos).map(([id,m])=>({id,...m}));
+  const baixos = list.filter(m=>statusEstoque(m)!=='ok');
+  const vencendo = list.filter(m=>statusValidade(m).level==='warn');
+  const vencidos = list.filter(m=>statusValidade(m).level==='danger');
+
+  const el = document.getElementById('alertsRow');
+  el.innerHTML = `
+    <div class="alert-card ${baixos.length?'warn':'ok'}">
+      <div class="num">${baixos.length}</div>
+      <div class="lbl">Estoque baixo / acabando</div>
+      ${baixos.length? `<ul>${baixos.slice(0,5).map(m=>`<li>${m.nome} — restam ${m.qtdeAtual||0} ${m.unidade||''}</li>`).join('')}</ul>`:''}
+    </div>
+    <div class="alert-card ${vencidos.length?'danger':'ok'}">
+      <div class="num">${vencidos.length}</div>
+      <div class="lbl">Vencidos</div>
+      ${vencidos.length? `<ul>${vencidos.slice(0,5).map(m=>`<li>${m.nome}</li>`).join('')}</ul>`:''}
+    </div>
+    <div class="alert-card ${vencendo.length?'warn':'ok'}">
+      <div class="num">${vencendo.length}</div>
+      <div class="lbl">Vencem em 30 dias</div>
+      ${vencendo.length? `<ul>${vencendo.slice(0,5).map(m=>`<li>${m.nome} — ${statusValidade(m).label}</li>`).join('')}</ul>`:''}
+    </div>
+    <div class="alert-card">
+      <div class="num">${list.length}</div>
+      <div class="lbl">Itens cadastrados</div>
+    </div>
+  `;
+}
+
+/* ============ TAG CHIPS (filtro) ============ */
+function renderTagChips(){
+  const usados = new Set();
+  Object.values(medicamentos).forEach(m=>(m.tags||[]).forEach(t=>usados.add(t)));
+  const el = document.getElementById('tagChips');
+  const tags = [...usados].sort();
+  el.innerHTML = `<span class="chip ${filtroTag===null?'active':''}" onclick="setFiltroTag(null)">Todos</span>` +
+    tags.map(t=>`<span class="chip ${filtroTag===t?'active':''}" onclick="setFiltroTag('${t.replace(/'/g,"\\'")}')">${t}</span>`).join('');
+}
+function setFiltroTag(t){ filtroTag = t; renderTagChips(); renderGrid(); }
+
+document.getElementById('searchInput').addEventListener('input', e=>{
+  filtroTexto = e.target.value.toLowerCase().trim();
+  renderGrid();
+});
+
+/* ============ GRID ============ */
+function renderGrid(){
+  let list = Object.entries(medicamentos).map(([id,m])=>({id,...m}));
+
+  if(filtroTag) list = list.filter(m=>(m.tags||[]).includes(filtroTag));
+  if(filtroTexto){
+    list = list.filter(m=>{
+      const alvo = [m.nome, m.local, m.obs, ...(m.tags||[])].join(' ').toLowerCase();
+      return alvo.includes(filtroTexto);
+    });
+  }
+  list.sort((a,b)=> a.nome.localeCompare(b.nome));
+
+  const content = document.getElementById('content');
+  if(list.length===0){
+    content.innerHTML = `<div class="empty"><div class="display">Nada por aqui</div>${Object.keys(medicamentos).length? 'Nenhum item bate com essa busca.' : 'Cadastre o primeiro medicamento da farmacinha.'}</div>`;
+    return;
+  }
+
+  content.innerHTML = `<div class="grid">${list.map(cardHTML).join('')}</div>`;
+}
+
+function cardHTML(m){
+  const estSt = statusEstoque(m);
+  const valSt = statusValidade(m);
+  const atual = Number(m.qtdeAtual||0);
+  const comprada = Number(m.qtdeComprada||atual||1);
+  const pct = Math.max(0, Math.min(100, Math.round((atual/Math.max(comprada,1))*100)));
+  const barClass = estSt==='danger'?'danger':(estSt==='warn'?'warn':'');
+  const cardClass = estSt==='danger'||valSt.level==='danger' ? 'status-danger' : ((estSt==='warn'||valSt.level==='warn') ? 'status-warn' : '');
+
+  return `
+  <div class="card ${cardClass}">
+    <div class="card-body">
+      <h3>${escapeHtml(m.nome)}</h3>
+      <p class="desc">${escapeHtml(m.local||'local não informado')}</p>
+      <div class="tags">${(m.tags||[]).slice(0,3).map(t=>`<span class="tag">${escapeHtml(t)}</span>`).join('')}${(m.tags||[]).length>3?`<span class="tag">+${m.tags.length-3}</span>`:''}</div>
+      <div class="stock-row"><span>Estoque</span><b>${atual} ${m.unidade||''}</b></div>
+      <div class="bar"><div class="bar-fill ${barClass}" style="width:${pct}%"></div></div>
+      <div class="meta-row">
+        <span class="badge ${valSt.level}">${valSt.label}</span>
+        <span>${m.estoqueMinimo? 'mín. '+m.estoqueMinimo : ''}</span>
+      </div>
+    </div>
+    <div class="card-actions">
+      <button class="use-btn" onclick="abrirDetalhe('${m.id}')">Usar</button>
+      <button onclick="abrirDetalhe('${m.id}')">Detalhes</button>
+      <button onclick="abrirFormEdicao('${m.id}')">Editar</button>
+    </div>
+  </div>`;
+}
+function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+/* ============ FORM (novo/editar) ============ */
+function renderTagPickerForm(){
+  const el = document.getElementById('f_tags');
+  el.innerHTML = NECESSIDADES.map(t=>
+    `<span class="chip ${tagsSelecionadasForm.has(t)?'active':''}" onclick="toggleTagForm('${t}')">${t}</span>`
+  ).join('');
+}
+function toggleTagForm(t){
+  if(tagsSelecionadasForm.has(t)) tagsSelecionadasForm.delete(t); else tagsSelecionadasForm.add(t);
+  renderTagPickerForm();
+}
+document.getElementById('f_tag_custom').addEventListener('keydown', e=>{
+  if(e.key==='Enter'){
+    e.preventDefault();
+    const v = e.target.value.trim();
+    if(v){ tagsSelecionadasForm.add(v); renderTagPickerForm(); e.target.value=''; }
+  }
+});
+
+function abrirFormNovo(){
+  document.getElementById('formTitle').textContent = 'Novo medicamento';
+  ['f_id','f_nome','f_qtdeComprada','f_qtdeAtual','f_estoqueMinimo','f_dataCompra','f_validade','f_valor','f_local','f_obs']
+    .forEach(id=>document.getElementById(id).value='');
+  document.getElementById('f_unidade').value='comprimidos';
+  tagsSelecionadasForm = new Set();
+  renderTagPickerForm();
+  abrirModal('formOverlay');
+}
+function abrirFormEdicao(id){
+  const m = medicamentos[id];
+  document.getElementById('formTitle').textContent = 'Editar medicamento';
+  document.getElementById('f_id').value = id;
+  document.getElementById('f_nome').value = m.nome||'';
+  document.getElementById('f_qtdeComprada').value = m.qtdeComprada||'';
+  document.getElementById('f_qtdeAtual').value = m.qtdeAtual||'';
+  document.getElementById('f_unidade').value = m.unidade||'comprimidos';
+  document.getElementById('f_estoqueMinimo').value = m.estoqueMinimo||'';
+  document.getElementById('f_dataCompra').value = m.dataCompra||'';
+  document.getElementById('f_validade').value = m.validade||'';
+  document.getElementById('f_valor').value = m.valor||'';
+  document.getElementById('f_local').value = m.local||'';
+  document.getElementById('f_obs').value = m.obs||'';
+  tagsSelecionadasForm = new Set(m.tags||[]);
+  renderTagPickerForm();
+  abrirModal('formOverlay');
+}
+function editarAtual(){
+  fecharModal('detailOverlay');
+  abrirFormEdicao(detalheAtualId);
+}
+
+async function salvarMedicamento(){
+  const nome = document.getElementById('f_nome').value.trim();
+  if(!nome){ toast('Dê um nome ao medicamento'); return; }
+  const id = document.getElementById('f_id').value;
+  const data = {
+    nome,
+    tags: [...tagsSelecionadasForm],
+    qtdeComprada: Number(document.getElementById('f_qtdeComprada').value)||0,
+    qtdeAtual: Number(document.getElementById('f_qtdeAtual').value)||0,
+    unidade: document.getElementById('f_unidade').value,
+    estoqueMinimo: Number(document.getElementById('f_estoqueMinimo').value)||0,
+    dataCompra: document.getElementById('f_dataCompra').value||'',
+    validade: document.getElementById('f_validade').value||'',
+    valor: Number(document.getElementById('f_valor').value)||0,
+    local: document.getElementById('f_local').value.trim(),
+    obs: document.getElementById('f_obs').value.trim(),
+  };
+  try{
+    if(id){
+      await fbPatch('medicamentos/'+id, data);
+      toast('Medicamento atualizado');
+    } else {
+      await fbPost('medicamentos', data);
+      toast('Medicamento cadastrado');
+    }
+    fecharModal('formOverlay');
+    await loadAll();
+  }catch(e){
+    toast('Erro ao salvar. Tente novamente.');
+  }
+}
+
+/* ============ DETALHE / USO ============ */
+function abrirDetalhe(id){
+  detalheAtualId = id;
+  const m = medicamentos[id];
+  document.getElementById('d_nome').textContent = m.nome;
+  document.getElementById('d_tags').innerHTML = (m.tags||[]).map(t=>`<span class="tag">${escapeHtml(t)}</span>`).join('') || '<span class="hint">sem tags</span>';
+  document.getElementById('d_obs').textContent = m.obs || '';
+  document.getElementById('d_local').textContent = m.local || '—';
+  const vs = statusValidade(m);
+  document.getElementById('d_validade').innerHTML = `${fmtData(m.validade)} <span class="badge ${vs.level}">${vs.label}</span>`;
+  document.getElementById('d_compra').textContent = `${fmtData(m.dataCompra)} · R$ ${Number(m.valor||0).toFixed(2)}`;
+  document.getElementById('d_restam').textContent = `${m.qtdeAtual||0} de ${m.qtdeComprada||0} ${m.unidade||''}`;
+  document.getElementById('d_qtdeUso').value = 1;
+  document.getElementById('d_qtdeUso').max = m.qtdeAtual||0;
+
+  const hist = usosDoMedicamento(id);
+  const histEl = document.getElementById('d_history');
+  histEl.innerHTML = hist.length ? hist.map(u=>`<li><span class="who">${escapeHtml(u.pessoa)} — ${u.qtde} ${m.unidade||''}</span><span class="when">${fmtData(u.data)}</span></li>`).join('') : '<li>Nenhum uso registrado ainda.</li>';
+
+  abrirModal('detailOverlay');
+}
+
+async function registrarUso(){
+  const id = detalheAtualId;
+  const m = medicamentos[id];
+  const qtde = Number(document.getElementById('d_qtdeUso').value)||0;
+  if(qtde<=0){ toast('Informe uma quantidade válida'); return; }
+  if(qtde > Number(m.qtdeAtual||0)){ toast('Quantidade maior que o estoque atual'); return; }
+
+  const novaQtde = Number(m.qtdeAtual||0) - qtde;
+  try{
+    await fbPatch('medicamentos/'+id, {qtdeAtual: novaQtde});
+    await fbPost('usos', {
+      medicamentoId: id,
+      pessoa: getPessoa(),
+      qtde,
+      data: new Date().toISOString().slice(0,10),
+      criadoEm: Date.now()
+    });
+    toast(`Baixa registrada: -${qtde} ${m.unidade||''}`);
+    await loadAll();
+    abrirDetalhe(id);
+    if(novaQtde<=Number(m.estoqueMinimo||0)){
+      setTimeout(()=>toast(`⚠️ ${m.nome} está acabando — restam ${novaQtde}`), 2400);
+    }
+  }catch(e){
+    toast('Erro ao registrar uso.');
+  }
+}
+
+async function excluirMedicamento(){
+  const id = detalheAtualId;
+  const m = medicamentos[id];
+  if(!confirm(`Excluir "${m.nome}" da farmacinha? O histórico de uso será mantido.`)) return;
+  try{
+    await fbDelete('medicamentos/'+id);
+    toast('Medicamento excluído');
+    fecharModal('detailOverlay');
+    await loadAll();
+  }catch(e){
+    toast('Erro ao excluir.');
+  }
+}
+
+/* ============ MODAL HELPERS ============ */
+function abrirModal(id){ document.getElementById(id).classList.add('show'); }
+function fecharModal(id){ document.getElementById(id).classList.remove('show'); }
+document.querySelectorAll('.overlay').forEach(ov=>{
+  ov.addEventListener('click', e=>{ if(e.target===ov) ov.classList.remove('show'); });
+});
+
+/* ============ INIT ============ */
+loadAll();
+</script>
+</body>
+</html>
