@@ -58,6 +58,7 @@
   .step-row:last-child{border-bottom:none;}
   .swatch{width:14px;height:14px;border-radius:3px; flex-shrink:0;}
   .sw-amarelo{background:var(--amarelo);}
+  .sw-verde{background:var(--good);}
   .sw-branco{background:var(--branco); border:1px solid #555;}
   .sw-laranja{background:var(--laranja);}
   .sw-azul{background:var(--azul);}
@@ -65,6 +66,7 @@
   .sw-roxo{background:var(--roxo);}
   .step-label{flex:1; font-size:14.5px;}
   .step-sub{color:var(--sub); font-size:12px;}
+  .step-desc{color:#6E7280; font-size:11.5px; font-style:italic; margin-top:2px;}
   input[type=checkbox]{
     width:20px;height:20px; accent-color:var(--good); cursor:pointer;
   }
@@ -116,16 +118,21 @@
   .cal-header{display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;}
   .cal-header button{background:var(--panel-2); border:1px solid var(--line); color:var(--text); border-radius:6px; padding:6px 10px; cursor:pointer;}
   .cal-header .cal-title{font-family:Georgia,serif; font-size:16px; text-transform:capitalize;}
-  .cal-grid{display:grid; grid-template-columns:repeat(7,1fr); gap:6px;}
-  .cal-dow{text-align:center; font-size:10px; color:var(--sub); text-transform:uppercase; padding-bottom:4px;}
+  .cal-months{display:grid; grid-template-columns:repeat(3,1fr); gap:18px;}
+  .cal-month-title{text-align:center; font-size:12.5px; color:var(--text); text-transform:capitalize; margin-bottom:8px; font-weight:600;}
+  .cal-grid{display:grid; grid-template-columns:repeat(7,1fr); gap:3px;}
+  .cal-dow{text-align:center; font-size:9px; color:var(--sub); text-transform:uppercase; padding-bottom:3px;}
   .cal-day{
-    aspect-ratio:1; border-radius:7px; display:flex; align-items:center; justify-content:center;
-    font-size:12px; position:relative; background:var(--panel-2); border:1px solid var(--line); color:var(--sub);
+    aspect-ratio:1; border-radius:4px; display:flex; align-items:center; justify-content:center;
+    font-size:9.5px; position:relative; background:var(--panel-2); border:1px solid var(--line); color:var(--sub);
   }
   .cal-day.empty{background:transparent; border:none;}
   .cal-day.today{outline:2px solid var(--laranja); outline-offset:1px;}
   .cal-day.skipped{background:repeating-linear-gradient(45deg,#31353F,#31353F 4px,#23262E 4px,#23262E 8px); color:var(--sub);}
   .cal-legend{display:flex; gap:14px; margin-top:12px; font-size:11px; color:var(--sub); flex-wrap:wrap;}
+  @media(max-width:700px){
+    .cal-months{grid-template-columns:1fr; gap:22px;}
+  }
   .cal-legend span{display:inline-flex; align-items:center; gap:5px;}
   .cal-legend i{width:10px;height:10px;border-radius:3px; display:inline-block;}
 
@@ -264,10 +271,10 @@
   <div class="card" style="margin-bottom:28px;">
     <div class="cal-header">
       <button id="calPrev">‹</button>
-      <div class="cal-title" id="calTitle"></div>
+      <div class="cal-title" id="calTitle">Últimos 3 meses</div>
       <button id="calNext">›</button>
     </div>
-    <div class="cal-grid" id="calGrid"></div>
+    <div class="cal-months" id="calMonths"></div>
     <div class="cal-legend">
       <span><i style="background:#3FBE7A;"></i> 100% concluído</span>
       <span><i style="background:#E8722C;"></i> parcial</span>
@@ -323,30 +330,30 @@
 const FIREBASE_DB_URL = "https://skincare-andrey-default-rtdb.firebaseio.com";
 
 const PRODUCTS = {
-  limpeza:     { label:"Limpador Antioleosidade",    sw:"sw-amarelo",  cost:54.89 },
+  limpeza:     { label:"Limpador Antioleosidade",    sw:"sw-verde",    cost:54.89 },
   protetor:    { label:"Protetor Solar FPS 60",      sw:"sw-branco",   cost:69.89 },
   vitc:        { label:"Vitamina C Gold",            sw:"sw-laranja",  cost:143.89 },
-  vichy:       { label:"Vichy Liftactiv Collagen",   sw:"sw-vermelho", cost:0 },
-  ahagel:      { label:"Creamy Gel 7% AHA",          sw:"sw-roxo",     cost:0 },
+  vichy:       { label:"Vichy Liftactiv Collagen",   sw:"sw-vermelho", cost:279 },
+  ahagel:      { label:"Creamy Gel 7% AHA",          sw:"sw-roxo",     cost:69.90 },
   retinal:     { label:"Sérum Retinal",              sw:"sw-vermelho", cost:134.89 },
   eyecream:    { label:"Creamy Eye Cream",           sw:"sw-branco",   cost:139.89 },
   calming:     { label:"Creamy Calming Cream",       sw:"sw-vermelho", cost:56.89 },
-  glicerinado: { label:"Limpador Facial Glicerinado", sw:"sw-amarelo", cost:69.89 },
+  glicerinado: { label:"Limpador Facial Glicerinado", sw:"sw-amarelo", cost:54.00 },
 };
 
 const MORNING_STEPS = [
-  {key:"limpeza",     label:"Limpador Antioleosidade", sub:"2x/dia · manhã e noite (troque pelo Glicerinado em dias sensíveis)"},
-  {key:"vitc",        label:"Vitamina C Gold", sub:"1x/dia · manhã"},
-  {key:"eyecream",    label:"Creamy Eye Cream", sub:"1x/dia · manhã, área dos olhos"},
-  {key:"protetor",    label:"Protetor Solar FPS 60", sub:"1x/dia · manhã"},
+  {key:"limpeza",     label:"Limpador Antioleosidade", sub:"2x/dia · manhã e noite (troque pelo Glicerinado em dias sensíveis)", desc:"Remove oleosidade e impurezas, prepara a pele pros ativos"},
+  {key:"vitc",        label:"Vitamina C Gold", sub:"1x/dia · manhã", desc:"Antioxidante, dá viço e uniformiza o tom da pele"},
+  {key:"eyecream",    label:"Creamy Eye Cream", sub:"1x/dia · manhã, área dos olhos", desc:"Hidrata e cuida da pele fina ao redor dos olhos"},
+  {key:"protetor",    label:"Protetor Solar FPS 60", sub:"1x/dia · manhã", desc:"Protege contra UV, previne manchas e envelhecimento"},
 ];
 const NIGHT_STEPS = [
-  {key:"limpeza",     label:"Limpador Antioleosidade", sub:"2x/dia · manhã e noite (troque pelo Glicerinado em dias sensíveis)"},
-  {key:"retinal",     label:"Sérum Retinal", sub:"2-3x/semana · alterne com o Gel AHA"},
-  {key:"ahagel",      label:"Creamy Gel 7% AHA", sub:"2-3x/semana · nas noites sem Retinal"},
-  {key:"vichy",       label:"Vichy Liftactiv Collagen", sub:"diário · noite"},
-  {key:"eyecream",    label:"Creamy Eye Cream", sub:"1x/dia · noite, área dos olhos"},
-  {key:"calming",     label:"Creamy Calming Cream", sub:"quando a pele estiver irritada/sensível"},
+  {key:"limpeza",     label:"Limpador Antioleosidade", sub:"2x/dia · manhã e noite (troque pelo Glicerinado em dias sensíveis)", desc:"Remove oleosidade e impurezas, prepara a pele pros ativos"},
+  {key:"retinal",     label:"Sérum Retinal", sub:"2-3x/semana · alterne com o Gel AHA", desc:"Renovação celular, melhora textura, poros e firmeza"},
+  {key:"ahagel",      label:"Creamy Gel 7% AHA", sub:"2-3x/semana · nas noites sem Retinal", desc:"Esfoliação química suave, uniformiza e afina a textura"},
+  {key:"vichy",       label:"Vichy Liftactiv Collagen", sub:"diário · noite", desc:"Estimula colágeno, firma e sustenta a pele"},
+  {key:"eyecream",    label:"Creamy Eye Cream", sub:"1x/dia · noite, área dos olhos", desc:"Hidrata e cuida da pele fina ao redor dos olhos"},
+  {key:"calming",     label:"Creamy Calming Cream", sub:"quando a pele estiver irritada/sensível", desc:"Acalma vermelhidão, ardência e irritação"},
 ];
 
 const MILESTONES = [
@@ -420,9 +427,10 @@ function renderChecklist(){
     return steps.map(s => {
       const checked = dayData[period]?.[s.key] ? "checked" : "";
       const sub = s.sub ? `<div class="step-sub">${s.sub}</div>` : "";
+      const desc = s.desc ? `<div class="step-desc">${s.desc}</div>` : "";
       return `<div class="step-row">
         <span class="swatch ${PRODUCTS[s.key].sw}"></span>
-        <div class="step-label">${s.label}${sub}</div>
+        <div class="step-label">${s.label}${sub}${desc}</div>
         <input type="checkbox" data-period="${period}" data-key="${s.key}" ${checked} ${skip?"disabled":""}>
       </div>`;
     }).join("");
@@ -638,10 +646,10 @@ function renderChart(){
   const dates = Object.keys(AVALIACAO).sort();
   const ctx = document.getElementById("skinChart");
   const datasets = [
-    {label:"Viço", data:dates.map(d=>AVALIACAO[d].vico), borderColor:"#E8722C", tension:.3},
-    {label:"Textura", data:dates.map(d=>AVALIACAO[d].textura), borderColor:"#D6483F", tension:.3},
-    {label:"Firmeza", data:dates.map(d=>AVALIACAO[d].firmeza), borderColor:"#3A8FD9", tension:.3},
-    {label:"Oleosidade", data:dates.map(d=>AVALIACAO[d].oleo), borderColor:"#F0C43A", tension:.3},
+    {label:"Viço", data:dates.map(d=>AVALIACAO[d].vico), borderColor:"#E8722C", tension:.3, borderWidth:2, order:4},
+    {label:"Textura", data:dates.map(d=>AVALIACAO[d].textura), borderColor:"#D6483F", tension:.3, borderWidth:2, borderDash:[6,3], order:3},
+    {label:"Firmeza", data:dates.map(d=>AVALIACAO[d].firmeza), borderColor:"#3A8FD9", tension:.3, borderWidth:3, order:1},
+    {label:"Oleosidade", data:dates.map(d=>AVALIACAO[d].oleo), borderColor:"#F0C43A", tension:.3, borderWidth:2, borderDash:[2,2], order:2},
   ];
   if(chartInstance) chartInstance.destroy();
   chartInstance = new Chart(ctx, {
@@ -722,21 +730,16 @@ function dayCompletion(dateKey){
   return Math.round((done / total) * 100);
 }
 
-function renderCalendar(){
-  const year = calViewDate.getFullYear();
-  const month = calViewDate.getMonth();
+function buildMonthHTML(year, month){
   const monthNames = ["janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];
-  document.getElementById("calTitle").textContent = `${monthNames[month]} ${year}`;
-
   const firstDay = new Date(year, month, 1);
   const startOffset = firstDay.getDay();
   const daysInMonth = new Date(year, month+1, 0).getDate();
   const today = todayKey();
-
   const dows = ["D","S","T","Q","Q","S","S"];
-  let html = dows.map(d=>`<div class="cal-dow">${d}</div>`).join("");
 
-  for(let i=0;i<startOffset;i++) html += `<div class="cal-day empty"></div>`;
+  let grid = dows.map(d=>`<div class="cal-dow">${d}</div>`).join("");
+  for(let i=0;i<startOffset;i++) grid += `<div class="cal-day empty"></div>`;
 
   for(let day=1; day<=daysInMonth; day++){
     const dateKey = `${year}-${String(month+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
@@ -756,10 +759,24 @@ function renderCalendar(){
         ? `background:#3FBE7A22; border-color:#3FBE7A; color:#3FBE7A;`
         : `background:#E8722C22; border-color:#E8722C; color:#E8722C;`;
     }
-    html += `<div class="${cls}" data-date="${dateKey}" style="${style}" title="${comp!==null && comp!=='skipped' ? comp+'%' : ''}">${content}</div>`;
+    grid += `<div class="${cls}" data-date="${dateKey}" style="${style}" title="${comp!==null && comp!=='skipped' ? comp+'%' : ''}">${content}</div>`;
   }
 
-  document.getElementById("calGrid").innerHTML = html;
+  return `<div>
+    <div class="cal-month-title">${monthNames[month]} ${year}</div>
+    <div class="cal-grid">${grid}</div>
+  </div>`;
+}
+
+function renderCalendar(){
+  const base = calViewDate;
+  const monthsWrap = document.getElementById("calMonths");
+  let html = "";
+  for(let offset=-2; offset<=0; offset++){
+    const d = new Date(base.getFullYear(), base.getMonth()+offset, 1);
+    html += buildMonthHTML(d.getFullYear(), d.getMonth());
+  }
+  monthsWrap.innerHTML = html;
 
   document.querySelectorAll('.cal-day[data-date]').forEach(el=>{
     el.addEventListener("click", ()=>{
