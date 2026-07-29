@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Casa 133 · Diretório de Apps</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #1B2027;
+    --bg-soft: #232A33;
+    --plate: #DCD3C3;
+    --plate-soft: #E7E0D3;
+    --ink: #1B2027;
+    --ink-soft: #55534B;
+    --brass: #B8935A;
+    --brass-bright: #D2AD73;
+    --teal: #2F5D62;
+    /* Troque este gradiente por: background-image: url('sua-foto.jpg'); quando tiver a foto da casa */
+    --bg-photo: radial-gradient(circle at 20% 15%, rgba(184,147,90,0.10), transparent 45%),
+                radial-gradient(circle at 80% 85%, rgba(47,93,98,0.14), transparent 50%);
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    background: var(--bg-photo), radial-gradient(ellipse at top, var(--bg-soft), var(--bg) 65%);
+    background-attachment: fixed;
+    background-size: cover;
+    color: var(--plate);
+    font-family: 'IBM Plex Sans', sans-serif;
+    min-height:100vh;
+    padding: 64px 24px 80px;
+  }
+  .wrap{ max-width: 880px; margin: 0 auto; }
+
+  .plaque{
+    background: linear-gradient(155deg, var(--plate-soft), var(--plate));
+    border-radius: 14px;
+    padding: 40px 36px 34px;
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.5) inset,
+      0 -8px 18px rgba(0,0,0,0.18) inset,
+      0 20px 40px rgba(0,0,0,0.35);
+    position: relative;
+    overflow:hidden;
+    animation: rise .6s ease both;
+  }
+  .plaque::before{
+    content:"";
+    position:absolute; inset:0;
+    background: repeating-linear-gradient(115deg, rgba(0,0,0,0.02) 0 2px, transparent 2px 6px);
+    pointer-events:none;
+  }
+  .plaque-row{ display:flex; align-items:flex-start; justify-content:space-between; gap:16px; }
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--teal);
+    display:flex; align-items:center; gap:10px;
+  }
+  .eyebrow::before{ content:""; width:18px; height:1px; background: var(--teal); }
+  h1{
+    font-family:'Fraunces', serif;
+    font-weight:700;
+    font-size: clamp(38px, 6vw, 58px);
+    color: var(--ink);
+    letter-spacing: -0.01em;
+    margin-top: 10px;
+  }
+  .sub{
+    font-size: 15px;
+    color: var(--ink-soft);
+    max-width: 46ch;
+    margin-top: 10px;
+    line-height: 1.5;
+  }
+  .add-btn{
+    flex-shrink:0;
+    width: 44px; height:44px;
+    border-radius: 10px;
+    border: none;
+    background: linear-gradient(155deg, var(--brass-bright), var(--brass));
+    color: var(--ink);
+    font-size: 22px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.1) inset;
+    transition: transform .15s ease;
+  }
+  .add-btn:hover{ transform: scale(1.06); }
+  .add-btn:active{ transform: scale(0.96); }
+  .add-btn:disabled{ opacity:0.5; cursor:not-allowed; }
+
+  .grid{
+    margin-top: 36px;
+    display:grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
+    min-height: 60px;
+  }
+  .sync-note{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    color: var(--brass-bright);
+    margin-top: 14px;
+    display:none;
+  }
+  .sync-note.show{ display:block; }
+  .card{
+    background: var(--bg-soft);
+    border: 1px solid rgba(216,203,179,0.12);
+    border-radius: 12px;
+    padding: 22px 20px 20px;
+    display:flex;
+    flex-direction:column;
+    gap: 14px;
+    text-decoration:none;
+    color: inherit;
+    position: relative;
+    animation: rise .6s ease both;
+    transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+    cursor: grab;
+  }
+  .card.dragging{ opacity: 0.4; cursor: grabbing; }
+  .card.drag-over{ border-color: var(--brass-bright); box-shadow: 0 0 0 1px var(--brass-bright) inset; }
+
+  .card:hover{
+    transform: translateY(1px) scale(0.99);
+    border-color: rgba(184,147,90,0.5);
+    box-shadow: 0 0 0 1px rgba(184,147,90,0.25) inset, 0 10px 24px rgba(0,0,0,0.3);
+  }
+  .card:focus-visible{
+    outline: 2px solid var(--brass-bright);
+    outline-offset: 3px;
+  }
+
+  .card-top{ display:flex; align-items:center; justify-content:space-between; }
+  .idx{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--brass-bright);
+    letter-spacing: 0.08em;
+    display:flex; align-items:center; gap:6px;
+  }
+  .drag-handle{ opacity:0.5; font-size:13px; letter-spacing:2px; }
+  .icon{
+    width: 40px; height:40px;
+    border-radius: 10px;
+    background: radial-gradient(circle at 30% 30%, var(--brass-bright), var(--brass) 70%);
+    display:flex; align-items:center; justify-content:center;
+    font-size: 19px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.08) inset;
+  }
+  .card h2{
+    font-family:'Fraunces', serif;
+    font-weight: 600;
+    font-size: 21px;
+    color: var(--plate);
+  }
+  .card p{
+    font-size: 13.5px;
+    line-height: 1.5;
+    color: #A9A296;
+  }
+  .card-bottom{ display:flex; align-items:center; justify-content:space-between; margin-top:auto; }
+  .go{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 11.5px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--teal);
+    display:flex; align-items:center; gap:6px;
+    text-decoration:none;
+  }
+  .go svg{ width:12px; height:12px; transition: transform .18s ease; }
+  .card:hover .go svg{ transform: translateX(3px); }
+  .del-btn{
+    background:none; border:none; color:#6b6a63; cursor:pointer; font-size:16px;
+    line-height:1; padding:2px 4px; border-radius:4px;
+  }
+  .del-btn:hover{ color:#c46a5a; }
+
+  footer{
+    text-align:center;
+    margin-top: 48px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    color: #8b8878;
+    text-transform: uppercase;
+  }
+
+  .overlay{
+    display:none; position:fixed; inset:0; background: rgba(10,12,15,0.6);
+    align-items:center; justify-content:center; padding:20px; z-index:10;
+  }
+  .overlay.open{ display:flex; }
+  .modal{
+    background: var(--plate-soft); color: var(--ink);
+    border-radius: 14px; padding: 28px; width: 100%; max-width: 420px;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+  }
+  .modal h3{ font-family:'Fraunces', serif; font-size:22px; margin-bottom:16px; }
+  .field{ margin-bottom:14px; }
+  .field label{ display:block; font-size:11px; text-transform:uppercase; letter-spacing:0.06em; color:var(--ink-soft); margin-bottom:5px; font-family:'IBM Plex Mono', monospace; }
+  .field input, .field textarea{
+    width:100%; padding:9px 11px; border-radius:8px; border:1px solid rgba(27,32,39,0.18);
+    font-family:'IBM Plex Sans', sans-serif; font-size:14px; background:#fff;
+  }
+  .field textarea{ resize:vertical; min-height:56px; }
+  .modal-actions{ display:flex; gap:10px; margin-top:18px; }
+  .btn{ flex:1; padding:10px; border-radius:8px; border:none; font-weight:600; cursor:pointer; font-size:13px; }
+  .btn-primary{ background: linear-gradient(155deg, var(--brass-bright), var(--brass)); color: var(--ink); }
+  .btn-primary:disabled{ opacity:0.6; cursor:not-allowed; }
+  .btn-secondary{ background: transparent; color: var(--ink-soft); border:1px solid rgba(27,32,39,0.18); }
+
+  @keyframes rise{
+    from{ opacity:0; transform: translateY(10px); }
+    to{ opacity:1; transform: translateY(0); }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .plaque, .card{ animation: none; }
+    .card{ transition:none; }
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="plaque">
+      <div class="plaque-row">
+        <div>
+          <div class="eyebrow">Diretório digital</div>
+          <h1>Casa 133</h1>
+          <p class="sub">Painel de acesso aos apps da casa. Toque em um cartão para abrir, arraste para reordenar.</p>
+        </div>
+        <button class="add-btn" id="openModal" title="Adicionar app" aria-label="Adicionar app">+</button>
+      </div>
+    </div>
+
+    <div class="grid" id="grid"></div>
+    <div class="sync-note" id="syncNote">Sincronizando…</div>
+
+    <footer>Casa 133 · alterações ficam salvas e visíveis para todos</footer>
+  </div>
+
+  <div class="overlay" id="overlay">
+    <div class="modal">
+      <h3>Novo card</h3>
+      <div class="field"><label>Título</label><input id="f-title" placeholder="Ex: Farmacinha"></div>
+      <div class="field"><label>Descrição curta</label><textarea id="f-desc" placeholder="Do que se trata"></textarea></div>
+      <div class="field"><label>Link</label><input id="f-url" placeholder="https://..."></div>
+      <div class="field"><label>Ícone (emoji)</label><input id="f-icon" placeholder="💊" maxlength="4"></div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" id="cancelModal">Cancelar</button>
+        <button class="btn btn-primary" id="saveModal">Adicionar</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+  // Reaproveita o Firebase Realtime Database já usado nos outros apps da casa (via REST, sem SDK)
+  const DB_URL = 'https://medicos-andrey-default-rtdb.firebaseio.com/casa133_apps.json';
+
+  const defaultApps = [
+    {
+      title: "Farmacinha",
+      desc: "Estoque de remédios da casa: validade, quantidade, para que serve e uso por pessoa.",
+      icon: "💊",
+      url: "https://djpartyman2015-ui.github.io/Links-Ativos/farmacinha.html"
+    },
+    {
+      title: "Contas da Casa",
+      desc: "Tracker 133 — planilha de controle das contas da casa.",
+      icon: "🧾",
+      url: "https://ibm-my.sharepoint.com/:x:/r/personal/acappa_br_ibm_com/Documents/Tracker%20133/Tracker%20133.xlsx?d=w85443fd811a346ba810f3a3a05d597c6&csf=1&web=1&e=ZRHNcc"
+    }
+  ];
+
+  let apps = [];
+  const grid = document.getElementById('grid');
+  const syncNote = document.getElementById('syncNote');
+  const addBtn = document.getElementById('openModal');
+  let dragSrcIndex = null;
+
+  function showSync(msg){ syncNote.textContent = msg; syncNote.classList.add('show'); }
+  function hideSync(){ syncNote.classList.remove('show'); }
+
+  async function fetchApps(){
+    try{
+      const res = await fetch(DB_URL);
+      const data = await res.json();
+      if(Array.isArray(data) && data.length) return data;
+      if(data && typeof data === 'object'){
+        // firebase pode retornar objeto indexado em vez de array
+        const arr = Object.values(data).filter(Boolean);
+        if(arr.length) return arr;
+      }
+      // banco vazio: semeia com os defaults
+      await persistApps(defaultApps);
+      return defaultApps.slice();
+    }catch(e){
+      console.error('Falha ao carregar do Firebase:', e);
+      showSync('Sem conexão — mostrando dados locais');
+      return defaultApps.slice();
+    }
+  }
+
+  async function persistApps(list){
+    try{
+      await fetch(DB_URL, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(list)
+      });
+      hideSync();
+    }catch(e){
+      console.error('Falha ao salvar no Firebase:', e);
+      showSync('Não foi possível salvar — verifique a conexão');
+    }
+  }
+
+  function render(){
+    grid.innerHTML = '';
+    apps.forEach((app, i) => {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.draggable = true;
+      card.dataset.index = i;
+      card.innerHTML = `
+        <div class="card-top">
+          <span class="idx"><span class="drag-handle">⠿</span>${String(i+1).padStart(2,'0')}</span>
+          <div class="icon">${app.icon || '🔗'}</div>
+        </div>
+        <h2>${app.title}</h2>
+        <p>${app.desc}</p>
+        <div class="card-bottom">
+          <a class="go" href="${app.url}" target="_blank" rel="noopener noreferrer">Abrir app
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+          </a>
+          <button class="del-btn" title="Remover" data-i="${i}">✕</button>
+        </div>
+      `;
+
+      card.addEventListener('dragstart', () => { dragSrcIndex = i; card.classList.add('dragging'); });
+      card.addEventListener('dragend', () => card.classList.remove('dragging'));
+      card.addEventListener('dragover', e => { e.preventDefault(); card.classList.add('drag-over'); });
+      card.addEventListener('dragleave', () => card.classList.remove('drag-over'));
+      card.addEventListener('drop', async e => {
+        e.preventDefault();
+        card.classList.remove('drag-over');
+        const destIndex = i;
+        if(dragSrcIndex === null || dragSrcIndex === destIndex) return;
+        const moved = apps.splice(dragSrcIndex, 1)[0];
+        apps.splice(destIndex, 0, moved);
+        render();
+        showSync('Salvando ordem…');
+        await persistApps(apps);
+      });
+
+      card.querySelector('.del-btn').addEventListener('click', async e => {
+        e.preventDefault(); e.stopPropagation();
+        apps.splice(i, 1);
+        render();
+        showSync('Removendo…');
+        await persistApps(apps);
+      });
+
+      grid.appendChild(card);
+    });
+  }
+
+  async function init(){
+    addBtn.disabled = true;
+    showSync('Carregando…');
+    apps = await fetchApps();
+    render();
+    hideSync();
+    addBtn.disabled = false;
+  }
+  init();
+
+  const overlay = document.getElementById('overlay');
+  const saveBtn = document.getElementById('saveModal');
+  document.getElementById('openModal').addEventListener('click', () => overlay.classList.add('open'));
+  document.getElementById('cancelModal').addEventListener('click', () => overlay.classList.remove('open'));
+  overlay.addEventListener('click', e => { if(e.target === overlay) overlay.classList.remove('open'); });
+
+  saveBtn.addEventListener('click', async () => {
+    const title = document.getElementById('f-title').value.trim();
+    const desc = document.getElementById('f-desc').value.trim();
+    const url = document.getElementById('f-url').value.trim();
+    const icon = document.getElementById('f-icon').value.trim() || '🔗';
+    if(!title || !url) { alert('Preencha ao menos título e link.'); return; }
+    apps.push({ title, desc, url, icon });
+    render();
+    document.getElementById('f-title').value = '';
+    document.getElementById('f-desc').value = '';
+    document.getElementById('f-url').value = '';
+    document.getElementById('f-icon').value = '';
+    overlay.classList.remove('open');
+    saveBtn.disabled = true;
+    showSync('Salvando…');
+    await persistApps(apps);
+    saveBtn.disabled = false;
+  });
+</script>
+</body>
+</html>
