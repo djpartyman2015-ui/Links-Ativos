@@ -396,6 +396,29 @@ async function dbSet(key, value){
   }
 }
 
+// Salva só UM item dentro de uma chave (ex: uma foto específica), evitando reenviar tudo.
+// Faz timeout em 20s pra nunca travar o botão pra sempre.
+async function dbSetPath(key, subKey, value, localFullObject){
+  localStorage.setItem(key, JSON.stringify(localFullObject)); // espelha local completo
+  if(FIREBASE_DB_URL){
+    const controller = new AbortController();
+    const timeout = setTimeout(()=>controller.abort(), 20000);
+    try{
+      const res = await fetch(`${FIREBASE_DB_URL}/${key}/${subKey}.json`, {
+        method:"PUT", body: JSON.stringify(value), signal: controller.signal
+      });
+      clearTimeout(timeout);
+      if(!res.ok) throw new Error("Firebase respondeu status " + res.status);
+      return true;
+    }catch(e){
+      clearTimeout(timeout);
+      console.error("Firebase SET (path) falhou:", e);
+      throw e;
+    }
+  }
+  return true;
+}
+
 function todayKey(){
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
@@ -907,9 +930,18 @@ function renderPhotoUpload(){
     if(!pendingPhotoDataUrl) return;
     const d = dateInput.value;
     PHOTOS[d] = pendingPhotoDataUrl;
+    saveBtn.disabled = true;
     saveBtn.textContent = "Salvando...";
-    await dbSet("skincare_photos", PHOTOS);
-    saveBtn.textContent = "Salvar foto";
+    try{
+      await dbSetPath("skincare_photos", d, pendingPhotoDataUrl, PHOTOS);
+      saveBtn.textContent = "Salvo ✓";
+    }catch(e){
+      saveBtn.textContent = "Erro ao salvar — toque pra tentar de novo";
+      saveBtn.disabled = false;
+      return;
+    }
+    saveBtn.disabled = false;
+    setTimeout(()=>{ saveBtn.textContent = "Salvar foto"; }, 1500);
     renderComparison();
     renderTimeline();
     refreshView();
