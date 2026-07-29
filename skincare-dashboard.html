@@ -186,6 +186,16 @@
     </div>
   </div>
 
+  <div class="card" style="margin-bottom:20px; display:none; border-color:#D6483F;" id="pauseBanner">
+    <div style="display:flex; gap:10px; align-items:flex-start;">
+      <span style="font-size:18px;">☀️</span>
+      <div>
+        <div style="font-size:13.5px; color:#D6483F; font-weight:600; margin-bottom:2px;">Pausa programada</div>
+        <div style="font-size:13px; color:var(--sub);" id="pauseBannerText"></div>
+      </div>
+    </div>
+  </div>
+
   <div class="grid" style="grid-template-columns:1fr 1fr;">
     <div class="card" id="checklistAnchor">
       <h3>☀️ Checklist Manhã</h3>
@@ -397,6 +407,15 @@ let CONFIG = {};
 let NOTES = {}; // { "2026-07-07": "texto da observação" }
 let selectedDate = todayKey();
 
+const PAUSES = [
+  { start:"2026-08-13", end:"2026-08-27", productKeys:["retinal","ahagel"],
+    reason:"Viagem pro Caribe (17-24/08) com sol forte — Retinal e AHA pausados por fotossensibilidade. Pausa de 13/08 a 27/08 (antes e depois da viagem)." }
+];
+
+function activePauseForDate(dateStr){
+  return PAUSES.find(p => dateStr >= p.start && dateStr <= p.end) || null;
+}
+
 function renderNotes(){
   const t = selectedDate;
   document.getElementById("notesInput").value = NOTES[t] || "";
@@ -420,20 +439,31 @@ function renderChecklist(){
   const dayData = CHECKLIST[t] || {manha:{}, noite:{}};
   const skipManha = !!dayData.skippedManha;
   const skipNoite = !!dayData.skippedNoite;
+  const pause = activePauseForDate(t);
 
   const banner = document.getElementById("editingBanner");
   banner.style.display = isToday ? "none" : "block";
   if(!isToday) document.getElementById("editingDateLabel").textContent = t;
 
+  const pauseBanner = document.getElementById("pauseBanner");
+  if(pause){
+    pauseBanner.style.display = "block";
+    document.getElementById("pauseBannerText").textContent = pause.reason;
+  } else {
+    pauseBanner.style.display = "none";
+  }
+
   const buildList = (steps, period, skip) => {
     return steps.map(s => {
       const checked = dayData[period]?.[s.key] ? "checked" : "";
+      const paused = pause && pause.productKeys.includes(s.key);
       const sub = s.sub ? `<div class="step-sub">${s.sub}</div>` : "";
       const desc = s.desc ? `<div class="step-desc">${s.desc}</div>` : "";
-      return `<div class="step-row">
+      const pausedNote = paused ? `<div class="step-desc" style="color:#D6483F;">⏸ pausado (viagem)</div>` : "";
+      return `<div class="step-row" style="${paused ? 'opacity:.5;' : ''}">
         <span class="swatch ${PRODUCTS[s.key].sw}"></span>
-        <div class="step-label">${s.label}${sub}${desc}</div>
-        <input type="checkbox" data-period="${period}" data-key="${s.key}" ${checked} ${skip?"disabled":""}>
+        <div class="step-label">${s.label}${sub}${desc}${pausedNote}</div>
+        <input type="checkbox" data-period="${period}" data-key="${s.key}" ${checked} ${(skip||paused)?"disabled":""}>
       </div>`;
     }).join("");
   };
