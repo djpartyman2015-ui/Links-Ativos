@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Manutenção 133 — Punch List</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#12171D;
+    --panel:#1B222A;
+    --panel-alt:#212A33;
+    --border:#2C3641;
+    --text:#E9ECEF;
+    --muted:#8B96A3;
+    --flag:#E8792B;
+    --flag-dim:#5A3E28;
+    --ok:#4FB6A8;
+    --ok-dim:#26443F;
+    --danger:#D9584C;
+    --grid: rgba(255,255,255,0.035);
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased;}
+  ::selection{background:var(--flag);color:#12171D;}
+
+  header{
+    position:relative;
+    padding:44px 28px 34px;
+    background:
+      linear-gradient(180deg, rgba(18,23,29,0) 0%, var(--bg) 92%),
+      repeating-linear-gradient(0deg, var(--grid) 0px, var(--grid) 1px, transparent 1px, transparent 28px),
+      repeating-linear-gradient(90deg, var(--grid) 0px, var(--grid) 1px, transparent 1px, transparent 28px),
+      var(--panel);
+    border-bottom:1px solid var(--border);
+    overflow:hidden;
+  }
+  .eyebrow{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11.5px; letter-spacing:.18em; color:var(--flag); text-transform:uppercase;
+    display:flex; align-items:center; gap:8px;
+  }
+  .eyebrow svg{width:16px;height:16px;flex-shrink:0;}
+  h1{
+    font-family:'Space Grotesk',sans-serif; font-weight:700;
+    font-size:clamp(30px,4.4vw,44px); margin:8px 0 4px; letter-spacing:-.01em;
+  }
+  header p.sub{color:var(--muted); margin:0 0 26px; font-size:14.5px; max-width:560px;}
+
+  .stats{display:flex; gap:14px; flex-wrap:wrap;}
+  .stat{
+    background:var(--panel-alt); border:1px solid var(--border); border-radius:10px;
+    padding:14px 18px; min-width:150px;
+  }
+  .stat .n{font-family:'Space Grotesk',sans-serif; font-size:26px; font-weight:700;}
+  .stat .l{font-size:11.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.08em; margin-top:2px;}
+  .stat.flag .n{color:var(--flag);}
+  .stat.ok .n{color:var(--ok);}
+
+  main{max-width:980px; margin:0 auto; padding:26px 28px 80px;}
+
+  .toolbar{
+    display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:20px;
+  }
+  .toolbar input[type=search]{
+    flex:1; min-width:180px; background:var(--panel); border:1px solid var(--border); color:var(--text);
+    padding:10px 13px; border-radius:8px; font-size:14px; font-family:'Inter',sans-serif;
+  }
+  select{
+    background:var(--panel); border:1px solid var(--border); color:var(--text);
+    padding:10px 12px; border-radius:8px; font-size:13.5px; font-family:'Inter',sans-serif;
+  }
+  .btn{
+    border:none; border-radius:8px; padding:10px 16px; font-size:14px; font-weight:600;
+    cursor:pointer; font-family:'Inter',sans-serif; transition:opacity .15s;
+  }
+  .btn:hover{opacity:.88;}
+  .btn-primary{background:var(--flag); color:#191008;}
+  .btn-ghost{background:var(--panel-alt); color:var(--text); border:1px solid var(--border);}
+  .btn-icon{background:transparent; border:none; color:var(--muted); cursor:pointer; padding:6px; border-radius:6px;}
+  .btn-icon:hover{color:var(--text); background:var(--panel-alt);}
+
+  .sync{font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--muted); display:flex; align-items:center; gap:6px;}
+  .dot{width:7px;height:7px;border-radius:50%; background:var(--ok);}
+  .dot.busy{background:var(--flag); animation:pulse 1s infinite;}
+  @keyframes pulse{50%{opacity:.3;}}
+
+  .row{
+    display:flex; gap:0; background:var(--panel); border:1px solid var(--border); border-radius:10px;
+    margin-bottom:10px; overflow:hidden; transition:border-color .15s;
+  }
+  .row:hover{border-color:#3A4552;}
+  .row.done{opacity:.55;}
+
+  .flagtag{
+    flex-shrink:0; width:54px; display:flex; align-items:center; justify-content:center;
+    background:var(--flag-dim); color:var(--flag); font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:15px;
+    position:relative;
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%, 14px 50%);
+  }
+  .row.done .flagtag{background:var(--ok-dim); color:var(--ok);}
+  .flagtag.na{color:var(--muted); background:#242C34; font-size:10px;}
+
+  .rowbody{flex:1; padding:14px 18px 14px 22px; min-width:0;}
+  .rowtop{display:flex; justify-content:space-between; align-items:flex-start; gap:14px;}
+  .servico{font-size:15px; font-weight:600; line-height:1.35;}
+  .row.done .servico{text-decoration:line-through; text-decoration-color:var(--muted);}
+  .meta{display:flex; gap:14px; margin-top:6px; flex-wrap:wrap; font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--muted);}
+  .meta .preco{color:var(--text);}
+  .pill{
+    font-family:'IBM Plex Mono',monospace; font-size:10.5px; text-transform:uppercase; letter-spacing:.06em;
+    padding:3px 9px; border-radius:20px; white-space:nowrap; border:1px solid var(--border); color:var(--muted);
+  }
+  .pill.pend{color:var(--flag); border-color:var(--flag-dim);}
+  .pill.done{color:var(--ok); border-color:var(--ok-dim);}
+
+  .historico{
+    margin-top:8px; font-size:13px; color:var(--muted); line-height:1.5; white-space:pre-wrap;
+    border-top:1px dashed var(--border); padding-top:8px; display:none;
+  }
+  .historico.open{display:block;}
+
+  .actions{display:flex; gap:2px; flex-shrink:0;}
+
+  .empty{text-align:center; padding:60px 20px; color:var(--muted);}
+  .empty svg{width:40px;height:40px;margin-bottom:12px;opacity:.5;}
+
+  /* modal */
+  .overlay{
+    position:fixed; inset:0; background:rgba(10,13,17,.7); display:none; align-items:flex-start; justify-content:center;
+    padding:40px 16px; overflow-y:auto; z-index:20;
+  }
+  .overlay.open{display:flex;}
+  .modal{
+    background:var(--panel); border:1px solid var(--border); border-radius:12px; width:100%; max-width:480px; padding:26px;
+  }
+  .modal h2{font-family:'Space Grotesk',sans-serif; margin:0 0 18px; font-size:20px;}
+  .field{margin-bottom:14px;}
+  .field label{display:block; font-size:12px; color:var(--muted); margin-bottom:6px; text-transform:uppercase; letter-spacing:.05em;}
+  .field input, .field textarea{
+    width:100%; background:var(--panel-alt); border:1px solid var(--border); color:var(--text);
+    padding:10px 12px; border-radius:8px; font-size:14px; font-family:'Inter',sans-serif;
+  }
+  .field textarea{min-height:70px; resize:vertical; font-family:'IBM Plex Mono',monospace; font-size:12.5px;}
+  .field-row{display:flex; gap:12px;}
+  .field-row .field{flex:1;}
+  .check{display:flex; align-items:center; gap:8px; margin-bottom:16px;}
+  .check input{width:16px; height:16px;}
+  .modal-actions{display:flex; justify-content:space-between; margin-top:20px; gap:10px;}
+
+  @media(max-width:560px){
+    header{padding:32px 18px 26px;} main{padding:20px 16px 60px;}
+    .flagtag{width:42px; font-size:13px;}
+    .rowbody{padding:12px 14px;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v9h14v-9"/><path d="M9.5 19v-5.5h5V19"/></svg>
+    PUNCH LIST · CASA 133
+  </div>
+  <h1>Manutenção da Casa</h1>
+  <p class="sub">Lista viva de reparos, prioridades e valores estimados — atualizada por quem chegar primeiro.</p>
+  <div class="stats">
+    <div class="stat flag"><div class="n" id="statPend">–</div><div class="l">Pendentes</div></div>
+    <div class="stat"><div class="n" id="statValor">–</div><div class="l">Estimado em aberto</div></div>
+    <div class="stat ok"><div class="n" id="statDone">–</div><div class="l">Concluídos</div></div>
+  </div>
+</header>
+
+<main>
+  <div class="toolbar">
+    <input type="search" id="search" placeholder="Buscar serviço...">
+    <select id="filterStatus">
+      <option value="todos">Todos os status</option>
+      <option value="pendente">Só pendentes</option>
+      <option value="concluido">Só concluídos</option>
+    </select>
+    <select id="sortBy">
+      <option value="prioridade">Ordenar: prioridade</option>
+      <option value="preco">Ordenar: preço</option>
+      <option value="nome">Ordenar: nome (A-Z)</option>
+      <option value="data">Ordenar: mais recente</option>
+    </select>
+    <button class="btn btn-primary" id="btnAdd">+ Novo serviço</button>
+  </div>
+
+  <div class="sync"><span class="dot" id="syncDot"></span><span id="syncText">conectando...</span></div>
+  <br>
+
+  <div id="list"></div>
+</main>
+
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <h2 id="modalTitle">Novo serviço</h2>
+    <div class="field"><label>Serviço</label><input id="fServico" type="text" placeholder="Ex: Pintura da fachada"></div>
+    <div class="field-row">
+      <div class="field"><label>Prioridade (1 = mais urgente)</label><input id="fPrioridade" type="number" min="1" placeholder="opcional"></div>
+      <div class="field"><label>Preço estimado (R$)</label><input id="fPreco" type="number" min="0" step="0.01" placeholder="0,00"></div>
+    </div>
+    <div class="field"><label>Realizado em</label><input id="fRealizado" type="text" placeholder="dd/mm/aa — deixe vazio se pendente"></div>
+    <div class="check"><input type="checkbox" id="fConcluido"><label for="fConcluido" style="margin:0; text-transform:none; letter-spacing:0; color:var(--text); font-size:14px;">Marcar como concluído</label></div>
+    <div class="field"><label>Histórico / observações</label><textarea id="fHistorico" placeholder="Anotações, fornecedores, cotações..."></textarea></div>
+    <div class="field"><label>Seu nome (fica registrado na última edição)</label><input id="fEditor" type="text" placeholder="Ex: Andrey"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="btnDelete" style="display:none; color:var(--danger); border-color:#4A2A26;">Excluir</button>
+      <div style="flex:1"></div>
+      <button class="btn btn-ghost" id="btnCancel">Cancelar</button>
+      <button class="btn btn-primary" id="btnSave">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const DB_URL = "https://medicos-andrey-default-rtdb.firebaseio.com/manutencao133.json";
+let items = {};
+let editingId = null;
+
+const seed = [
+ {servico:"Pintura Fundo da casa", prioridade:null, preco:800, realizadoEm:"", historico:"", concluido:false},
+ {servico:"Lavar Cortinas da Sala e Sala de Jantar", prioridade:null, preco:600, realizadoEm:"", historico:"", concluido:false},
+ {servico:"Ar da sala", prioridade:null, preco:150, realizadoEm:"28/01", historico:"Eduardo", concluido:true},
+ {servico:"Pintura Area Gourmet", prioridade:null, preco:700, realizadoEm:"", historico:"", concluido:false},
+ {servico:"Gesso da Garagem", prioridade:null, preco:300, realizadoEm:"", historico:"", concluido:false},
+ {servico:"Arrumar madeira de cima da porta do banheiro", prioridade:null, preco:0, realizadoEm:"17/01/25", historico:"Chamar a Porto junto pra arrumar o gavetão", concluido:true},
+ {servico:"Pintar de branco o entorno do interruptor do escritório", prioridade:null, preco:null, realizadoEm:"", historico:"", concluido:false},
+ {servico:"Limpeza do ar-condicionado do escritório", prioridade:null, preco:150, realizadoEm:"08/01/25", historico:"Eduardo", concluido:true},
+ {servico:"Maçaneta da porta do Closet", prioridade:null, preco:0, realizadoEm:"03/01/25", historico:"Porto Seguro - Agendado para 03/01", concluido:true},
+ {servico:"Banheiro Suíte - Parede Descascando", prioridade:null, preco:300, realizadoEm:"", historico:"", concluido:false},
+ {servico:"Revisar Persiana do Escritório", prioridade:null, preco:80, realizadoEm:"09/01/25", historico:"08/01 cotado com dois fornecedores (250 e 300 a visita); Osmar cobrou 80", concluido:true},
+ {servico:"Tela para banheiro suíte", prioridade:null, preco:200, realizadoEm:"", historico:"", concluido:false},
+ {servico:"Reforma do Sofá", prioridade:null, preco:null, realizadoEm:"", historico:"", concluido:false},
+ {servico:"Gavetão do Closet - comprar carrinho e chamar a Porto", prioridade:null, preco:27, realizadoEm:"10/01/2025", historico:"Porto", concluido:true},
+ {servico:"Impermeabilização das rachaduras da parede da sala de jantar e pintar de branco", prioridade:null, preco:300, realizadoEm:"Mar/25", historico:"Eu mesmo fiz", concluido:true},
+ {servico:"Pintar parede escorrida de água da suíte", prioridade:null, preco:100, realizadoEm:"", historico:"", concluido:false},
+ {servico:"Vedação da cobertura de vidro da garagem para tirar vazamento", prioridade:1, preco:200, realizadoEm:"", historico:"Chamar Osmar", concluido:false},
+ {servico:"Cabeceira da Cama", prioridade:null, preco:null, realizadoEm:"", historico:"", concluido:false},
+ {servico:"Checar se taparam o buraco em cima da casa (possível foco do vazamento)", prioridade:null, preco:0, realizadoEm:"03/01/25", historico:"A Porto mostrou que taparam", concluido:true},
+ {servico:"Colar Rufo em cima da garagem", prioridade:null, preco:0, realizadoEm:"03/01/25", historico:"Calheiro da Porto veio e passou cola no Rufo. Precisa esperar secar pra ver se continua a pingar na garagem, para então mexer no gesso.", concluido:true},
+ {servico:"Rebaixar sarjeta da garagem", prioridade:null, preco:null, realizadoEm:"", historico:"", concluido:false},
+];
+
+function setSync(state, text){
+  document.getElementById('syncDot').className = 'dot' + (state==='busy' ? ' busy' : '');
+  document.getElementById('syncText').textContent = text;
+}
+
+async function load(initial=false){
+  setSync('busy','sincronizando...');
+  try{
+    const res = await fetch(DB_URL);
+    const data = await res.json();
+    if(!data){
+      const obj = {};
+      seed.forEach((s,i)=>{ obj['s'+i+'_'+Date.now()] = s; });
+      await fetch(DB_URL, {method:'PUT', body: JSON.stringify(obj)});
+      items = obj;
+    } else {
+      items = data;
+    }
+    setSync('ok','sincronizado agora');
+    render();
+  }catch(e){
+    setSync('busy','erro de conexão — tentando de novo');
+  }
+}
+
+async function saveAll(){
+  setSync('busy','salvando...');
+  try{
+    await fetch(DB_URL, {method:'PUT', body: JSON.stringify(items)});
+    setSync('ok','salvo');
+  }catch(e){
+    setSync('busy','erro ao salvar');
+  }
+}
+
+function fmtPreco(v){
+  if(v===null || v===undefined || v==='') return '—';
+  return 'R$ ' + Number(v).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+
+function render(){
+  const list = document.getElementById('list');
+  const q = document.getElementById('search').value.toLowerCase().trim();
+  const statusF = document.getElementById('filterStatus').value;
+  const sortBy = document.getElementById('sortBy').value;
+
+  let arr = Object.entries(items).map(([id,v])=>({id,...v}));
+
+  let pendCount=0, doneCount=0, valorAberto=0;
+  arr.forEach(it=>{
+    if(it.concluido){ doneCount++; } else { pendCount++; if(it.preco) valorAberto += Number(it.preco); }
+  });
+  document.getElementById('statPend').textContent = pendCount;
+  document.getElementById('statDone').textContent = doneCount;
+  document.getElementById('statValor').textContent = 'R$ ' + valorAberto.toLocaleString('pt-BR',{minimumFractionDigits:0});
+
+  if(q) arr = arr.filter(it => (it.servico||'').toLowerCase().includes(q));
+  if(statusF==='pendente') arr = arr.filter(it=>!it.concluido);
+  if(statusF==='concluido') arr = arr.filter(it=>it.concluido);
+
+  arr.sort((a,b)=>{
+    if(sortBy==='prioridade'){
+      const pa = a.prioridade==null ? 999 : a.prioridade;
+      const pb = b.prioridade==null ? 999 : b.prioridade;
+      if(a.concluido !== b.concluido) return a.concluido ? 1 : -1;
+      return pa - pb;
+    }
+    if(sortBy==='preco') return (b.preco||0) - (a.preco||0);
+    if(sortBy==='nome') return (a.servico||'').localeCompare(b.servico||'');
+    if(sortBy==='data') return (b.id||'').localeCompare(a.id||'');
+    return 0;
+  });
+
+  if(arr.length===0){
+    list.innerHTML = `<div class="empty">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="9"/><path d="M9 12h6M12 9v6"/></svg>
+      <div>Nada por aqui. Clique em "+ Novo serviço" para começar a lista.</div>
+    </div>`;
+    return;
+  }
+
+  list.innerHTML = arr.map(it=>{
+    const flag = it.prioridade!=null ? it.prioridade : (it.concluido ? '✓' : '—');
+    return `
+    <div class="row ${it.concluido?'done':''}">
+      <div class="flagtag ${it.prioridade==null?'na':''}">${flag}</div>
+      <div class="rowbody">
+        <div class="rowtop">
+          <div>
+            <div class="servico">${escapeHtml(it.servico||'(sem nome)')}</div>
+            <div class="meta">
+              <span class="preco">${fmtPreco(it.preco)}</span>
+              ${it.realizadoEm ? `<span>· ${escapeHtml(it.realizadoEm)}</span>` : ''}
+              <span class="pill ${it.concluido?'done':'pend'}">${it.concluido?'concluído':'pendente'}</span>
+            </div>
+          </div>
+          <div class="actions">
+            ${it.historico ? `<button class="btn-icon" onclick="toggleHist('${it.id}')" title="Ver histórico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16M4 12h16M4 18h10"/></svg></button>` : ''}
+            <button class="btn-icon" onclick="openEdit('${it.id}')" title="Editar"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
+          </div>
+        </div>
+        ${it.historico ? `<div class="historico" id="hist_${it.id}">${escapeHtml(it.historico)}</div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleHist(id){
+  document.getElementById('hist_'+id).classList.toggle('open');
+}
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function openAdd(){
+  editingId = null;
+  document.getElementById('modalTitle').textContent = 'Novo serviço';
+  document.getElementById('fServico').value='';
+  document.getElementById('fPrioridade').value='';
+  document.getElementById('fPreco').value='';
+  document.getElementById('fRealizado').value='';
+  document.getElementById('fConcluido').checked=false;
+  document.getElementById('fHistorico').value='';
+  document.getElementById('fEditor').value = localStorage.getItem('m133_editor')||'';
+  document.getElementById('btnDelete').style.display='none';
+  document.getElementById('overlay').classList.add('open');
+}
+
+function openEdit(id){
+  editingId = id;
+  const it = items[id];
+  document.getElementById('modalTitle').textContent = 'Editar serviço';
+  document.getElementById('fServico').value = it.servico||'';
+  document.getElementById('fPrioridade').value = it.prioridade ?? '';
+  document.getElementById('fPreco').value = it.preco ?? '';
+  document.getElementById('fRealizado').value = it.realizadoEm||'';
+  document.getElementById('fConcluido').checked = !!it.concluido;
+  document.getElementById('fHistorico').value = it.historico||'';
+  document.getElementById('fEditor').value = localStorage.getItem('m133_editor')||'';
+  document.getElementById('btnDelete').style.display='inline-block';
+  document.getElementById('overlay').classList.add('open');
+}
+
+function closeModal(){
+  document.getElementById('overlay').classList.remove('open');
+}
+
+async function save(){
+  const editor = document.getElementById('fEditor').value.trim();
+  if(editor) localStorage.setItem('m133_editor', editor);
+
+  const servico = document.getElementById('fServico').value.trim();
+  if(!servico){ alert('Digite o nome do serviço.'); return; }
+
+  const prio = document.getElementById('fPrioridade').value;
+  const preco = document.getElementById('fPreco').value;
+
+  const obj = {
+    servico,
+    prioridade: prio==='' ? null : Number(prio),
+    preco: preco==='' ? null : Number(preco),
+    realizadoEm: document.getElementById('fRealizado').value.trim(),
+    concluido: document.getElementById('fConcluido').checked,
+    historico: document.getElementById('fHistorico').value.trim(),
+    editor,
+    updatedAt: Date.now()
+  };
+
+  const id = editingId || ('s_' + Date.now());
+  items[id] = obj;
+  closeModal();
+  render();
+  await saveAll();
+}
+
+async function del(){
+  if(!editingId) return;
+  if(!confirm('Excluir este serviço da lista?')) return;
+  delete items[editingId];
+  closeModal();
+  render();
+  await saveAll();
+}
+
+document.getElementById('btnAdd').onclick = openAdd;
+document.getElementById('btnCancel').onclick = closeModal;
+document.getElementById('btnSave').onclick = save;
+document.getElementById('btnDelete').onclick = del;
+document.getElementById('overlay').onclick = (e)=>{ if(e.target.id==='overlay') closeModal(); };
+document.getElementById('search').oninput = render;
+document.getElementById('filterStatus').onchange = render;
+document.getElementById('sortBy').onchange = render;
+
+load(true);
+setInterval(()=>load(false), 20000);
+</script>
+</body>
+</html>
