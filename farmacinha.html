@@ -466,8 +466,11 @@ function renderTagChips(){
 }
 function setFiltroTag(t){ filtroTag = t; renderTagChips(); renderGrid(); }
 
+function normalizar(s){
+  return (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+}
 document.getElementById('searchInput').addEventListener('input', e=>{
-  filtroTexto = e.target.value.toLowerCase().trim();
+  filtroTexto = normalizar(e.target.value.trim());
   renderGrid();
 });
 
@@ -478,7 +481,7 @@ function renderGrid(){
   if(filtroTag) list = list.filter(m=>(m.tags||[]).includes(filtroTag));
   if(filtroTexto){
     list = list.filter(m=>{
-      const alvo = [m.nome, m.local, m.obs, ...(m.tags||[])].join(' ').toLowerCase();
+      const alvo = normalizar([m.nome, m.local, m.obs, ...(m.tags||[])].join(' '));
       return alvo.includes(filtroTexto);
     });
   }
@@ -582,6 +585,8 @@ function editarAtual(){
 async function salvarMedicamento(){
   const nome = document.getElementById('f_nome').value.trim();
   if(!nome){ toast('Dê um nome ao medicamento'); return; }
+  const pendente = document.getElementById('f_tag_custom').value.trim();
+  if(pendente){ tagsSelecionadasForm.add(pendente); document.getElementById('f_tag_custom').value=''; }
   const id = document.getElementById('f_id').value;
   const data = {
     nome,
