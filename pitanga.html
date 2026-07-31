@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pitanga · Rotina</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Karla:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#EEF1F4;
+    --panel:#FFFFFF;
+    --ink:#262A2E;
+    --ink-soft:#6B7480;
+    --steel:#4A5C6E;
+    --steel-dark:#34424E;
+    --tan:#C99A4B;
+    --tan-light:#EFDCB3;
+    --berry:#A63D4F;
+    --berry-dark:#7E2E3B;
+    --line:#DCE2E7;
+    --good:#4E8B6F;
+    --warn:#C77C2E;
+    --radius:14px;
+    --shadow:0 1px 2px rgba(38,42,46,.06), 0 8px 24px -12px rgba(38,42,46,.18);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Karla',sans-serif;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+  }
+  h1,h2,h3,.display{font-family:'Fraunces',serif;}
+  .mono{font-family:'JetBrains Mono',monospace;}
+  a{color:inherit;}
+  button{font-family:inherit;cursor:pointer;}
+  input,select,textarea{font-family:inherit;}
+
+  /* ---------- App shell ---------- */
+  #app{display:flex;min-height:100vh;}
+  #login-screen{
+    min-height:100vh;display:flex;align-items:center;justify-content:center;
+    background:linear-gradient(160deg,var(--steel-dark),var(--steel) 60%,var(--tan) 140%);
+    padding:24px;
+  }
+  .login-card{
+    background:var(--panel);border-radius:20px;box-shadow:var(--shadow);
+    padding:36px 32px;max-width:380px;width:100%;text-align:center;
+  }
+  .login-card h1{font-size:28px;margin:12px 0 4px;color:var(--steel-dark);}
+  .login-card p{color:var(--ink-soft);font-size:14px;margin:0 0 20px;}
+  .login-card input{
+    width:100%;padding:12px 14px;border-radius:10px;border:1.5px solid var(--line);
+    font-size:15px;margin-bottom:12px;
+  }
+  .login-card button{
+    width:100%;padding:12px;border-radius:10px;border:none;background:var(--berry);
+    color:#fff;font-weight:700;font-size:15px;transition:background .15s;
+  }
+  .login-card button:hover{background:var(--berry-dark);}
+
+  nav#sidebar{
+    width:220px;flex-shrink:0;background:var(--steel-dark);color:#fff;
+    display:flex;flex-direction:column;padding:20px 0;position:sticky;top:0;height:100vh;
+  }
+  .brand{display:flex;align-items:center;gap:10px;padding:0 20px 18px;border-bottom:1px solid rgba(255,255,255,.12);margin-bottom:10px;}
+  .brand svg{width:38px;height:38px;flex-shrink:0;}
+  .brand-text .name{font-family:'Fraunces',serif;font-weight:600;font-size:19px;line-height:1.1;}
+  .brand-text .who{font-size:11px;color:var(--tan-light);opacity:.85;}
+  .navitem{
+    display:flex;align-items:center;gap:10px;padding:10px 20px;font-size:14px;font-weight:600;
+    color:rgba(255,255,255,.72);border-left:3px solid transparent;transition:.15s;
+  }
+  .navitem span.ico{width:18px;text-align:center;}
+  .navitem:hover{color:#fff;background:rgba(255,255,255,.05);}
+  .navitem.active{color:#fff;background:rgba(255,255,255,.09);border-left-color:var(--tan);}
+  .nav-user{margin-top:auto;padding:14px 20px 0;border-top:1px solid rgba(255,255,255,.12);font-size:12px;color:rgba(255,255,255,.6);}
+  .nav-user b{color:#fff;}
+  .nav-user button{background:none;border:none;color:var(--tan-light);font-size:12px;text-decoration:underline;padding:6px 0 0;}
+
+  main{flex:1;min-width:0;padding:28px 34px 60px;}
+  .page-title{display:flex;align-items:baseline;gap:10px;margin-bottom:22px;}
+  .page-title h1{font-size:26px;margin:0;color:var(--steel-dark);}
+  .page-title .sub{color:var(--ink-soft);font-size:13px;}
+
+  .card{background:var(--panel);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px 22px;}
+  .grid{display:grid;gap:16px;}
+  .grid-3{grid-template-columns:repeat(3,1fr);}
+  .grid-2{grid-template-columns:repeat(2,1fr);}
+  @media(max-width:900px){.grid-3{grid-template-columns:1fr 1fr;}}
+
+  /* ---------- Home ---------- */
+  .tag{
+    background:var(--steel-dark);color:#fff;border-radius:20px;padding:26px 28px;
+    display:flex;align-items:center;gap:22px;position:relative;overflow:hidden;
+    box-shadow:var(--shadow);
+  }
+  .tag::before{
+    content:"";position:absolute;right:-40px;top:-40px;width:180px;height:180px;border-radius:50%;
+    background:radial-gradient(circle,rgba(201,154,75,.35),transparent 70%);
+  }
+  .tag .ring{width:14px;height:14px;border:3px solid var(--tan-light);border-radius:50%;position:absolute;left:16px;top:50%;transform:translateY(-50%);}
+  .tag-content{position:relative;z-index:1;}
+  .tag-content .eyebrow{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--tan-light);font-weight:600;}
+  .tag-content .age{font-family:'Fraunces',serif;font-size:34px;font-weight:600;margin:4px 0 2px;}
+  .tag-content .age b{color:var(--tan);}
+  .tag-content .since{font-size:12px;color:rgba(255,255,255,.65);}
+
+  .stat-card{display:flex;flex-direction:column;gap:6px;}
+  .stat-card .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-soft);font-weight:700;}
+  .stat-card .val{font-family:'Fraunces',serif;font-size:20px;color:var(--steel-dark);}
+  .stat-card .meta{font-size:12px;color:var(--ink-soft);}
+  .badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700;}
+  .badge.ok{background:#E4F1EA;color:var(--good);}
+  .badge.warn{background:#FBEBD8;color:var(--warn);}
+
+  /* ---------- Lists / collections ---------- */
+  .toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;gap:10px;flex-wrap:wrap;}
+  .btn{
+    border:none;border-radius:9px;padding:9px 16px;font-weight:700;font-size:13px;
+  }
+  .btn-primary{background:var(--berry);color:#fff;}
+  .btn-primary:hover{background:var(--berry-dark);}
+  .btn-ghost{background:var(--panel);border:1.5px solid var(--line);color:var(--steel-dark);}
+  .btn-ghost:hover{border-color:var(--steel);}
+  .item{
+    display:flex;justify-content:space-between;gap:14px;padding:14px 16px;border-radius:11px;
+    border:1px solid var(--line);margin-bottom:10px;background:var(--panel);
+  }
+  .item .date-chip{
+    font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;color:#fff;background:var(--steel);
+    padding:3px 9px;border-radius:7px;white-space:nowrap;height:fit-content;
+  }
+  .item-main{flex:1;min-width:0;}
+  .item-title{font-weight:700;font-size:14.5px;color:var(--steel-dark);}
+  .item-sub{font-size:13px;color:var(--ink-soft);margin-top:2px;white-space:pre-wrap;}
+  .item-actions{display:flex;gap:6px;flex-shrink:0;}
+  .icon-btn{background:none;border:none;color:var(--ink-soft);font-size:15px;padding:4px 6px;border-radius:6px;}
+  .icon-btn:hover{background:var(--bg);color:var(--berry);}
+  .empty{color:var(--ink-soft);font-size:13.5px;text-align:center;padding:26px 10px;}
+
+  /* ---------- Modal ---------- */
+  .overlay{position:fixed;inset:0;background:rgba(38,42,46,.45);display:none;align-items:center;justify-content:center;z-index:50;padding:16px;}
+  .overlay.open{display:flex;}
+  .modal{background:#fff;border-radius:16px;padding:24px 26px;width:100%;max-width:440px;box-shadow:var(--shadow);max-height:88vh;overflow:auto;}
+  .modal h3{margin:0 0 16px;color:var(--steel-dark);}
+  .field{margin-bottom:13px;}
+  .field label{display:block;font-size:12px;font-weight:700;color:var(--ink-soft);margin-bottom:5px;text-transform:uppercase;letter-spacing:.04em;}
+  .field input,.field select,.field textarea{
+    width:100%;padding:9px 11px;border-radius:8px;border:1.5px solid var(--line);font-size:14px;
+  }
+  .field textarea{min-height:64px;resize:vertical;}
+  .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px;}
+
+  /* ---------- Mobile ---------- */
+  #tabbar{display:none;}
+  @media(max-width:820px){
+    nav#sidebar{display:none;}
+    #tabbar{
+      display:flex;overflow-x:auto;background:var(--steel-dark);position:sticky;top:0;z-index:20;
+      padding:10px 6px;gap:4px;
+    }
+    #tabbar .navitem{flex-direction:column;font-size:10.5px;gap:4px;padding:6px 12px;border-left:none;border-radius:8px;white-space:nowrap;}
+    #tabbar .navitem.active{background:rgba(255,255,255,.12);}
+    main{padding:18px 16px 50px;}
+    .grid-3{grid-template-columns:1fr 1fr;}
+  }
+</style>
+</head>
+<body>
+
+<div id="login-screen">
+  <div class="login-card">
+    <svg viewBox="0 0 120 120" width="64" height="64" style="margin:0 auto;display:block;">
+      <use href="#yorkie-mark"/>
+    </svg>
+    <h1>Rotina da Pitanga</h1>
+    <p>Histórico, vacinas, peso e cuidados — tudo num só lugar, pra vocês dois.</p>
+    <input id="login-name" placeholder="Seu nome (ex: Andrey)" maxlength="24">
+    <button onclick="doLogin()">Entrar</button>
+  </div>
+</div>
+
+<div id="app" style="display:none;">
+  <nav id="sidebar"></nav>
+  <main>
+    <div id="tabbar"></div>
+    <div id="page"></div>
+  </main>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="modal" id="modal-box"></div>
+</div>
+
+<!-- signature mark, reused everywhere -->
+<svg width="0" height="0" style="position:absolute;">
+  <defs>
+    <g id="yorkie-mark">
+      <ellipse cx="60" cy="70" rx="34" ry="30" fill="var(--steel,#4A5C6E)"/>
+      <path d="M30 46 Q22 6 46 34 Q60 14 74 34 Q98 6 90 46 Q98 60 88 74 Q92 96 60 102 Q28 96 32 74 Q22 60 30 46 Z" fill="var(--tan,#C99A4B)"/>
+      <path d="M60 30 Q66 10 78 14 Q88 22 80 40 Q70 34 60 30Z" fill="var(--steel,#4A5C6E)"/>
+      <path d="M60 30 Q54 10 42 14 Q32 22 40 40 Q50 34 60 30Z" fill="var(--steel,#4A5C6E)"/>
+      <ellipse cx="49" cy="66" rx="4.2" ry="5" fill="#2B2E33"/>
+      <ellipse cx="71" cy="66" rx="4.2" ry="5" fill="#2B2E33"/>
+      <ellipse cx="60" cy="80" rx="4" ry="3" fill="#2B2E33"/>
+      <path d="M60 83 Q64 90 70 86" stroke="#2B2E33" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <path d="M42 96 l6 -10 l6 10 l-6 6z" fill="var(--berry,#A63D4F)"/>
+      <path d="M78 96 l-6 -10 l-6 10 l6 6z" fill="var(--berry,#A63D4F)"/>
+      <circle cx="60" cy="96" r="4" fill="var(--berry,#A63D4F)"/>
+    </g>
+  </defs>
+</svg>
+
+<script>
+/* ============================= CONFIG ============================= */
+const DB = "https://medicos-andrey-default-rtdb.firebaseio.com/pitanga";
+const BIRTH = "2023-07-05"; // 05/07/2023
+
+/* ============================= UTILS ============================= */
+const $ = s => document.querySelector(s);
+const uid = () => Math.random().toString(36).slice(2,10);
+function toBR(iso){ if(!iso) return "—"; const [y,m,d]=iso.split("-"); return `${d}/${m}/${y}`; }
+function todayISO(){ return new Date().toISOString().slice(0,10); }
+function daysBetween(a,b){ return Math.round((new Date(b)-new Date(a))/86400000); }
+function escapeHtml(s){ return (s||"").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+async function fbGet(path){
+  const r = await fetch(`${DB}/${path}.json`);
+  return r.ok ? r.json() : null;
+}
+async function fbSet(path, data){
+  await fetch(`${DB}/${path}.json`, {method:"PUT", body: JSON.stringify(data)});
+}
+async function fbPatch(path, data){
+  await fetch(`${DB}/${path}.json`, {method:"PATCH", body: JSON.stringify(data)});
+}
+async function fbDelete(path){
+  await fetch(`${DB}/${path}.json`, {method:"DELETE"});
+}
+
+/* ============================= LOGIN ============================= */
+function doLogin(){
+  const name = $("#login-name").value.trim();
+  if(!name){ $("#login-name").focus(); return; }
+  localStorage.setItem("pitanga_user", name);
+  boot();
+}
+$("#login-name")?.addEventListener("keydown", e=>{ if(e.key==="Enter") doLogin(); });
+
+/* ============================= NAV CONFIG ============================= */
+const TABS = [
+  {key:"home", label:"Início", icon:"🏠"},
+  {key:"eventos", label:"Histórico", icon:"📜"},
+  {key:"vacinas", label:"Vacinas", icon:"💉"},
+  {key:"pesagem", label:"Peso", icon:"⚖️"},
+  {key:"medicamentos", label:"Remédios", icon:"💊"},
+  {key:"filtroBebedouro", label:"Filtro", icon:"🚰"},
+  {key:"cio", label:"Cio", icon:"🩸"},
+  {key:"receitas", label:"Receitas Vet", icon:"🩺"},
+  {key:"banhos", label:"Banho", icon:"🛁"},
+  {key:"info", label:"Info Geral", icon:"ℹ️"},
+];
+
+/* Generic collection configs: field defs used for both form + rendering */
+const COLLECTIONS = {
+  eventos: {
+    title:"Histórico de Eventos", empty:"Nenhum evento registrado ainda.",
+    fields:[
+      {name:"data", label:"Data", type:"date", required:true},
+      {name:"titulo", label:"Título", type:"text", required:true},
+      {name:"descricao", label:"Descrição", type:"textarea"},
+    ],
+    sortField:"data",
+    itemTitle:e=>e.titulo, itemSub:e=>e.descricao,
+  },
+  vacinas: {
+    title:"Controle de Vacinas", empty:"Nenhuma vacina registrada ainda.",
+    fields:[
+      {name:"data", label:"Data", type:"date", required:true},
+      {name:"tipo", label:"Vacina", type:"text", required:true, placeholder:"Ex: V10, Antirrábica, Nobivac"},
+      {name:"obs", label:"Observações", type:"textarea"},
+    ],
+    sortField:"data",
+    itemTitle:e=>e.tipo, itemSub:e=>e.obs,
+  },
+  pesagem: {
+    title:"Controle de Pesagem", empty:"Nenhum peso registrado ainda.",
+    fields:[
+      {name:"data", label:"Data", type:"date", required:true},
+      {name:"peso", label:"Peso (kg)", type:"number", step:"0.01", required:true},
+      {name:"obs", label:"Observações", type:"text"},
+    ],
+    sortField:"data",
+    itemTitle:e=>`${e.peso} kg`, itemSub:e=>e.obs,
+  },
+  medicamentos: {
+    title:"Controle de Medicamentos", empty:"Nenhum medicamento registrado ainda.",
+    fields:[
+      {name:"nome", label:"Medicamento", type:"text", required:true},
+      {name:"dosagem", label:"Dosagem", type:"text", placeholder:"Ex: 0,3 da seringa de 1ml"},
+      {name:"motivo", label:"Motivo", type:"text"},
+      {name:"dataInicio", label:"Data de início", type:"date"},
+      {name:"ativo", label:"Em uso?", type:"select", options:["Sim","Não"]},
+      {name:"obs", label:"Observações", type:"textarea"},
+    ],
+    sortField:"dataInicio",
+    itemTitle:e=>`${e.nome}${e.ativo==="Sim" ? " · em uso":""}`,
+    itemSub:e=>[e.motivo, e.dosagem, e.obs].filter(Boolean).join(" · "),
+  },
+  filtroBebedouro: {
+    title:"Troca de Filtro do Bebedouro", empty:"Nenhuma troca registrada ainda.",
+    fields:[
+      {name:"data", label:"Data da troca", type:"date", required:true},
+      {name:"obs", label:"Observações", type:"text"},
+    ],
+    sortField:"data",
+    itemTitle:()=>"Lavou o bebedouro e trocou o filtro", itemSub:e=>e.obs,
+  },
+  cio: {
+    title:"Controle do Cio", empty:"Nenhum registro de cio ainda.",
+    fields:[
+      {name:"data", label:"Data (início)", type:"date", required:true},
+      {name:"obs", label:"Observações", type:"text", placeholder:"Ex: data aproximada, gotejamento, etc"},
+    ],
+    sortField:"data",
+    itemTitle:()=>"Entrou no cio", itemSub:e=>e.obs,
+  },
+  receitas: {
+    title:"Receitas do Veterinário", empty:"Nenhuma receita registrada ainda.",
+    fields:[
+      {name:"data", label:"Data", type:"date", required:true},
+      {name:"vet", label:"Veterinário(a) / Clínica", type:"text"},
+      {name:"medicamento", label:"Medicamento", type:"text", required:true},
+      {name:"dosagem", label:"Dosagem", type:"text"},
+      {name:"obs", label:"Observações", type:"textarea"},
+    ],
+    sortField:"data",
+    itemTitle:e=>e.medicamento, itemSub:e=>[e.vet, e.dosagem, e.obs].filter(Boolean).join(" · "),
+  },
+  banhos: {
+    title:"Controle de Banho", empty:"Nenhum banho registrado ainda.",
+    fields:[
+      {name:"data", label:"Data", type:"date", required:true},
+      {name:"petshop", label:"Petshop", type:"text"},
+      {name:"custo", label:"Custo (R$)", type:"number", step:"0.01"},
+      {name:"obs", label:"Observações", type:"text"},
+    ],
+    sortField:"data",
+    itemTitle:e=>e.petshop||"Banho", itemSub:e=> (e.custo!=null?`R$ ${Number(e.custo).toFixed(2)}`:"") + (e.obs?` · ${e.obs}`:""),
+  },
+};
+
+/* ============================= STATE ============================= */
+let DATA = {}; // full snapshot from firebase
+let currentTab = "home";
+
+/* ============================= SEED (only if empty) ============================= */
+const SEED = {
+  eventos: [
+    {data:"2024-12-04", titulo:"Início possível dos exames de castração", descricao:"A partir dessa data pode iniciar os exames para agendar a castração."},
+    {data:"2026-02-24", titulo:"Desconforto abdominal", descricao:"Trouxe no Vet pq estava com desconforto abdominal, sem comer, e patinha meio mancando. Dra achou que era gases (confirmado). Tirou sangue pra investigar. Tomou Buscopan e Simeticona na vet."},
+    {data:"2025-01-13", titulo:"Soluço estranho", descricao:"Começou a soluçar estranho, parecia ter ingerido veneno. Tomou injeção de Ornitiu para desintoxicação (just in case)."},
+    {data:"2024-11-17", titulo:"Diarreia e vômitos", descricao:"Tomou Buscopan Composto com Dipirona (injeção) e Lufta para gases. Precisou tomar também Nuxcell Plus."},
+    {data:"2024-06-12", titulo:"Vence carência do plano (120 dias)", descricao:"Vence a carência de 120 dias da troca de plano e então pode castrar (necessário banho e tosa baixinha inclusive na barriga antes de castrar)."},
+    {data:"2024-02-12", titulo:"Migração de plano de saúde", descricao:"Migração do Plano Ideal para o Plano Tranquilo (Pet Love)."},
+    {data:"2023-12-18", titulo:"Hemograma + citológico", descricao:"Hemograma (tudo normal) + análise citológica do carocinho."},
+    {data:"2023-12-12", titulo:"Caroço na barriga", descricao:"Foi ao vet ver um carocinho na barriga. Tomou Prednon na veia no primeiro dia e nos outros 4 dias na seringa."},
+    {data:"2023-11-06", titulo:"Necessidade de vacina da raiva", descricao:"Pitanga precisa tomar vacina da raiva (a partir de 4 meses de idade)."},
+    {data:"2023-11-04", titulo:"Liberada para a rua", descricao:"Liberada para sair na rua, 21 dias após a última vacina V10."},
+    {data:"2023-10-24", titulo:"Fim da carência PetLovers", descricao:"Termina o prazo de carência do PetLovers (45 dias)."},
+    {data:"2023-10-13", titulo:"Vacina V10 agendada", descricao:"Próxima vacina V10 agendada para as 15:30 (já comprada no app)."},
+    {data:"2023-09-12", titulo:"Alta", descricao:"Pitanga teve alta da internação."},
+    {data:"2023-09-11", titulo:"Internação", descricao:"Pitanga foi internada e tomou três injeções (glicemia, desconforto). No dia seguinte fez ultrassom e exame de sangue."},
+    {data:"2023-09-09", titulo:"Microchipagem", descricao:"Microchipagem e início da carência do PetLovers."},
+    {data:"2023-09-05", titulo:"Chegada em casa", descricao:"Retirada no canil e vinda para casa."},
+    {data:"2023-07-05", titulo:"Nascimento", descricao:"Pitanga nasceu! 🎉"},
+  ],
+  vacinas: [
+    {data:"2025-11-17", tipo:"V10 + Antirrábica", obs:""},
+    {data:"2024-11-04", tipo:"Antirrábica (segunda)", obs:""},
+    {data:"2024-10-14", tipo:"V10", obs:""},
+    {data:"2023-09-18", tipo:"V10", obs:"Teve reação após a vacina e tomou 1 gota de Dipirona."},
+    {data:"2023-08-21", tipo:"Nobivac (Parvo)", obs:""},
+  ],
+  medicamentos: [
+    {nome:"Prednon 4mg", dosagem:"0,3 da seringa de 1ml", motivo:"Cisto no abdômen (suspeita de picada de inseto)", dataInicio:"2023-12-12", ativo:"Não", obs:"Aplicado na veia no 1º dia e via seringa nos 4 dias seguintes."},
+  ],
+  filtroBebedouro: [
+    {data:"2026-01-17", obs:""},
+    {data:"2026-03-16", obs:""},
+    {data:"2026-05-14", obs:""},
+    {data:"2026-07-23", obs:""},
+  ],
+  cio: [
+    {data:"2024-02-21", obs:"Começaram a sair gotinhas de sangue."},
+    {data:"2024-08-15", obs:"Data aproximada — segunda quinzena de agosto/24."},
+    {data:"2025-02-15", obs:"Data aproximada — fevereiro/25."},
+    {data:"2026-03-10", obs:"Começou a gotejar."},
+  ],
+  receitas: [
+    {data:"2026-02-24", vet:"All Pet", medicamento:"Buscopan + Simeticona", dosagem:"", obs:"Aplicado na clínica para desconforto abdominal (gases)."},
+    {data:"2025-01-13", vet:"", medicamento:"Ornitiu (injeção)", dosagem:"", obs:"Para desintoxicação, por precaução."},
+    {data:"2024-11-17", vet:"", medicamento:"Buscopan Composto c/ Dipirona (injeção) + Lufta", dosagem:"", obs:"Diarreia e vômitos. Prosseguir com Nuxcell Plus."},
+    {data:"2023-09-18", vet:"", medicamento:"Dipirona", dosagem:"1 gota", obs:"Reação após vacina V10."},
+    {data:"2023-12-12", vet:"", medicamento:"Prednon", dosagem:"Venoso no 1º dia, seringa nos 4 seguintes", obs:"Caroço na barriga."},
+  ],
+  banhos: [],
+  pesagem: [],
+};
+const SEED_INFO = {
+  racao: "",
+  plano: "Pet Love — Plano Tranquilo (migrado do Plano Ideal em 12/02/2024). Carência de 120 dias para castração.",
+  microchip: "Microchipagem em 09/09/2023.",
+  vetClinica: "All Pet — Rua dos Andradas, 847 — Dra. Juliana",
+  lugares: "Vila Amalia\nThe Soft\nO Concorrente\nCafé do Lago (colonial) — Cardeal 🔝 (favorito)",
+};
+
+async function seedIfEmpty(){
+  const flag = await fbGet("_seeded");
+  if(flag) return;
+  const payload = {};
+  for(const k of Object.keys(SEED)){
+    const obj = {};
+    SEED[k].forEach(item=> obj[uid()] = item);
+    payload[k] = obj;
+  }
+  payload.info = SEED_INFO;
+  payload._seeded = true;
+  await fbSet("", payload);
+}
+
+/* ============================= BOOT / LOAD ============================= */
+async function boot(){
+  const user = localStorage.getItem("pitanga_user");
+  if(!user){ return; }
+  $("#login-screen").style.display = "none";
+  $("#app").style.display = "flex";
+  renderNav(user);
+  await seedIfEmpty();
+  await loadAll();
+  goTab("home");
+}
+async function loadAll(){
+  DATA = await fbGet("") || {};
+}
+
+/* ============================= NAV RENDER ============================= */
+function renderNav(user){
+  const sidebar = $("#sidebar");
+  sidebar.innerHTML = `
+    <div class="brand">
+      <svg viewBox="0 0 120 120"><use href="#yorkie-mark"/></svg>
+      <div class="brand-text"><div class="name">Pitanga</div><div class="who">rotina & cuidados</div></div>
+    </div>
+    <div id="nav-items"></div>
+    <div class="nav-user">Logado como <b>${escapeHtml(user)}</b><br><button onclick="logout()">trocar usuário</button></div>
+  `;
+  const items = TABS.map(t=>`<div class="navitem" data-tab="${t.key}" onclick="goTab('${t.key}')"><span class="ico">${t.icon}</span>${t.label}</div>`).join("");
+  $("#nav-items").innerHTML = items;
+  $("#tabbar").innerHTML = TABS.map(t=>`<div class="navitem" data-tab="${t.key}" onclick="goTab('${t.key}')"><span class="ico">${t.icon}</span>${t.label}</div>`).join("");
+}
+function logout(){ localStorage.removeItem("pitanga_user"); location.reload(); }
+
+function goTab(key){
+  currentTab = key;
+  document.querySelectorAll(".navitem").forEach(el=> el.classList.toggle("active", el.dataset.tab===key));
+  if(key==="home") renderHome();
+  else if(key==="info") renderInfo();
+  else renderCollection(key);
+}
+
+/* ============================= HOME ============================= */
+function ageParts(){
+  const birth = new Date(BIRTH+"T00:00:00");
+  const now = new Date();
+  let years = now.getFullYear()-birth.getFullYear();
+  let months = now.getMonth()-birth.getMonth();
+  let days = now.getDate()-birth.getDate();
+  if(days<0){ months--; days += new Date(now.getFullYear(), now.getMonth(), 0).getDate(); }
+  if(months<0){ years--; months += 12; }
+  return {years,months,days};
+}
+function lastOf(key, dateField){
+  const obj = DATA[key] || {};
+  const arr = Object.values(obj);
+  if(!arr.length) return null;
+  arr.sort((a,b)=> (b[dateField]||"").localeCompare(a[dateField]||""));
+  return arr[0];
+}
+function avgIntervalDays(key, dateField){
+  const obj = DATA[key] || {};
+  const dates = Object.values(obj).map(e=>e[dateField]).filter(Boolean).sort();
+  if(dates.length<2) return null;
+  let total=0;
+  for(let i=1;i<dates.length;i++) total += daysBetween(dates[i-1], dates[i]);
+  return Math.round(total/(dates.length-1));
+}
+
+function renderHome(){
+  const {years,months,days} = ageParts();
+  const lastVac = lastOf("vacinas","data");
+  const lastPeso = lastOf("pesagem","data");
+  const lastFiltro = lastOf("filtroBebedouro","data");
+  const lastCio = lastOf("cio","data");
+  const lastBanho = lastOf("banhos","data");
+  const banhoTotal = Object.values(DATA.banhos||{}).reduce((s,b)=> s + (Number(b.custo)||0), 0);
+
+  const avgFiltro = avgIntervalDays("filtroBebedouro","data");
+  const diasDesdeFiltro = lastFiltro ? daysBetween(lastFiltro.data, todayISO()) : null;
+  const filtroWarn = avgFiltro && diasDesdeFiltro!=null && diasDesdeFiltro > avgFiltro + 10;
+
+  const avgCio = avgIntervalDays("cio","data");
+  const diasDesdeCio = lastCio ? daysBetween(lastCio.data, todayISO()) : null;
+
+  $("#page").innerHTML = `
+    <div class="page-title"><h1>Oi! 🐾</h1><span class="sub">resumo de hoje</span></div>
+    <div class="tag" style="margin-bottom:20px;">
+      <span class="ring"></span>
+      <svg viewBox="0 0 120 120" width="72" height="72" style="filter:drop-shadow(0 4px 10px rgba(0,0,0,.25));flex-shrink:0;"><use href="#yorkie-mark"/></svg>
+      <div class="tag-content">
+        <div class="eyebrow">Pitanga tem</div>
+        <div class="age"><b>${years}</b> ano${years!==1?"s":""}, <b>${months}</b> ${months===1?"mês":"meses"} e <b>${days}</b> dia${days!==1?"s":""}</div>
+        <div class="since">nascida em ${toBR(BIRTH)}</div>
+      </div>
+    </div>
+
+    <div class="grid grid-3" style="margin-bottom:16px;">
+      <div class="card stat-card">
+        <div class="lbl">Última vacina</div>
+        <div class="val">${lastVac ? escapeHtml(lastVac.tipo) : "—"}</div>
+        <div class="meta">${lastVac ? toBR(lastVac.data) : "sem registro"}</div>
+      </div>
+      <div class="card stat-card">
+        <div class="lbl">Peso atual</div>
+        <div class="val">${lastPeso ? lastPeso.peso+" kg" : "—"}</div>
+        <div class="meta">${lastPeso ? toBR(lastPeso.data) : "sem registro"}</div>
+      </div>
+      <div class="card stat-card">
+        <div class="lbl">Total gasto em banhos</div>
+        <div class="val">R$ ${banhoTotal.toFixed(2)}</div>
+        <div class="meta">${lastBanho ? "último em "+toBR(lastBanho.data) : "sem registro"}</div>
+      </div>
+      <div class="card stat-card">
+        <div class="lbl">Filtro do bebedouro</div>
+        <div class="val">${diasDesdeFiltro!=null ? diasDesdeFiltro+" dias" : "—"} <span class="meta">desde a troca</span></div>
+        <div class="meta">${lastFiltro? "trocado em "+toBR(lastFiltro.data):"sem registro"} ${filtroWarn?'<span class="badge warn">trocar em breve</span>':(lastFiltro?'<span class="badge ok">em dia</span>':'')}</div>
+      </div>
+      <div class="card stat-card">
+        <div class="lbl">Cio</div>
+        <div class="val">${diasDesdeCio!=null ? diasDesdeCio+" dias" : "—"} <span class="meta">desde o último</span></div>
+        <div class="meta">${lastCio? "início em "+toBR(lastCio.data):"sem registro"}${avgCio?` · média entre ciclos: ~${avgCio} dias`:""}</div>
+      </div>
+      <div class="card stat-card">
+        <div class="lbl">Eventos registrados</div>
+        <div class="val">${Object.keys(DATA.eventos||{}).length}</div>
+        <div class="meta">no histórico completo</div>
+      </div>
+    </div>
+  `;
+}
+
+/* ============================= GENERIC COLLECTION RENDER ============================= */
+function renderCollection(key){
+  const cfg = COLLECTIONS[key];
+  const obj = DATA[key] || {};
+  const items = Object.entries(obj).sort((a,b)=> (b[1][cfg.sortField]||"").localeCompare(a[1][cfg.sortField]||""));
+
+  let extra = "";
+  if(key==="pesagem") extra = `<div class="card" style="margin-bottom:18px;"><canvas id="peso-chart" height="90"></canvas></div>`;
+
+  $("#page").innerHTML = `
+    <div class="page-title"><h1>${cfg.title}</h1><span class="sub">${items.length} registro${items.length!==1?"s":""}</span></div>
+    ${extra}
+    <div class="toolbar">
+      <div></div>
+      <button class="btn btn-primary" onclick="openForm('${key}')">+ Adicionar</button>
+    </div>
+    <div id="list">
+      ${items.length ? items.map(([id,it])=>renderItem(key,id,it)).join("") : `<div class="empty">${cfg.empty}</div>`}
+    </div>
+  `;
+
+  if(key==="pesagem" && items.length) drawPesoChart(items);
+}
+
+function renderItem(key,id,it){
+  const cfg = COLLECTIONS[key];
+  const dateField = cfg.sortField;
+  const dateVal = it[dateField];
+  return `
+    <div class="item">
+      ${dateVal ? `<div class="date-chip">${toBR(dateVal)}</div>` : ""}
+      <div class="item-main">
+        <div class="item-title">${escapeHtml(cfg.itemTitle(it))}</div>
+        ${cfg.itemSub(it) ? `<div class="item-sub">${escapeHtml(cfg.itemSub(it))}</div>` : ""}
+      </div>
+      <div class="item-actions">
+        <button class="icon-btn" title="Editar" onclick="openForm('${key}','${id}')">✎</button>
+        <button class="icon-btn" title="Excluir" onclick="removeItem('${key}','${id}')">🗑</button>
+      </div>
+    </div>
+  `;
+}
+
+function drawPesoChart(items){
+  const sorted = [...items].sort((a,b)=> a[1].data.localeCompare(b[1].data));
+  const ctx = document.getElementById("peso-chart");
+  if(!ctx) return;
+  new Chart(ctx, {
+    type:"line",
+    data:{
+      labels: sorted.map(([,i])=>toBR(i.data)),
+      datasets:[{
+        label:"Peso (kg)",
+        data: sorted.map(([,i])=>i.peso),
+        borderColor:"#A63D4F", backgroundColor:"rgba(166,61,79,.12)",
+        tension:.3, fill:true, pointBackgroundColor:"#4A5C6E", pointRadius:4,
+      }]
+    },
+    options:{ plugins:{legend:{display:false}}, scales:{ y:{ title:{display:true,text:"kg"} } } }
+  });
+}
+
+/* ============================= FORM MODAL ============================= */
+function openForm(key, id){
+  const cfg = COLLECTIONS[key];
+  const editing = !!id;
+  const data = editing ? (DATA[key][id] || {}) : {};
+  const fieldsHtml = cfg.fields.map(f=>{
+    const val = data[f.name] ?? "";
+    if(f.type==="textarea"){
+      return `<div class="field"><label>${f.label}</label><textarea id="f_${f.name}">${escapeHtml(val)}</textarea></div>`;
+    }
+    if(f.type==="select"){
+      const opts = f.options.map(o=>`<option ${o===val?"selected":""}>${o}</option>`).join("");
+      return `<div class="field"><label>${f.label}</label><select id="f_${f.name}"><option value=""></option>${opts}</select></div>`;
+    }
+    return `<div class="field"><label>${f.label}</label><input id="f_${f.name}" type="${f.type}" ${f.step?`step="${f.step}"`:""} placeholder="${f.placeholder||""}" value="${escapeHtml(val)}"></div>`;
+  }).join("");
+
+  $("#modal-box").innerHTML = `
+    <h3>${editing?"Editar":"Adicionar"} — ${cfg.title}</h3>
+    ${fieldsHtml}
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveForm('${key}', ${editing? `'${id}'`:'null'})">Salvar</button>
+    </div>
+  `;
+  $("#overlay").classList.add("open");
+}
+function closeModal(){ $("#overlay").classList.remove("open"); }
+
+async function saveForm(key, id){
+  const cfg = COLLECTIONS[key];
+  const payload = {};
+  for(const f of cfg.fields){
+    const el = document.getElementById(`f_${f.name}`);
+    const val = el.value.trim();
+    if(f.required && !val){ el.focus(); el.style.borderColor = "var(--berry)"; return; }
+    payload[f.name] = val;
+  }
+  const finalId = id || uid();
+  await fbSet(`${key}/${finalId}`, payload);
+  DATA[key] = DATA[key] || {};
+  DATA[key][finalId] = payload;
+  closeModal();
+  renderCollection(key);
+  if(key==="pesagem" || key==="vacinas" || key==="filtroBebedouro" || key==="cio" || key==="banhos") {} // home stats will refresh on next visit
+}
+
+async function removeItem(key,id){
+  if(!confirm("Excluir este registro?")) return;
+  await fbDelete(`${key}/${id}`);
+  delete DATA[key][id];
+  renderCollection(key);
+}
+
+/* ============================= INFO GERAL ============================= */
+function renderInfo(){
+  const info = DATA.info || {};
+  $("#page").innerHTML = `
+    <div class="page-title"><h1>Informações Gerais</h1><span class="sub">plano, vet, ração e lugares favoritos</span></div>
+    <div class="grid grid-2">
+      <div class="card">
+        <h3 style="margin-top:0;">Plano de saúde</h3>
+        <textarea id="info_plano" style="width:100%;min-height:70px;border:1.5px solid var(--line);border-radius:8px;padding:9px;">${escapeHtml(info.plano||"")}</textarea>
+      </div>
+      <div class="card">
+        <h3 style="margin-top:0;">Microchip</h3>
+        <textarea id="info_microchip" style="width:100%;min-height:70px;border:1.5px solid var(--line);border-radius:8px;padding:9px;">${escapeHtml(info.microchip||"")}</textarea>
+      </div>
+      <div class="card">
+        <h3 style="margin-top:0;">Clínica veterinária</h3>
+        <textarea id="info_vetClinica" style="width:100%;min-height:70px;border:1.5px solid var(--line);border-radius:8px;padding:9px;">${escapeHtml(info.vetClinica||"")}</textarea>
+      </div>
+      <div class="card">
+        <h3 style="margin-top:0;">Ração</h3>
+        <textarea id="info_racao" style="width:100%;min-height:70px;border:1.5px solid var(--line);border-radius:8px;padding:9px;" placeholder="Marca, quantidade diária, observações...">${escapeHtml(info.racao||"")}</textarea>
+      </div>
+      <div class="card" style="grid-column:1/-1;">
+        <h3 style="margin-top:0;">Lugares Pet Friendly</h3>
+        <textarea id="info_lugares" style="width:100%;min-height:90px;border:1.5px solid var(--line);border-radius:8px;padding:9px;">${escapeHtml(info.lugares||"")}</textarea>
+      </div>
+    </div>
+    <div style="margin-top:16px;text-align:right;">
+      <button class="btn btn-primary" onclick="saveInfo()">Salvar informações</button>
+    </div>
+  `;
+}
+async function saveInfo(){
+  const payload = {
+    plano: $("#info_plano").value,
+    microchip: $("#info_microchip").value,
+    vetClinica: $("#info_vetClinica").value,
+    racao: $("#info_racao").value,
+    lugares: $("#info_lugares").value,
+  };
+  await fbSet("info", payload);
+  DATA.info = payload;
+  alert("Salvo!");
+}
+
+/* ============================= INIT ============================= */
+window.addEventListener("DOMContentLoaded", boot);
+</script>
+</body>
+</html>
