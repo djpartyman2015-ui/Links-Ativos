@@ -105,6 +105,18 @@
   }
   .tag .ring{width:14px;height:14px;border:3px solid var(--tan-light);border-radius:50%;position:absolute;left:16px;top:50%;transform:translateY(-50%);}
   .tag-content{position:relative;z-index:1;}
+  .photo-wrap{position:relative;flex-shrink:0;z-index:1;}
+  .photo-wrap img,.photo-wrap .mascot-fallback{
+    width:72px;height:72px;border-radius:50%;object-fit:cover;
+    border:3px solid var(--tan);box-shadow:0 4px 10px rgba(0,0,0,.25);
+    display:block;background:var(--steel);
+  }
+  .photo-edit-btn{
+    position:absolute;bottom:-4px;right:-4px;width:26px;height:26px;border-radius:50%;
+    background:var(--berry);border:2px solid var(--steel-dark);color:#fff;font-size:12px;
+    display:flex;align-items:center;justify-content:center;padding:0;
+  }
+  .photo-edit-btn:hover{background:var(--berry-dark);}
   .tag-content .eyebrow{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--tan-light);font-weight:600;}
   .tag-content .age{font-family:'Fraunces',serif;font-size:34px;font-weight:600;margin:4px 0 2px;}
   .tag-content .age b{color:var(--tan);}
@@ -521,7 +533,13 @@ function renderHome(){
     <div class="page-title"><h1>Oi! 🐾</h1><span class="sub">resumo de hoje</span></div>
     <div class="tag" style="margin-bottom:20px;">
       <span class="ring"></span>
-      <svg viewBox="0 0 120 120" width="72" height="72" style="filter:drop-shadow(0 4px 10px rgba(0,0,0,.25));flex-shrink:0;"><use href="#yorkie-mark"/></svg>
+      <div class="photo-wrap">
+        ${DATA.foto
+          ? `<img src="${DATA.foto}" alt="Pitanga">`
+          : `<svg class="mascot-fallback" viewBox="0 0 120 120" width="72" height="72"><use href="#yorkie-mark"/></svg>`}
+        <button class="photo-edit-btn" title="Trocar foto" onclick="document.getElementById('photo-input').click()">✎</button>
+      </div>
+      <input type="file" id="photo-input" accept="image/*" style="display:none" onchange="handlePhotoChange(event)">
       <div class="tag-content">
         <div class="eyebrow">Pitanga tem</div>
         <div class="age"><b>${years}</b> ano${years!==1?"s":""}, <b>${months}</b> ${months===1?"mês":"meses"} e <b>${days}</b> dia${days!==1?"s":""}</div>
@@ -562,6 +580,30 @@ function renderHome(){
       </div>
     </div>
   `;
+}
+
+function handlePhotoChange(ev){
+  const file = ev.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e=>{
+    const img = new Image();
+    img.onload = async ()=>{
+      const maxDim = 480;
+      let {width,height} = img;
+      if(width>height && width>maxDim){ height*=maxDim/width; width=maxDim; }
+      else if(height>maxDim){ width*=maxDim/height; height=maxDim; }
+      const canvas = document.createElement("canvas");
+      canvas.width=width; canvas.height=height;
+      canvas.getContext("2d").drawImage(img,0,0,width,height);
+      const dataUrl = canvas.toDataURL("image/jpeg", .82);
+      await fbSet("foto", dataUrl);
+      DATA.foto = dataUrl;
+      renderHome();
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
 }
 
 /* ============================= GENERIC COLLECTION RENDER ============================= */
