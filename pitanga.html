@@ -244,6 +244,7 @@ const uid = () => Math.random().toString(36).slice(2,10);
 function toBR(iso){ if(!iso) return "—"; const [y,m,d]=iso.split("-"); return `${d}/${m}/${y}`; }
 function todayISO(){ return new Date().toISOString().slice(0,10); }
 function daysBetween(a,b){ return Math.round((new Date(b)-new Date(a))/86400000); }
+function addDays(iso, days){ const d = new Date(iso+"T00:00:00"); d.setDate(d.getDate()+days); return d.toISOString().slice(0,10); }
 function escapeHtml(s){ return (s||"").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
 async function fbGet(path){
@@ -529,6 +530,8 @@ function renderHome(){
 
   const avgCio = avgIntervalDays("cio","data");
   const diasDesdeCio = lastCio ? daysBetween(lastCio.data, todayISO()) : null;
+  const proxCio = (lastCio && avgCio) ? addDays(lastCio.data, avgCio) : null;
+  const diasParaProxCio = proxCio ? daysBetween(todayISO(), proxCio) : null;
 
   $("#page").innerHTML = `
     <div class="page-title"><h1>Oi! 🐾</h1><span class="sub">resumo de hoje</span></div>
@@ -572,7 +575,8 @@ function renderHome(){
       <div class="card stat-card">
         <div class="lbl">Cio</div>
         <div class="val">${diasDesdeCio!=null ? diasDesdeCio+" dias" : "—"} <span class="meta">desde o último</span></div>
-        <div class="meta">${lastCio? "início em "+toBR(lastCio.data):"sem registro"}${avgCio?` · média entre ciclos: ~${avgCio} dias`:""}</div>
+        <div class="meta">${lastCio? "início em "+toBR(lastCio.data):"sem registro"}${avgCio?` · ciclo médio: ~${avgCio} dias`:""}</div>
+        ${proxCio ? `<div class="meta" style="margin-top:2px;">próximo estimado: <b style="color:var(--steel-dark);">${toBR(proxCio)}</b> ${diasParaProxCio>=0 ? `(em ${diasParaProxCio} dias)` : `(${Math.abs(diasParaProxCio)} dias atrás)`}</div>` : ""}
       </div>
       <div class="card stat-card">
         <div class="lbl">Eventos registrados</div>
