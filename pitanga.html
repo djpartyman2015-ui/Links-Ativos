@@ -275,11 +275,11 @@ const TABS = [
   {key:"eventos", label:"Histórico", icon:"📜"},
   {key:"vacinas", label:"Vacinas", icon:"💉"},
   {key:"pesagem", label:"Peso", icon:"⚖️"},
-  {key:"medicamentos", label:"Remédios", icon:"💊"},
   {key:"filtroBebedouro", label:"Filtro", icon:"🚰"},
   {key:"cio", label:"Cio", icon:"🩸"},
   {key:"receitas", label:"Receitas Vet", icon:"🩺"},
   {key:"banhos", label:"Banho", icon:"🛁"},
+  {key:"custos", label:"Custos", icon:"💰"},
   {key:"info", label:"Info Geral", icon:"ℹ️"},
 ];
 
@@ -314,20 +314,6 @@ const COLLECTIONS = {
     ],
     sortField:"data",
     itemTitle:e=>`${e.peso} kg`, itemSub:e=>e.obs,
-  },
-  medicamentos: {
-    title:"Controle de Medicamentos", empty:"Nenhum medicamento registrado ainda.",
-    fields:[
-      {name:"nome", label:"Medicamento", type:"text", required:true},
-      {name:"dosagem", label:"Dosagem", type:"text", placeholder:"Ex: 0,3 da seringa de 1ml"},
-      {name:"motivo", label:"Motivo", type:"text"},
-      {name:"dataInicio", label:"Data de início", type:"date"},
-      {name:"ativo", label:"Em uso?", type:"select", options:["Sim","Não"]},
-      {name:"obs", label:"Observações", type:"textarea"},
-    ],
-    sortField:"dataInicio",
-    itemTitle:e=>`${e.nome}${e.ativo==="Sim" ? " · em uso":""}`,
-    itemSub:e=>[e.motivo, e.dosagem, e.obs].filter(Boolean).join(" · "),
   },
   filtroBebedouro: {
     title:"Troca de Filtro do Bebedouro", empty:"Nenhuma troca registrada ainda.",
@@ -370,6 +356,17 @@ const COLLECTIONS = {
     sortField:"data",
     itemTitle:e=>e.petshop||"Banho", itemSub:e=> (e.custo!=null?`R$ ${Number(e.custo).toFixed(2)}`:"") + (e.obs?` · ${e.obs}`:""),
   },
+  custos: {
+    title:"Custos Gerais", empty:"Nenhum custo registrado ainda.",
+    fields:[
+      {name:"data", label:"Data", type:"date", required:true},
+      {name:"categoria", label:"Categoria", type:"select", required:true, options:["Ração","Petiscos","Brinquedos","Remédios","Higiene","Acessórios","Outros"]},
+      {name:"descricao", label:"Descrição", type:"text"},
+      {name:"valor", label:"Valor (R$)", type:"number", step:"0.01", required:true},
+    ],
+    sortField:"data",
+    itemTitle:e=>`${e.categoria} · R$ ${Number(e.valor).toFixed(2)}`, itemSub:e=>e.descricao,
+  },
 };
 
 /* ============================= STATE ============================= */
@@ -404,9 +401,6 @@ const SEED = {
     {data:"2023-09-18", tipo:"V10", obs:"Teve reação após a vacina e tomou 1 gota de Dipirona."},
     {data:"2023-08-21", tipo:"Nobivac (Parvo)", obs:""},
   ],
-  medicamentos: [
-    {nome:"Prednon 4mg", dosagem:"0,3 da seringa de 1ml", motivo:"Cisto no abdômen (suspeita de picada de inseto)", dataInicio:"2023-12-12", ativo:"Não", obs:"Aplicado na veia no 1º dia e via seringa nos 4 dias seguintes."},
-  ],
   filtroBebedouro: [
     {data:"2026-01-17", obs:""},
     {data:"2026-03-16", obs:""},
@@ -428,6 +422,7 @@ const SEED = {
   ],
   banhos: [],
   pesagem: [],
+  custos: [],
 };
 const SEED_INFO = {
   racao: "",
@@ -526,6 +521,7 @@ function renderHome(){
   const lastCio = lastOf("cio","data");
   const lastBanho = lastOf("banhos","data");
   const banhoTotal = Object.values(DATA.banhos||{}).reduce((s,b)=> s + (Number(b.custo)||0), 0);
+  const custosTotal = Object.values(DATA.custos||{}).reduce((s,c)=> s + (Number(c.valor)||0), 0);
 
   const avgFiltro = avgIntervalDays("filtroBebedouro","data");
   const diasDesdeFiltro = lastFiltro ? daysBetween(lastFiltro.data, todayISO()) : null;
@@ -583,6 +579,11 @@ function renderHome(){
         <div class="val">${Object.keys(DATA.eventos||{}).length}</div>
         <div class="meta">no histórico completo</div>
       </div>
+      <div class="card stat-card">
+        <div class="lbl">Gastos gerais</div>
+        <div class="val">R$ ${custosTotal.toFixed(2)}</div>
+        <div class="meta">ração, brinquedos, petiscos e mais</div>
+      </div>
     </div>
   `;
 }
@@ -619,6 +620,16 @@ function renderCollection(key){
 
   let extra = "";
   if(key==="pesagem") extra = `<div class="card" style="margin-bottom:18px;"><canvas id="peso-chart" height="90"></canvas></div>`;
+  if(key==="custos"){
+    const total = items.reduce((s,[,it])=> s + (Number(it.valor)||0), 0);
+    extra = `
+      <div class="grid grid-3" style="margin-bottom:18px;">
+        <div class="card stat-card"><div class="lbl">Total geral</div><div class="val">R$ ${total.toFixed(2)}</div><div class="meta">${items.length} lançamento${items.length!==1?"s":""}</div></div>
+        <div class="card" style="grid-column:span 2;"><canvas id="custos-cat-chart" height="90"></canvas></div>
+      </div>
+      <div class="card" style="margin-bottom:18px;"><canvas id="custos-mes-chart" height="80"></canvas></div>
+    `;
+  }
 
   $("#page").innerHTML = `
     <div class="page-title"><h1>${cfg.title}</h1><span class="sub">${items.length} registro${items.length!==1?"s":""}</span></div>
@@ -633,6 +644,7 @@ function renderCollection(key){
   `;
 
   if(key==="pesagem" && items.length) drawPesoChart(items);
+  if(key==="custos" && items.length) drawCustosCharts(items);
 }
 
 function renderItem(key,id,it){
@@ -671,6 +683,42 @@ function drawPesoChart(items){
     },
     options:{ plugins:{legend:{display:false}}, scales:{ y:{ title:{display:true,text:"kg"} } } }
   });
+}
+
+function drawCustosCharts(items){
+  const byCat = {};
+  const byMonth = {};
+  items.forEach(([,it])=>{
+    const v = Number(it.valor)||0;
+    byCat[it.categoria] = (byCat[it.categoria]||0) + v;
+    const mes = (it.data||"").slice(0,7); // YYYY-MM
+    if(mes) byMonth[mes] = (byMonth[mes]||0) + v;
+  });
+
+  const catCtx = document.getElementById("custos-cat-chart");
+  if(catCtx){
+    new Chart(catCtx, {
+      type:"bar",
+      data:{
+        labels: Object.keys(byCat),
+        datasets:[{ label:"R$ por categoria", data:Object.values(byCat), backgroundColor:"#C99A4B", borderRadius:6 }]
+      },
+      options:{ plugins:{legend:{display:false}, title:{display:true,text:"Gasto por categoria"}}, scales:{y:{ticks:{callback:v=>"R$ "+v}}} }
+    });
+  }
+
+  const meses = Object.keys(byMonth).sort();
+  const mesCtx = document.getElementById("custos-mes-chart");
+  if(mesCtx){
+    new Chart(mesCtx, {
+      type:"line",
+      data:{
+        labels: meses.map(m=>{ const [y,mo]=m.split("-"); return `${mo}/${y}`; }),
+        datasets:[{ label:"R$ por mês", data: meses.map(m=>byMonth[m]), borderColor:"#4A5C6E", backgroundColor:"rgba(74,92,110,.12)", fill:true, tension:.3, pointBackgroundColor:"#A63D4F", pointRadius:4 }]
+      },
+      options:{ plugins:{legend:{display:false}, title:{display:true,text:"Gasto por mês"}}, scales:{y:{ticks:{callback:v=>"R$ "+v}}} }
+    });
+  }
 }
 
 /* ============================= FORM MODAL ============================= */
