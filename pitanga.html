@@ -722,12 +722,34 @@ function drawCustosCharts(items){
 }
 
 /* ============================= FORM MODAL ============================= */
+function dateSelectHtml(f, val){
+  const [vy,vm,vd] = (val||"").split("-");
+  const months = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
+  const thisYear = new Date().getFullYear();
+  let dOpts = `<option value=""></option>`;
+  for(let d=1; d<=31; d++) dOpts += `<option value="${String(d).padStart(2,"0")}" ${String(d).padStart(2,"0")===vd?"selected":""}>${d}</option>`;
+  let mOpts = `<option value=""></option>`;
+  months.forEach((m,i)=>{ const mm=String(i+1).padStart(2,"0"); mOpts += `<option value="${mm}" ${mm===vm?"selected":""}>${m}</option>`; });
+  let yOpts = `<option value=""></option>`;
+  for(let y=2020; y<=thisYear+4; y++) yOpts += `<option value="${y}" ${String(y)===vy?"selected":""}>${y}</option>`;
+  return `<div class="field"><label>${f.label}</label>
+    <div style="display:flex;gap:6px;">
+      <select id="f_${f.name}_d" style="flex:.8;padding:9px 4px;border-radius:8px;border:1.5px solid var(--line);font-size:14px;">${dOpts}</select>
+      <select id="f_${f.name}_m" style="flex:1.1;padding:9px 4px;border-radius:8px;border:1.5px solid var(--line);font-size:14px;">${mOpts}</select>
+      <select id="f_${f.name}_y" style="flex:1;padding:9px 4px;border-radius:8px;border:1.5px solid var(--line);font-size:14px;">${yOpts}</select>
+    </div>
+  </div>`;
+}
+
 function openForm(key, id){
   const cfg = COLLECTIONS[key];
   const editing = !!id;
   const data = editing ? (DATA[key][id] || {}) : {};
   const fieldsHtml = cfg.fields.map(f=>{
     const val = data[f.name] ?? "";
+    if(f.type==="date"){
+      return dateSelectHtml(f, val);
+    }
     if(f.type==="textarea"){
       return `<div class="field"><label>${f.label}</label><textarea id="f_${f.name}">${escapeHtml(val)}</textarea></div>`;
     }
@@ -754,6 +776,17 @@ async function saveForm(key, id){
   const cfg = COLLECTIONS[key];
   const payload = {};
   for(const f of cfg.fields){
+    if(f.type==="date"){
+      const d = document.getElementById(`f_${f.name}_d`).value;
+      const m = document.getElementById(`f_${f.name}_m`).value;
+      const y = document.getElementById(`f_${f.name}_y`).value;
+      if(f.required && !(d&&m&&y)){
+        document.getElementById(`f_${f.name}_y`).style.borderColor = "var(--berry)";
+        return;
+      }
+      payload[f.name] = (d&&m&&y) ? `${y}-${m}-${d}` : "";
+      continue;
+    }
     const el = document.getElementById(`f_${f.name}`);
     const val = el.value.trim();
     if(f.required && !val){ el.focus(); el.style.borderColor = "var(--berry)"; return; }
@@ -765,7 +798,6 @@ async function saveForm(key, id){
   DATA[key][finalId] = payload;
   closeModal();
   renderCollection(key);
-  if(key==="pesagem" || key==="vacinas" || key==="filtroBebedouro" || key==="cio" || key==="banhos") {} // home stats will refresh on next visit
 }
 
 async function removeItem(key,id){
