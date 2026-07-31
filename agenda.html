@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agenda</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect x='3' y='4' width='18' height='17' rx='3' fill='%238B7FE8'/%3E%3Cpath d='M3 9h18' stroke='%2312171D' stroke-width='1.4'/%3E%3Cpath d='M8 2.5v3M16 2.5v3' stroke='%2312171D' stroke-width='1.6' stroke-linecap='round'/%3E%3Ccircle cx='8' cy='13.5' r='1.3' fill='%2312171D'/%3E%3Ccircle cx='12' cy='13.5' r='1.3' fill='%2312171D'/%3E%3Ccircle cx='16' cy='13.5' r='1.3' fill='%2312171D'/%3E%3Ccircle cx='8' cy='17.5' r='1.3' fill='%2312171D'/%3E%3Ccircle cx='12' cy='17.5' r='1.3' fill='%2312171D'/%3E%3C/svg%3E">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Agenda">
+<meta name="theme-color" content="#12171D">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#12171D;
+    --panel:#1B222A;
+    --panel-alt:#212A33;
+    --border:#2C3641;
+    --text:#E9ECEF;
+    --muted:#8B96A3;
+    --accent:#8B7FE8;
+    --accent-dim:#332D57;
+    --ok:#4FB6A8;
+    --ok-dim:#26443F;
+    --danger:#D9584C;
+    --danger-dim:#4A2A26;
+    --gold:#E8B25F;
+    --gold-dim:#4A3D24;
+    --rose:#E8709A;
+    --rose-dim:#4A2A38;
+    --grid: rgba(255,255,255,0.035);
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased;}
+  ::selection{background:var(--accent);color:#12171D;}
+
+  header{
+    position:relative;
+    padding:44px 28px 34px;
+    background:
+      linear-gradient(180deg, rgba(18,23,29,0) 0%, var(--bg) 92%),
+      repeating-linear-gradient(0deg, var(--grid) 0px, var(--grid) 1px, transparent 1px, transparent 28px),
+      repeating-linear-gradient(90deg, var(--grid) 0px, var(--grid) 1px, transparent 1px, transparent 28px),
+      var(--panel);
+    border-bottom:1px solid var(--border);
+    overflow:hidden;
+  }
+  .eyebrow{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11.5px; letter-spacing:.18em; color:var(--accent); text-transform:uppercase;
+    display:flex; align-items:center; gap:8px;
+  }
+  .eyebrow svg{width:16px;height:16px;flex-shrink:0;}
+  h1{
+    font-family:'Space Grotesk',sans-serif; font-weight:700;
+    font-size:clamp(30px,4.4vw,44px); margin:8px 0 4px; letter-spacing:-.01em;
+  }
+  header p.sub{color:var(--muted); margin:0 0 26px; font-size:14.5px; max-width:560px;}
+
+  .stats{display:flex; gap:14px; flex-wrap:wrap;}
+  .stat{
+    background:var(--panel-alt); border:1px solid var(--border); border-radius:10px;
+    padding:14px 18px; min-width:150px;
+  }
+  .stat .n{font-family:'Space Grotesk',sans-serif; font-size:22px; font-weight:700; line-height:1.25;}
+  .stat .l{font-size:11.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.08em; margin-top:2px;}
+  .stat.accent .n{color:var(--accent);}
+  .stat.ok .n{color:var(--ok);}
+
+  main{max-width:980px; margin:0 auto; padding:26px 28px 80px;}
+
+  .toolbar{
+    display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:20px;
+  }
+  .toolbar input[type=search]{
+    flex:1; min-width:180px; background:var(--panel); border:1px solid var(--border); color:var(--text);
+    padding:10px 13px; border-radius:8px; font-size:14px; font-family:'Inter',sans-serif;
+  }
+  select{
+    background:var(--panel); border:1px solid var(--border); color:var(--text);
+    padding:10px 12px; border-radius:8px; font-size:13.5px; font-family:'Inter',sans-serif;
+  }
+  .btn{
+    border:none; border-radius:8px; padding:10px 16px; font-size:14px; font-weight:600;
+    cursor:pointer; font-family:'Inter',sans-serif; transition:opacity .15s;
+  }
+  .btn:hover{opacity:.88;}
+  .btn-primary{background:var(--accent); color:#12171D;}
+  .btn-ghost{background:var(--panel-alt); color:var(--text); border:1px solid var(--border);}
+  .btn-icon{background:transparent; border:none; color:var(--muted); cursor:pointer; padding:6px; border-radius:6px;}
+  .btn-icon:hover{color:var(--text); background:var(--panel-alt);}
+
+  .sync{font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--muted); display:flex; align-items:center; gap:6px;}
+  .dot{width:7px;height:7px;border-radius:50%; background:var(--ok);}
+  .dot.busy{background:var(--accent); animation:pulse 1s infinite;}
+  @keyframes pulse{50%{opacity:.3;}}
+
+  .monthhead{
+    font-family:'IBM Plex Mono',monospace; font-size:11.5px; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--muted); margin:26px 0 10px; padding-bottom:6px; border-bottom:1px solid var(--border);
+  }
+  .monthhead:first-of-type{margin-top:4px;}
+
+  .row{
+    display:flex; gap:0; background:var(--panel); border:1px solid var(--border); border-radius:10px;
+    margin-bottom:10px; overflow:hidden; transition:border-color .15s;
+  }
+  .row:hover{border-color:#3A4552;}
+  .row.concluido{opacity:.5;}
+  .row.cancelado{opacity:.45;}
+  .row.andamento{border-color:var(--ok); border-width:1.5px;}
+
+  .flagtag{
+    flex-shrink:0; width:54px; display:flex; align-items:center; justify-content:center;
+    font-size:19px; position:relative;
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%, 14px 50%);
+  }
+
+  .rowbody{flex:1; padding:14px 18px 14px 22px; min-width:0;}
+  .rowtop{display:flex; justify-content:space-between; align-items:flex-start; gap:14px;}
+  .titulo{font-size:15px; font-weight:600; line-height:1.35;}
+  .row.concluido .titulo, .row.cancelado .titulo{text-decoration:line-through; text-decoration-color:var(--muted);}
+  .meta{display:flex; gap:10px; margin-top:6px; flex-wrap:wrap; align-items:center; font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--muted);}
+  .meta .data{color:var(--text);}
+  .pill{
+    font-family:'IBM Plex Mono',monospace; font-size:10.5px; text-transform:uppercase; letter-spacing:.06em;
+    padding:3px 9px; border-radius:20px; white-space:nowrap; border:1px solid var(--border); color:var(--muted);
+  }
+  .pill.previsto{color:var(--accent); border-color:var(--accent-dim);}
+  .pill.andamento{color:var(--ok); border-color:var(--ok-dim);}
+  .pill.hoje{color:var(--gold); border-color:var(--gold-dim);}
+  .pill.concluido{color:var(--muted);}
+  .pill.cancelado{color:var(--danger); border-color:var(--danger-dim);}
+  .cattag{font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted);}
+
+  .notas{
+    margin-top:8px; font-size:13px; color:var(--muted); line-height:1.5; white-space:pre-wrap;
+    border-top:1px dashed var(--border); padding-top:8px; display:none;
+  }
+  .notas.open{display:block;}
+
+  .actions{display:flex; gap:2px; flex-shrink:0;}
+
+  .empty{text-align:center; padding:60px 20px; color:var(--muted);}
+  .empty svg{width:40px;height:40px;margin-bottom:12px;opacity:.5;}
+
+  .overlay{
+    position:fixed; inset:0; background:rgba(10,13,17,.7); display:none; align-items:flex-start; justify-content:center;
+    padding:40px 16px; overflow-y:auto; z-index:20;
+  }
+  .overlay.open{display:flex;}
+  .modal{
+    background:var(--panel); border:1px solid var(--border); border-radius:12px; width:100%; max-width:480px; padding:26px;
+  }
+  .modal h2{font-family:'Space Grotesk',sans-serif; margin:0 0 18px; font-size:20px;}
+  .field{margin-bottom:14px;}
+  .field label{display:block; font-size:12px; color:var(--muted); margin-bottom:6px; text-transform:uppercase; letter-spacing:.05em;}
+  .field input, .field textarea, .field select{
+    width:100%; background:var(--panel-alt); border:1px solid var(--border); color:var(--text);
+    padding:10px 12px; border-radius:8px; font-size:14px; font-family:'Inter',sans-serif;
+  }
+  .field textarea{min-height:70px; resize:vertical; font-family:'Inter',sans-serif; font-size:13.5px;}
+  .field-row{display:flex; gap:12px;}
+  .field-row .field{flex:1;}
+  .check{display:flex; align-items:center; gap:8px; margin-bottom:16px;}
+  .check input{width:16px; height:16px;}
+  .modal-actions{display:flex; justify-content:space-between; margin-top:20px; gap:10px;}
+
+  @media(max-width:560px){
+    header{padding:32px 18px 26px;} main{padding:20px 16px 60px;}
+    .flagtag{width:42px; font-size:16px;}
+    .rowbody{padding:12px 14px;}
+    .stat{min-width:130px;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2.5v3M16 2.5v3"/></svg>
+    AGENDA COMPARTILHADA
+  </div>
+  <h1>Nossa Agenda</h1>
+  <p class="sub">Tudo o que está por vir e tudo o que já rolou — num só lugar, sempre atualizado.</p>
+  <div class="stats">
+    <div class="stat accent"><div class="n" id="statProximo">–</div><div class="l">Próximo evento</div></div>
+    <div class="stat"><div class="n" id="statPrevistos">–</div><div class="l">Previstos</div></div>
+    <div class="stat"><div class="n" id="statMes">–</div><div class="l">Este mês</div></div>
+    <div class="stat ok"><div class="n" id="statHistorico">–</div><div class="l">No histórico</div></div>
+  </div>
+</header>
+
+<main>
+  <div class="toolbar">
+    <input type="search" id="search" placeholder="Buscar evento...">
+    <select id="filterCat">
+      <option value="todas">Todas categorias</option>
+      <option value="aniversario">🎂 Aniversário</option>
+      <option value="viagem">✈️ Viagem</option>
+      <option value="festa">🎉 Festa</option>
+      <option value="feriado">📅 Feriado</option>
+      <option value="evento">📌 Evento</option>
+    </select>
+    <select id="filterStatus">
+      <option value="proximos">Próximos</option>
+      <option value="historico">Histórico</option>
+      <option value="todos">Todos</option>
+    </select>
+    <button class="btn btn-primary" id="btnAdd">+ Novo evento</button>
+  </div>
+
+  <div class="sync"><span class="dot" id="syncDot"></span><span id="syncText">conectando...</span></div>
+  <br>
+
+  <div id="list"></div>
+</main>
+
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <h2 id="modalTitle">Novo evento</h2>
+    <div class="field"><label>Título</label><input id="fTitulo" type="text" placeholder="Ex: Aniversário da Paty"></div>
+    <div class="field-row">
+      <div class="field"><label>Início</label><input id="fInicio" type="date"></div>
+      <div class="field"><label>Fim</label><input id="fFim" type="date"></div>
+    </div>
+    <div class="field">
+      <label>Categoria</label>
+      <select id="fCategoria">
+        <option value="evento">📌 Evento</option>
+        <option value="aniversario">🎂 Aniversário</option>
+        <option value="viagem">✈️ Viagem</option>
+        <option value="festa">🎉 Festa</option>
+        <option value="feriado">📅 Feriado</option>
+      </select>
+    </div>
+    <div class="check"><input type="checkbox" id="fCancelado"><label for="fCancelado" style="margin:0; text-transform:none; letter-spacing:0; color:var(--text); font-size:14px;">Cancelado / não aconteceu</label></div>
+    <div class="field"><label>Notas</label><textarea id="fNotas" placeholder="Detalhes, local, quem vai..."></textarea></div>
+    <div class="field"><label>Seu nome (fica registrado na última edição)</label><input id="fEditor" type="text" placeholder="Ex: Andrey"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="btnDelete" style="display:none; color:var(--danger); border-color:#4A2A26;">Excluir</button>
+      <div style="flex:1"></div>
+      <button class="btn btn-ghost" id="btnCancel">Cancelar</button>
+      <button class="btn btn-primary" id="btnSave">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const DB_URL = "https://medicos-andrey-default-rtdb.firebaseio.com/agenda.json";
+let items = {};
+let editingId = null;
+
+const CATS = {
+  aniversario:{label:'Aniversário', icon:'🎂', color:'var(--rose)', dim:'var(--rose-dim)'},
+  viagem:     {label:'Viagem',      icon:'✈️', color:'var(--ok)',   dim:'var(--ok-dim)'},
+  festa:      {label:'Festa',       icon:'🎉', color:'var(--accent)', dim:'var(--accent-dim)'},
+  feriado:    {label:'Feriado',     icon:'📅', color:'var(--gold)', dim:'var(--gold-dim)'},
+  evento:     {label:'Evento',      icon:'📌', color:'var(--muted)', dim:'#242C34'},
+};
+
+const MESES_ABR = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+const MESES_LONG = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+
+const SEED = [{"titulo":"Tiago em Mogi","dataInicio":"2026-08-04","dataFim":"2026-08-04","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Punta Cana 🌴🏝️","dataInicio":"2026-08-19","dataFim":"2026-08-26","categoria":"evento","cancelado":false,"notas":""},{"titulo":"São Pedro","dataInicio":"2026-08-31","dataFim":"2026-09-03","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Casamento do Diego + férias de uns 20 dias + Tomorrowland Bélgica (provável que o primeiro final de semana de festa seja de 16 a 18-07-27)","dataInicio":"2027-07-09","dataFim":"2027-07-11","categoria":"viagem","cancelado":false,"notas":""},{"titulo":"EletroHits Zoff com Tiko’s Groove","dataInicio":"2026-07-18","dataFim":"2026-07-18","categoria":"evento","cancelado":false,"notas":""},{"titulo":"LIVRE","dataInicio":"2026-07-11","dataFim":"2026-07-11","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Rewind Laroc","dataInicio":"2026-07-04","dataFim":"2026-07-04","categoria":"festa","cancelado":false,"notas":""},{"titulo":"Festa Junina no Sitio","dataInicio":"2026-06-27","dataFim":"2026-06-27","categoria":"festa","cancelado":false,"notas":""},{"titulo":"Dom - Casa Decor","dataInicio":"2026-06-21","dataFim":"2026-06-21","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Noronhe-se","dataInicio":"2026-06-14","dataFim":"2026-06-20","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Brasil e Marrocos no Disso","dataInicio":"2026-06-13","dataFim":"2026-06-13","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Tiago em Mogi com o carro","dataInicio":"2026-06-10","dataFim":"2026-06-10","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Casa da Prilão","dataInicio":"2026-06-05","dataFim":"2026-06-05","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Festa da Igreja - BINGO","dataInicio":"2026-05-24","dataFim":"2026-05-24","categoria":"festa","cancelado":false,"notas":""},{"titulo":"Bingo na Igreja Sta Rita","dataInicio":"2026-05-16","dataFim":"2026-05-16","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Diabo Vesta Prada 22h no Polo","dataInicio":"2026-05-04","dataFim":"2026-05-04","categoria":"evento","cancelado":false,"notas":""},{"titulo":"La Palma Hotel Fazenda","dataInicio":"2026-04-30","dataFim":"2026-05-03","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Diego no Brasil","dataInicio":"2026-04-08","dataFim":"2026-04-21","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Niver da Franga","dataInicio":"2026-04-11","dataFim":"2026-04-11","categoria":"aniversario","cancelado":false,"notas":""},{"titulo":"Andrey vai encontrar Aline do Canadá em Cps","dataInicio":"2026-03-31","dataFim":"2026-03-31","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Implante Tiago (Mogi Guaçu)","dataInicio":"2026-03-24","dataFim":"2026-03-26","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Concurso Tiago","dataInicio":"2026-03-15","dataFim":"2026-03-15","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Férias (navio)","dataInicio":"2026-03-07","dataFim":"2026-03-14","categoria":"viagem","cancelado":false,"notas":""},{"titulo":"Niver da Paty (não fomos)","dataInicio":"2026-01-24","dataFim":"2026-01-24","categoria":"aniversario","cancelado":true,"notas":""},{"titulo":"SP","dataInicio":"2026-01-13","dataFim":"2026-01-17","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Niver Joca","dataInicio":"2026-01-11","dataFim":"2026-01-11","categoria":"aniversario","cancelado":false,"notas":""},{"titulo":"Reveillon Laroc","dataInicio":"2025-12-31","dataFim":"2025-12-31","categoria":"festa","cancelado":false,"notas":""},{"titulo":"Tiago em Rio Preto","dataInicio":"2025-12-22","dataFim":"2025-12-29","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Churras Casa da Marcita","dataInicio":"2025-12-13","dataFim":"2025-12-13","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Serra Negra","dataInicio":"2025-12-05","dataFim":"2025-12-08","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Niver da Lidioca","dataInicio":"2025-11-30","dataFim":"2025-11-30","categoria":"aniversario","cancelado":false,"notas":""},{"titulo":"Confra no Sto Pq da Bandag","dataInicio":"2025-11-27","dataFim":"2025-11-27","categoria":"festa","cancelado":false,"notas":""},{"titulo":"Feriado","dataInicio":"2025-11-20","dataFim":"2025-11-20","categoria":"feriado","cancelado":false,"notas":""},{"titulo":"Niver do Luis Barreto IBM","dataInicio":"2025-11-16","dataFim":"2025-11-16","categoria":"aniversario","cancelado":false,"notas":""},{"titulo":"SP","dataInicio":"2025-11-15","dataFim":"2025-11-15","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Voltamos das Ferias","dataInicio":"2025-11-03","dataFim":"2025-11-03","categoria":"viagem","cancelado":false,"notas":""},{"titulo":"Férias 🙏🏻🏝️☀️💙","dataInicio":"2025-10-13","dataFim":"2025-10-30","categoria":"viagem","cancelado":false,"notas":""},{"titulo":"Porto Seguro/CARAÍVA","dataInicio":"2025-10-14","dataFim":"2025-10-14","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Tomorrowland","dataInicio":"2025-10-11","dataFim":"2025-10-11","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Festa Goodtimes com Evi Goffin - LimeLight Campinas","dataInicio":"2025-10-10","dataFim":"2025-10-10","categoria":"festa","cancelado":false,"notas":""},{"titulo":"Casa da Dete","dataInicio":"2025-10-04","dataFim":"2025-10-04","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Churras na casa da Marcinha (visita do Tom dos EUA)- nã teve","dataInicio":"2025-09-14","dataFim":"2025-09-14","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Niver do Henri","dataInicio":"2025-09-13","dataFim":"2025-09-13","categoria":"aniversario","cancelado":false,"notas":""},{"titulo":"Moon - Campinas - Cancun","dataInicio":"2025-09-06","dataFim":"2025-09-06","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Niver Rapha - Bar da Loira (Não fomos)","dataInicio":"2025-09-06","dataFim":"2025-09-06","categoria":"aniversario","cancelado":true,"notas":""},{"titulo":"17h - Missa de 7o Dia da Vó","dataInicio":"2025-08-23","dataFim":"2025-08-23","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Dia dos Pais - Casa da Mae","dataInicio":"2025-08-10","dataFim":"2025-08-10","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Niver Rebeka Itatiba - 15h (não fomos)","dataInicio":"2025-08-02","dataFim":"2025-08-02","categoria":"aniversario","cancelado":true,"notas":""},{"titulo":"Festa Julina no Disso","dataInicio":"2025-07-12","dataFim":"2025-07-12","categoria":"festa","cancelado":false,"notas":""},{"titulo":"Surpresa Casamento Marcio - Elixir","dataInicio":"2025-07-10","dataFim":"2025-07-10","categoria":"festa","cancelado":false,"notas":""},{"titulo":"Quinta - Feriado Prolongado","dataInicio":"2025-06-19","dataFim":"2025-06-19","categoria":"feriado","cancelado":false,"notas":""},{"titulo":"Festa Junina Rancho Campestre","dataInicio":"2025-06-28","dataFim":"2025-06-28","categoria":"festa","cancelado":false,"notas":""},{"titulo":"Festa Junina Helvetia","dataInicio":"2025-06-21","dataFim":"2025-06-21","categoria":"festa","cancelado":false,"notas":""},{"titulo":"LIVRE","dataInicio":"2025-06-14","dataFim":"2025-06-14","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Monte Verde (niver namoro 🥰)","dataInicio":"2025-05-31","dataFim":"2025-06-02","categoria":"aniversario","cancelado":false,"notas":""},{"titulo":"Balada Millenium 2000’s no Cine Jóia em SP (com Lasgo) - Reservado Hotel Global Grupos com café","dataInicio":"2025-05-23","dataFim":"2025-05-23","categoria":"festa","cancelado":false,"notas":""},{"titulo":"Domingo: Niver da Gigi Jaguariuna","dataInicio":"2025-05-18","dataFim":"2025-05-18","categoria":"aniversario","cancelado":false,"notas":""},{"titulo":"Quinta - Feriado Prolongado","dataInicio":"2025-05-01","dataFim":"2025-05-01","categoria":"feriado","cancelado":false,"notas":""},{"titulo":"Niver Cristian Maresias","dataInicio":"2025-04-18","dataFim":"2025-04-21","categoria":"aniversario","cancelado":false,"notas":""},{"titulo":"Niver do Marcio no Tatu Bola","dataInicio":"2025-04-12","dataFim":"2025-04-12","categoria":"aniversario","cancelado":false,"notas":""},{"titulo":"Férias","dataInicio":"2025-03-22","dataFim":"2025-04-06","categoria":"viagem","cancelado":false,"notas":""},{"titulo":"Aji com Mel Thata","dataInicio":"2025-03-16","dataFim":"2025-03-16","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Niver Disso","dataInicio":"2025-03-09","dataFim":"2025-03-09","categoria":"aniversario","cancelado":false,"notas":""},{"titulo":"Niver Andrey","dataInicio":"2025-03-08","dataFim":"2025-03-08","categoria":"aniversario","cancelado":false,"notas":""},{"titulo":"AgroRancho","dataInicio":"2025-02-28","dataFim":"2025-03-05","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Niver Marcinha","dataInicio":"2025-02-22","dataFim":"2025-02-22","categoria":"aniversario","cancelado":false,"notas":""},{"titulo":"Almoço Alê SP","dataInicio":"2025-02-16","dataFim":"2025-02-16","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Ceasa","dataInicio":"2025-01-04","dataFim":"2025-01-04","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Rewind 3.0","dataInicio":"2024-12-21","dataFim":"2024-12-21","categoria":"festa","cancelado":false,"notas":""},{"titulo":"Visitar Rejane","dataInicio":"2024-12-15","dataFim":"2024-12-15","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Churras na Luana","dataInicio":"2024-12-08","dataFim":"2024-12-08","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Visitar a Pri em Araçoiaba","dataInicio":"2024-12-07","dataFim":"2024-12-07","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Hallow Paty/Michael","dataInicio":"2024-11-02","dataFim":"2024-11-02","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Rewind 2.0 Laroc","dataInicio":"2024-10-26","dataFim":"2024-10-26","categoria":"festa","cancelado":false,"notas":""},{"titulo":"Niver do Henri","dataInicio":"2024-10-26","dataFim":"2024-10-26","categoria":"aniversario","cancelado":false,"notas":""},{"titulo":"Niver Romas em Cps - Fortão","dataInicio":"2024-10-21","dataFim":"2024-10-21","categoria":"aniversario","cancelado":false,"notas":""},{"titulo":"Tomorrowland","dataInicio":"2024-10-12","dataFim":"2024-10-12","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Tiago em Rio Preto","dataInicio":"2024-09-23","dataFim":"2024-09-29","categoria":"evento","cancelado":false,"notas":""},{"titulo":"RJ - Rock in Rio","dataInicio":"2024-09-19","dataFim":"2024-09-22","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Joao Pessoa","dataInicio":"2024-09-07","dataFim":"2024-09-17","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Expoflora Holambra (ingresso comprado)","dataInicio":"2024-08-31","dataFim":"2024-08-31","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Cirurgia da Mamis","dataInicio":"2024-08-23","dataFim":"2024-08-23","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Dalila e Amora em casa","dataInicio":"2024-08-15","dataFim":"2024-08-26","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Brotas","dataInicio":"2024-08-03","dataFim":"2024-08-05","categoria":"evento","cancelado":false,"notas":""},{"titulo":"ida a Belem/PA (Andrey)","dataInicio":"2024-06-16","dataFim":"2024-06-21","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Festa Junina Vila Ytu","dataInicio":"2024-06-08","dataFim":"2024-06-08","categoria":"festa","cancelado":false,"notas":""},{"titulo":"Amora e Dalila aqui em casa","dataInicio":"2024-05-28","dataFim":"2024-06-12","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Festa Junina Helvetia (não fomos)","dataInicio":"2024-06-01","dataFim":"2024-06-01","categoria":"festa","cancelado":true,"notas":""},{"titulo":"Balada Flight SP","dataInicio":"2024-05-31","dataFim":"2024-05-31","categoria":"festa","cancelado":false,"notas":""},{"titulo":"Monte Verde - Beija-Flor","dataInicio":"2024-05-25","dataFim":"2024-05-27","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Chá de Bebê da Rebeka (Luana) - não fomos","dataInicio":"2024-05-18","dataFim":"2024-05-18","categoria":"evento","cancelado":true,"notas":""},{"titulo":"Niver Cris em Cps","dataInicio":"2024-04-20","dataFim":"2024-04-20","categoria":"aniversario","cancelado":false,"notas":""},{"titulo":"Porto de Galinhas (Férias)","dataInicio":"2024-03-18","dataFim":"2024-03-24","categoria":"viagem","cancelado":false,"notas":""},{"titulo":"Navio (férias)","dataInicio":"2024-03-10","dataFim":"2024-03-17","categoria":"viagem","cancelado":false,"notas":""},{"titulo":"Niver da Ale em SP","dataInicio":"2024-02-17","dataFim":"2024-02-17","categoria":"aniversario","cancelado":false,"notas":""},{"titulo":"Bar Queen","dataInicio":"2024-02-17","dataFim":"2024-02-17","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Visita Fran, Renan e Tata","dataInicio":"2024-02-16","dataFim":"2024-02-16","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Carna Agro Rancho","dataInicio":"2024-02-09","dataFim":"2024-02-14","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Balada Flight em SP na Komplexo Tempo com Conras (hotel reservado)","dataInicio":"2024-01-27","dataFim":"2024-01-27","categoria":"festa","cancelado":false,"notas":""},{"titulo":"Niver da Paty","dataInicio":"2024-01-20","dataFim":"2024-01-20","categoria":"aniversario","cancelado":false,"notas":""},{"titulo":"Bailinho da Amanda","dataInicio":"2024-01-13","dataFim":"2024-01-13","categoria":"festa","cancelado":false,"notas":""},{"titulo":"Bar Queen","dataInicio":"2024-01-06","dataFim":"2024-01-06","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Cappacabana","dataInicio":"2023-12-31","dataFim":"2023-12-31","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Recital do Romas","dataInicio":"2023-12-17","dataFim":"2023-12-17","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Visita na casa da Amanda","dataInicio":"2023-12-09","dataFim":"2023-12-09","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Pedreira","dataInicio":"2023-12-08","dataFim":"2023-12-08","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Confra no Armazem Cambui","dataInicio":"2023-12-01","dataFim":"2023-12-01","categoria":"festa","cancelado":false,"notas":""},{"titulo":"Tiago em Rio Preto","dataInicio":"2023-11-16","dataFim":"2023-11-20","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Andrey com virose","dataInicio":"2023-11-18","dataFim":"2023-11-20","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Feriado (quarta)","dataInicio":"2023-11-15","dataFim":"2023-11-15","categoria":"feriado","cancelado":false,"notas":""},{"titulo":"Quinta Feriado prolongado","dataInicio":"2023-11-02","dataFim":"2023-11-02","categoria":"feriado","cancelado":false,"notas":""},{"titulo":"Possível niver do Romas (não teve)","dataInicio":"2023-10-21","dataFim":"2023-10-21","categoria":"aniversario","cancelado":true,"notas":""},{"titulo":"Quinta Feriado prolongado","dataInicio":"2023-10-12","dataFim":"2023-10-12","categoria":"feriado","cancelado":false,"notas":""},{"titulo":"Churrasco Niver Pai","dataInicio":"2023-09-30","dataFim":"2023-09-30","categoria":"aniversario","cancelado":false,"notas":""},{"titulo":"Almoço em Pira ikigai - niver da Priscila","dataInicio":"2023-09-23","dataFim":"2023-09-23","categoria":"aniversario","cancelado":false,"notas":""},{"titulo":"sabado - Pais vem pra almoçar no jatoba com a gente","dataInicio":"2023-09-16","dataFim":"2023-09-16","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Quinta- Feriado prolongado","dataInicio":"2023-09-07","dataFim":"2023-09-07","categoria":"feriado","cancelado":false,"notas":""},{"titulo":"FÉRIAS","dataInicio":"2023-08-21","dataFim":"2023-09-09","categoria":"viagem","cancelado":false,"notas":""},{"titulo":"Campos do Jordão","dataInicio":"2023-08-31","dataFim":"2023-09-05","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Porto/Caraíva","dataInicio":"2023-08-19","dataFim":"2023-08-29","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Feijoada dia dos pais","dataInicio":"2023-08-13","dataFim":"2023-08-13","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Free","dataInicio":"2023-08-12","dataFim":"2023-08-12","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Chá de Bebê do Henri","dataInicio":"2023-08-06","dataFim":"2023-08-06","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Festa da Tradição no Helvetia","dataInicio":"2023-07-30","dataFim":"2023-07-30","categoria":"festa","cancelado":false,"notas":""},{"titulo":"Festa Junina Sitio Ale","dataInicio":"2023-07-29","dataFim":"2023-07-29","categoria":"festa","cancelado":false,"notas":""},{"titulo":"Blue Space SP","dataInicio":"2023-07-22","dataFim":"2023-07-22","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Visto SP Tiago (day-off)","dataInicio":"2023-07-13","dataFim":"2023-07-13","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Fundue no Fabio e Luana","dataInicio":"2023-07-01","dataFim":"2023-07-01","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Festa Junina Helvetia","dataInicio":"2023-06-17","dataFim":"2023-06-17","categoria":"festa","cancelado":false,"notas":""},{"titulo":"Sabado Thata e Franga em casa","dataInicio":"2023-06-10","dataFim":"2023-06-10","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Festa Junina em casa","dataInicio":"2023-06-03","dataFim":"2023-06-03","categoria":"festa","cancelado":false,"notas":""},{"titulo":"Monte Verde","dataInicio":"2023-05-27","dataFim":"2023-05-29","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Niver Gigi","dataInicio":"2023-05-20","dataFim":"2023-05-20","categoria":"aniversario","cancelado":false,"notas":""},{"titulo":"Quarta - 18:30 - OTRO - Niver da Lu","dataInicio":"2023-05-17","dataFim":"2023-05-17","categoria":"aniversario","cancelado":false,"notas":""},{"titulo":"Visita Fatima","dataInicio":"2023-05-12","dataFim":"2023-05-14","categoria":"evento","cancelado":false,"notas":""},{"titulo":"1 Ano da Maria Eduarda","dataInicio":"2023-05-13","dataFim":"2023-05-13","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Vila do Grao 16h pegar usd com Everton/Thata","dataInicio":"2023-05-07","dataFim":"2023-05-07","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Niver Zé Luis em Campinas (Taquaral)","dataInicio":"2023-05-06","dataFim":"2023-05-06","categoria":"aniversario","cancelado":false,"notas":""},{"titulo":"Segunda feriado prolongado","dataInicio":"2023-05-01","dataFim":"2023-05-01","categoria":"feriado","cancelado":false,"notas":""},{"titulo":"Sexta Feriado - Poços Chacara","dataInicio":"2023-04-21","dataFim":"2023-04-23","categoria":"feriado","cancelado":false,"notas":""},{"titulo":"sab - Happy Hour em casa","dataInicio":"2023-02-11","dataFim":"2023-02-11","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Cha Revelacao Joyce","dataInicio":"2023-03-05","dataFim":"2023-03-05","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Niver Alana Bar Zin Bar","dataInicio":"2023-04-15","dataFim":"2023-04-15","categoria":"aniversario","cancelado":false,"notas":""},{"titulo":"Sexta Feriado prolongado","dataInicio":"2023-04-07","dataFim":"2023-04-07","categoria":"feriado","cancelado":false,"notas":""},{"titulo":"Visitar nenê da Vanessa","dataInicio":"2023-04-01","dataFim":"2023-04-01","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Férias (Joao Pessoa)","dataInicio":"2023-03-17","dataFim":"2023-03-29","categoria":"viagem","cancelado":false,"notas":""},{"titulo":"show do Coldplay no Morumbi","dataInicio":"2023-03-13","dataFim":"2023-03-13","categoria":"festa","cancelado":false,"notas":""},{"titulo":"niver Boteco do Disso","dataInicio":"2023-03-11","dataFim":"2023-03-11","categoria":"aniversario","cancelado":false,"notas":""},{"titulo":"Bar com Prilao e Edu","dataInicio":"2023-02-25","dataFim":"2023-02-25","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Carnaval Agro Rancho","dataInicio":"2023-02-18","dataFim":"2023-02-21","categoria":"festa","cancelado":false,"notas":""},{"titulo":"sab - Livre","dataInicio":"2023-02-04","dataFim":"2023-02-04","categoria":"evento","cancelado":false,"notas":""},{"titulo":"sab - livre","dataInicio":"2023-01-28","dataFim":"2023-01-28","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Niver tia Tata","dataInicio":"2023-01-22","dataFim":"2023-01-22","categoria":"aniversario","cancelado":false,"notas":""},{"titulo":"Niver da Paty - Praia Bar - 19h","dataInicio":"2023-01-20","dataFim":"2023-01-20","categoria":"aniversario","cancelado":false,"notas":""},{"titulo":"Diego no Brasil","dataInicio":"2022-12-28","dataFim":"2023-01-16","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Festa de 40 da Amanda - Pier 19","dataInicio":"2023-01-14","dataFim":"2023-01-14","categoria":"festa","cancelado":false,"notas":""},{"titulo":"Rio de Janeiro","dataInicio":"2023-01-07","dataFim":"2023-01-08","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Poços Réveillon","dataInicio":"2022-12-30","dataFim":"2023-01-01","categoria":"festa","cancelado":false,"notas":""},{"titulo":"Natal na tia Tata","dataInicio":"2022-12-24","dataFim":"2022-12-24","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Apresentação do Romas","dataInicio":"2022-12-11","dataFim":"2022-12-11","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Niver do Kaue na tia Tata","dataInicio":"2022-12-10","dataFim":"2022-12-10","categoria":"aniversario","cancelado":false,"notas":""},{"titulo":"Thermas de Sao Pedro","dataInicio":"2022-12-03","dataFim":"2022-12-03","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Niver Bia e Xuxuzao (não fomos)","dataInicio":"2022-11-20","dataFim":"2022-11-20","categoria":"aniversario","cancelado":true,"notas":""},{"titulo":"Bar Queen","dataInicio":"2022-11-19","dataFim":"2022-11-19","categoria":"evento","cancelado":false,"notas":""},{"titulo":"casorio da Meire em Valinhos","dataInicio":"2022-11-05","dataFim":"2022-11-05","categoria":"festa","cancelado":false,"notas":""},{"titulo":"Niver Rejane","dataInicio":"2022-11-06","dataFim":"2022-11-06","categoria":"aniversario","cancelado":false,"notas":""},{"titulo":"sexta - - 18h bar da roça com a Luciana (desmarcado)","dataInicio":"2022-11-04","dataFim":"2022-11-04","categoria":"evento","cancelado":true,"notas":""},{"titulo":"Niver Tio Paulo","dataInicio":"2022-10-29","dataFim":"2022-10-29","categoria":"aniversario","cancelado":false,"notas":""},{"titulo":"Niver Romas","dataInicio":"2022-10-22","dataFim":"2022-10-22","categoria":"aniversario","cancelado":false,"notas":""},{"titulo":"Churras na Paty","dataInicio":"2022-10-08","dataFim":"2022-10-08","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Encontro com Andreia/Tati/Neia","dataInicio":"2022-10-06","dataFim":"2022-10-06","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Eleições","dataInicio":"2022-10-02","dataFim":"2022-10-02","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Niver Gil","dataInicio":"2022-10-01","dataFim":"2022-10-01","categoria":"aniversario","cancelado":false,"notas":""},{"titulo":"domingo - Churrasco na casa do Ti e Ju","dataInicio":"2022-09-25","dataFim":"2022-09-25","categoria":"festa","cancelado":false,"notas":""},{"titulo":"Poços de Caldas","dataInicio":"2022-09-06","dataFim":"2022-09-08","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Faxina Gi","dataInicio":"2022-08-27","dataFim":"2022-08-27","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Férias Maceió 😎☀️🏖","dataInicio":"2022-08-20","dataFim":"2022-09-11","categoria":"viagem","cancelado":false,"notas":""},{"titulo":"Tiago em Rio Preto","dataInicio":"2022-07-29","dataFim":"2022-08-05","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Wallace e Hari em casa","dataInicio":"2022-07-21","dataFim":"2022-07-24","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Andrey em Brasília","dataInicio":"2022-07-19","dataFim":"2022-07-21","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Livre","dataInicio":"2022-07-16","dataFim":"2022-07-17","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Ceasa e Mogiana - Faxina Gissele","dataInicio":"2022-07-09","dataFim":"2022-07-09","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Festa Julina na tia Tata","dataInicio":"2022-07-02","dataFim":"2022-07-02","categoria":"festa","cancelado":false,"notas":""},{"titulo":"Aniver do Tiago Mauschi no Gramado","dataInicio":"2022-07-01","dataFim":"2022-07-01","categoria":"aniversario","cancelado":false,"notas":""},{"titulo":"Peça de Teatro da Ale em SP","dataInicio":"2022-06-29","dataFim":"2022-06-29","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Domingo - Volta de SSA","dataInicio":"2022-06-26","dataFim":"2022-06-26","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Salvador/Riachao Sao Joao","dataInicio":"2022-06-18","dataFim":"2022-06-26","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Feriado de Corpus Christi","dataInicio":"2022-06-16","dataFim":"2022-06-16","categoria":"feriado","cancelado":false,"notas":""},{"titulo":"Dia dos Namorados","dataInicio":"2022-06-12","dataFim":"2022-06-12","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Festa Junina da Paroquia","dataInicio":"2022-06-11","dataFim":"2022-06-11","categoria":"festa","cancelado":false,"notas":""},{"titulo":"Festinha Junina Íntima II","dataInicio":"2022-06-04","dataFim":"2022-06-04","categoria":"evento","cancelado":false,"notas":""},{"titulo":"4 anos de namoro!","dataInicio":"2022-05-28","dataFim":"2022-05-29","categoria":"aniversario","cancelado":false,"notas":""},{"titulo":"Niver Gigi Mamma Jamma","dataInicio":"2022-05-28","dataFim":"2022-05-28","categoria":"aniversario","cancelado":false,"notas":""},{"titulo":"Monte Verde","dataInicio":"2022-05-21","dataFim":"2022-05-22","categoria":"evento","cancelado":false,"notas":""},{"titulo":"feriado em Horto","dataInicio":"2022-05-19","dataFim":"2022-05-19","categoria":"feriado","cancelado":false,"notas":""},{"titulo":"Livre","dataInicio":"2022-05-14","dataFim":"2022-05-14","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Dia das Maes no Proença","dataInicio":"2022-05-08","dataFim":"2022-05-08","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Festa Mahalo a partir das 16h - DECLINED","dataInicio":"2022-05-07","dataFim":"2022-05-07","categoria":"festa","cancelado":true,"notas":""},{"titulo":"Visita Fatima","dataInicio":"2022-05-06","dataFim":"2022-05-06","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Niver Adriana Cps DECLINED","dataInicio":"2022-05-07","dataFim":"2022-05-07","categoria":"aniversario","cancelado":true,"notas":""},{"titulo":"Livre","dataInicio":"2022-04-30","dataFim":"2022-04-30","categoria":"evento","cancelado":false,"notas":""},{"titulo":"balada em SP com Conrado - BUBU","dataInicio":"2022-04-23","dataFim":"2022-04-24","categoria":"festa","cancelado":false,"notas":""},{"titulo":"Baladinha de niver do Márcio na Caos","dataInicio":"2022-04-16","dataFim":"2022-04-16","categoria":"aniversario","cancelado":false,"notas":""},{"titulo":"Jantar Pizza Niver Alana","dataInicio":"2022-04-16","dataFim":"2022-04-16","categoria":"aniversario","cancelado":false,"notas":""},{"titulo":"Niver da Fabi","dataInicio":"2022-04-09","dataFim":"2022-04-10","categoria":"aniversario","cancelado":false,"notas":""},{"titulo":"Maroon 5","dataInicio":"2022-04-05","dataFim":"2022-04-05","categoria":"evento","cancelado":false,"notas":""},{"titulo":"SP","dataInicio":"2022-04-02","dataFim":"2022-04-02","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Buscar Visto em SP","dataInicio":"2022-04-01","dataFim":"2022-04-01","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Ale SP","dataInicio":"2022-04-01","dataFim":"2022-04-01","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Ale SP","dataInicio":"2022-03-31","dataFim":"2022-03-31","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Livre em casa","dataInicio":"2022-04-03","dataFim":"2022-04-03","categoria":"evento","cancelado":false,"notas":""},{"titulo":"17h pizza na Prilao","dataInicio":"2022-04-02","dataFim":"2022-04-02","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Niver da Thata","dataInicio":"2022-03-19","dataFim":"2022-03-19","categoria":"aniversario","cancelado":false,"notas":""},{"titulo":"Porto Seguro","dataInicio":"2022-03-05","dataFim":"2022-03-17","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Carnaval","dataInicio":"2022-02-25","dataFim":"2022-03-02","categoria":"festa","cancelado":false,"notas":""},{"titulo":"dom - casa dos pais","dataInicio":"2022-02-20","dataFim":"2022-02-20","categoria":"evento","cancelado":false,"notas":""},{"titulo":"sab pizza na Joca","dataInicio":"2022-02-19","dataFim":"2022-02-19","categoria":"evento","cancelado":false,"notas":""},{"titulo":"sab - LET’s EAT","dataInicio":"2022-02-12","dataFim":"2022-02-12","categoria":"evento","cancelado":false,"notas":""},{"titulo":"sex - Monika em casa HH","dataInicio":"2022-02-11","dataFim":"2022-02-11","categoria":"evento","cancelado":false,"notas":""},{"titulo":"sab - NADA - FICAMOS EM CASA","dataInicio":"2022-02-05","dataFim":"2022-02-05","categoria":"evento","cancelado":false,"notas":""},{"titulo":"ter - Leo tirar medidas","dataInicio":"2022-02-01","dataFim":"2022-02-01","categoria":"evento","cancelado":false,"notas":""},{"titulo":"seg - Aplicar papel tijolinho","dataInicio":"2022-01-31","dataFim":"2022-01-31","categoria":"evento","cancelado":false,"notas":""},{"titulo":"sab - Jantar na Paty","dataInicio":"2022-01-29","dataFim":"2022-01-29","categoria":"evento","cancelado":false,"notas":""},{"titulo":"qua - Faxina Gissele","dataInicio":"2022-01-26","dataFim":"2022-01-26","categoria":"evento","cancelado":false,"notas":""},{"titulo":"sab - Quarentena da Covid","dataInicio":"2022-01-22","dataFim":"2022-01-22","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Lavagem do carro (14h)","dataInicio":"2022-01-17","dataFim":"2022-01-17","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Covid andrey","dataInicio":"2022-01-15","dataFim":"2022-01-15","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Sex - Jantar Thiago (Campinas)","dataInicio":"2022-01-14","dataFim":"2022-01-14","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Faxina","dataInicio":"2022-01-13","dataFim":"2022-01-13","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Dom - Limpeza Cappacabana","dataInicio":"2022-01-02","dataFim":"2022-01-02","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Sab - Ressaca Cappacabana","dataInicio":"2022-01-01","dataFim":"2022-01-01","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Sex - Cappacabana","dataInicio":"2021-12-31","dataFim":"2021-12-31","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Dom na casa da Joca e Tiago em SJRP","dataInicio":"2021-12-26","dataFim":"2021-12-26","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Sab Natal casa da Joca","dataInicio":"2021-12-25","dataFim":"2021-12-25","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Sex Natal Havaiano","dataInicio":"2021-12-24","dataFim":"2021-12-24","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Dom","dataInicio":"2021-12-19","dataFim":"2021-12-19","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Sab","dataInicio":"2021-12-18","dataFim":"2021-12-18","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Dom - Chácara (Ressaca casamento Luana)","dataInicio":"2021-12-12","dataFim":"2021-12-12","categoria":"festa","cancelado":false,"notas":""},{"titulo":"Sab - Casamento Luana","dataInicio":"2021-12-11","dataFim":"2021-12-11","categoria":"festa","cancelado":false,"notas":""},{"titulo":"Dom - Jacuzzi","dataInicio":"2021-12-05","dataFim":"2021-12-05","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Sab - Jacuzzi","dataInicio":"2021-12-04","dataFim":"2021-12-04","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Dom - Cps Piscina","dataInicio":"2021-11-28","dataFim":"2021-11-28","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Sab - Niver Lidioca em Campinas","dataInicio":"2021-11-27","dataFim":"2021-11-27","categoria":"aniversario","cancelado":false,"notas":""},{"titulo":"Dom - Cps","dataInicio":"2021-11-21","dataFim":"2021-11-21","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Sab - Noite dos Petiscos Disso","dataInicio":"2021-11-20","dataFim":"2021-11-20","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Feriado - Livre","dataInicio":"2021-11-15","dataFim":"2021-11-15","categoria":"feriado","cancelado":false,"notas":""},{"titulo":"Dom - Visita da Vó Jacira","dataInicio":"2021-11-14","dataFim":"2021-11-14","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Sab - Livre","dataInicio":"2021-11-13","dataFim":"2021-11-13","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Cps Niver mae","dataInicio":"2021-11-06","dataFim":"2021-11-07","categoria":"aniversario","cancelado":false,"notas":""},{"titulo":"Serra Negra","dataInicio":"2021-10-30","dataFim":"2021-11-02","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Lanche na Rapha","dataInicio":"2021-10-23","dataFim":"2021-10-24","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Happy Halloween pessoal de Boraceia","dataInicio":"2021-10-16","dataFim":"2021-10-16","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Sab - Cps - Viagem dos Pais","dataInicio":"2021-10-03","dataFim":"2021-10-03","categoria":"viagem","cancelado":false,"notas":""},{"titulo":"Sab - Cps - Viagem dos Pais","dataInicio":"2021-10-02","dataFim":"2021-10-02","categoria":"viagem","cancelado":false,"notas":""},{"titulo":"Dom - LIVRE","dataInicio":"2021-09-26","dataFim":"2021-09-26","categoria":"evento","cancelado":false,"notas":""},{"titulo":"Sáb - LIVRE","dataInicio":"2021-09-25","dataFim":"2021-09-25","categoria":"evento","cancelado":false,"notas":""}];
+
+function setSync(state, text){
+  document.getElementById('syncDot').className = 'dot' + (state==='busy' ? ' busy' : '');
+  document.getElementById('syncText').textContent = text;
+}
+
+async function load(initial=false){
+  setSync('busy','sincronizando...');
+  try{
+    const res = await fetch(DB_URL);
+    const data = await res.json();
+    if(!data){
+      const obj = {};
+      SEED.forEach((s,i)=>{ obj['e'+i+'_'+Date.now()] = s; });
+      await fetch(DB_URL, {method:'PUT', body: JSON.stringify(obj)});
+      items = obj;
+    } else {
+      items = data;
+    }
+    setSync('ok','sincronizado agora');
+    render();
+  }catch(e){
+    setSync('busy','erro de conexão — tentando de novo');
+  }
+}
+
+async function saveAll(){
+  setSync('busy','salvando...');
+  try{
+    await fetch(DB_URL, {method:'PUT', body: JSON.stringify(items)});
+    setSync('ok','salvo');
+  }catch(e){
+    setSync('busy','erro ao salvar');
+  }
+}
+
+function todayISO(){
+  const d = new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+
+function statusOf(e){
+  const t = todayISO();
+  if(e.cancelado) return 'cancelado';
+  if(e.dataFim < t) return 'concluido';
+  if(e.dataInicio <= t && t <= e.dataFim) return 'andamento';
+  return 'previsto';
+}
+
+function diffDays(iso){
+  const t = new Date(todayISO()+'T00:00:00');
+  const d = new Date(iso+'T00:00:00');
+  return Math.round((d-t)/86400000);
+}
+
+function fmtShort(iso){
+  const p = iso.split('-');
+  return parseInt(p[2],10)+' '+MESES_ABR[parseInt(p[1],10)-1];
+}
+
+function fmtRange(ini, fim){
+  if(ini===fim) return fmtShort(ini);
+  const p1 = ini.split('-'), p2 = fim.split('-');
+  if(p1[0]===p2[0] && p1[1]===p2[1]) return parseInt(p1[2],10)+' a '+fmtShort(fim);
+  return fmtShort(ini)+' – '+fmtShort(fim);
+}
+
+function countdownText(e){
+  const st = statusOf(e);
+  if(st==='cancelado') return 'cancelado';
+  if(st==='concluido') return 'concluído';
+  if(st==='andamento') return 'rolando agora';
+  const dd = diffDays(e.dataInicio);
+  if(dd===0) return 'hoje';
+  if(dd===1) return 'amanhã';
+  if(dd<7) return 'em '+dd+' dias';
+  if(dd<30){ const w=Math.round(dd/7); return 'em '+w+' semana'+(w>1?'s':''); }
+  if(dd<365){ const mo=Math.round(dd/30); return 'em '+mo+' mês'+(mo>1?'es':''); }
+  const yr=Math.round(dd/365); return 'em '+yr+' ano'+(yr>1?'s':'');
+}
+
+function monthKey(iso){ return iso.slice(0,7); }
+function monthLabel(key){
+  const p = key.split('-');
+  return MESES_LONG[parseInt(p[1],10)-1]+' de '+p[0];
+}
+
+function escapeHtml(s){
+  return String(s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function render(){
+  const list = document.getElementById('list');
+  const q = document.getElementById('search').value.toLowerCase().trim();
+  const catF = document.getElementById('filterCat').value;
+  const statusF = document.getElementById('filterStatus').value;
+  const t = todayISO();
+
+  let arr = Object.entries(items).map(([id,v])=>({id,...v}));
+
+  const previstos = arr.filter(e=>{const s=statusOf(e); return s==='previsto'||s==='andamento';});
+  const esteMes = previstos.filter(e=>monthKey(e.dataInicio)===monthKey(t));
+  const historico = arr.filter(e=>statusOf(e)==='concluido');
+  const proximo = previstos.slice().sort((a,b)=>a.dataInicio.localeCompare(b.dataInicio))[0];
+
+  document.getElementById('statProximo').textContent = proximo ? proximo.titulo : '—';
+  document.getElementById('statPrevistos').textContent = previstos.length;
+  document.getElementById('statMes').textContent = esteMes.length;
+  document.getElementById('statHistorico').textContent = historico.length;
+
+  if(q) arr = arr.filter(e => (e.titulo||'').toLowerCase().includes(q) || (e.notas||'').toLowerCase().includes(q));
+  if(catF!=='todas') arr = arr.filter(e=>e.categoria===catF);
+
+  let sortAsc = true;
+  if(statusF==='proximos'){
+    arr = arr.filter(e=>{const s=statusOf(e); return s==='previsto'||s==='andamento';});
+    sortAsc = true;
+  } else if(statusF==='historico'){
+    arr = arr.filter(e=>{const s=statusOf(e); return s==='concluido'||s==='cancelado';});
+    sortAsc = false;
+  } else {
+    sortAsc = false;
+  }
+
+  arr.sort((a,b)=> sortAsc ? a.dataInicio.localeCompare(b.dataInicio) : b.dataInicio.localeCompare(a.dataInicio));
+
+  if(arr.length===0){
+    list.innerHTML = `<div class="empty">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18"/></svg>
+      <div>Nada por aqui. Clique em "+ Novo evento" para começar.</div>
+    </div>`;
+    return;
+  }
+
+  let html = '';
+  let lastMonth = null;
+  arr.forEach(e=>{
+    const mk = monthKey(e.dataInicio);
+    if(mk !== lastMonth){
+      html += `<div class="monthhead">${monthLabel(mk)}</div>`;
+      lastMonth = mk;
+    }
+    const cat = CATS[e.categoria] || CATS.evento;
+    const st = statusOf(e);
+    const cd = countdownText(e);
+    let pillClass = st;
+    if(st==='previsto' && (cd==='hoje' || cd==='amanhã')) pillClass = 'hoje';
+    html += `
+    <div class="row ${st}">
+      <div class="flagtag" style="background:${cat.dim};color:${cat.color};">${cat.icon}</div>
+      <div class="rowbody">
+        <div class="rowtop">
+          <div>
+            <div class="titulo">${escapeHtml(e.titulo)}</div>
+            <div class="meta">
+              <span class="data">${fmtRange(e.dataInicio, e.dataFim)}</span>
+              <span class="pill ${pillClass}">${cd}</span>
+              <span class="cattag">${cat.label}</span>
+            </div>
+          </div>
+          <div class="actions">
+            ${e.notas ? `<button class="btn-icon" onclick="toggleNotas('${e.id}')" title="Ver notas"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16M4 12h16M4 18h10"/></svg></button>` : ''}
+            <button class="btn-icon" onclick="openEdit('${e.id}')" title="Editar"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
+          </div>
+        </div>
+        ${e.notas ? `<div class="notas" id="notas_${e.id}">${escapeHtml(e.notas)}</div>` : ''}
+      </div>
+    </div>`;
+  });
+  list.innerHTML = html;
+}
+
+function toggleNotas(id){
+  document.getElementById('notas_'+id).classList.toggle('open');
+}
+
+function openAdd(){
+  editingId = null;
+  document.getElementById('modalTitle').textContent = 'Novo evento';
+  document.getElementById('fTitulo').value='';
+  const t = todayISO();
+  document.getElementById('fInicio').value = t;
+  document.getElementById('fFim').value = t;
+  document.getElementById('fCategoria').value = 'evento';
+  document.getElementById('fCancelado').checked = false;
+  document.getElementById('fNotas').value = '';
+  document.getElementById('fEditor').value = localStorage.getItem('agenda133_editor')||'';
+  document.getElementById('btnDelete').style.display='none';
+  document.getElementById('overlay').classList.add('open');
+}
+
+function openEdit(id){
+  editingId = id;
+  const e = items[id];
+  document.getElementById('modalTitle').textContent = 'Editar evento';
+  document.getElementById('fTitulo').value = e.titulo||'';
+  document.getElementById('fInicio').value = e.dataInicio||todayISO();
+  document.getElementById('fFim').value = e.dataFim||e.dataInicio||todayISO();
+  document.getElementById('fCategoria').value = e.categoria||'evento';
+  document.getElementById('fCancelado').checked = !!e.cancelado;
+  document.getElementById('fNotas').value = e.notas||'';
+  document.getElementById('fEditor').value = localStorage.getItem('agenda133_editor')||'';
+  document.getElementById('btnDelete').style.display='inline-block';
+  document.getElementById('overlay').classList.add('open');
+}
+
+function closeModal(){
+  document.getElementById('overlay').classList.remove('open');
+}
+
+async function save(){
+  const editor = document.getElementById('fEditor').value.trim();
+  if(editor) localStorage.setItem('agenda133_editor', editor);
+
+  const titulo = document.getElementById('fTitulo').value.trim();
+  if(!titulo){ alert('Digite o título do evento.'); return; }
+
+  let inicio = document.getElementById('fInicio').value;
+  let fim = document.getElementById('fFim').value || inicio;
+  if(!inicio){ alert('Escolha a data de início.'); return; }
+  if(fim < inicio) fim = inicio;
+
+  const obj = {
+    titulo,
+    dataInicio: inicio,
+    dataFim: fim,
+    categoria: document.getElementById('fCategoria').value,
+    cancelado: document.getElementById('fCancelado').checked,
+    notas: document.getElementById('fNotas').value.trim(),
+    editor,
+    updatedAt: Date.now()
+  };
+
+  const id = editingId || ('e_' + Date.now());
+  items[id] = obj;
+  closeModal();
+  render();
+  await saveAll();
+}
+
+async function del(){
+  if(!editingId) return;
+  if(!confirm('Excluir este evento da agenda?')) return;
+  delete items[editingId];
+  closeModal();
+  render();
+  await saveAll();
+}
+
+document.getElementById('btnAdd').onclick = openAdd;
+document.getElementById('btnCancel').onclick = closeModal;
+document.getElementById('btnSave').onclick = save;
+document.getElementById('btnDelete').onclick = del;
+document.getElementById('overlay').onclick = (e)=>{ if(e.target.id==='overlay') closeModal(); };
+document.getElementById('fInicio').onchange = function(){
+  const fFim = document.getElementById('fFim');
+  if(!fFim.value || fFim.value < this.value) fFim.value = this.value;
+};
+document.getElementById('search').oninput = render;
+document.getElementById('filterCat').onchange = render;
+document.getElementById('filterStatus').onchange = render;
+
+load(true);
+setInterval(()=>load(false), 20000);
+</script>
+</body>
+</html>
