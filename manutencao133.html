@@ -176,6 +176,7 @@
     <div class="stat flag"><div class="n" id="statPend">–</div><div class="l">Pendentes</div></div>
     <div class="stat"><div class="n" id="statValor">–</div><div class="l">Estimado em aberto</div></div>
     <div class="stat ok"><div class="n" id="statDone">–</div><div class="l">Concluídos</div></div>
+    <div class="stat ok"><div class="n" id="statGasto">–</div><div class="l">Gasto em concluídos</div></div>
   </div>
 </header>
 
@@ -300,13 +301,14 @@ function render(){
 
   let arr = Object.entries(items).map(([id,v])=>({id,...v}));
 
-  let pendCount=0, doneCount=0, valorAberto=0;
+  let pendCount=0, doneCount=0, valorAberto=0, valorGasto=0;
   arr.forEach(it=>{
-    if(it.concluido){ doneCount++; } else { pendCount++; if(it.preco) valorAberto += Number(it.preco); }
+    if(it.concluido){ doneCount++; if(it.preco) valorGasto += Number(it.preco); } else { pendCount++; if(it.preco) valorAberto += Number(it.preco); }
   });
   document.getElementById('statPend').textContent = pendCount;
   document.getElementById('statDone').textContent = doneCount;
   document.getElementById('statValor').textContent = 'R$ ' + valorAberto.toLocaleString('pt-BR',{minimumFractionDigits:0});
+  document.getElementById('statGasto').textContent = 'R$ ' + valorGasto.toLocaleString('pt-BR',{minimumFractionDigits:0});
 
   if(q) arr = arr.filter(it => (it.servico||'').toLowerCase().includes(q));
   if(statusF==='pendente') arr = arr.filter(it=>!it.concluido);
