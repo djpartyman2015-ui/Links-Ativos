@@ -682,8 +682,8 @@ function renderCollection(key){
       <div class="card stat-card" style="margin-bottom:14px;">
         <div class="lbl">Total geral</div><div class="val">R$ ${total.toFixed(2)}</div><div class="meta">${items.length} lançamento${items.length!==1?"s":""}</div>
       </div>
-      <div class="card" style="margin-bottom:18px;"><div style="height:${chartH}px;"><canvas id="custos-cat-chart"></canvas></div></div>
-      <div class="card" style="margin-bottom:18px;"><canvas id="custos-mes-chart" height="80"></canvas></div>
+      <div class="card" style="margin-bottom:18px;"><div style="height:${chartH}px;width:100%;position:relative;"><canvas id="custos-cat-chart"></canvas></div></div>
+      <div class="card" style="margin-bottom:18px;"><div style="height:220px;width:100%;position:relative;"><canvas id="custos-mes-chart"></canvas></div></div>
     `;
   }
 
@@ -764,7 +764,7 @@ function drawCustosCharts(items){
   });
 
   const barTotalsPlugin = {
-    id: "barTotals",
+    id: "barTotalsH",
     afterDatasetsDraw(chart){
       const {ctx} = chart;
       chart.data.datasets.forEach((dataset,i)=>{
@@ -784,53 +784,84 @@ function drawCustosCharts(items){
     }
   };
 
-  const catCtx = document.getElementById("custos-cat-chart");
-  if(catCtx){
-    const entries = Object.entries(byCat).sort((a,b)=> b[1]-a[1]);
-    const cats = entries.map(e=>e[0]);
-    const vals = entries.map(e=>e[1]);
-    new Chart(catCtx, {
-      type:"bar",
-      data:{
-        labels: cats,
-        datasets:[{ label:"R$ por categoria", data:vals, backgroundColor: cats.map((_,i)=>CAT_PALETTE[i%CAT_PALETTE.length]), borderRadius:6, barPercentage:.7 }]
-      },
-      options:{
-        indexAxis:"y",
-        maintainAspectRatio:false,
-        plugins:{
-          legend:{display:false},
-          title:{display:true,text:"Gasto por categoria"},
-          tooltip:{callbacks:{label:ctx=>fmtBRL0(ctx.parsed.x)}}
-        },
-        scales:{
-          x:{ ticks:{callback:v=>fmtBRL0(v), precision:0}, grace:"18%" },
-          y:{ ticks:{autoSkip:false, font:{size:12}} }
-        }
-      },
-      plugins:[barTotalsPlugin]
-    });
-  }
+  const pointTotalsPlugin = {
+    id: "pointTotals",
+    afterDatasetsDraw(chart){
+      const {ctx} = chart;
+      chart.data.datasets.forEach((dataset,i)=>{
+        const meta = chart.getDatasetMeta(i);
+        meta.data.forEach((point,idx)=>{
+          const value = dataset.data[idx];
+          if(value==null) return;
+          ctx.save();
+          ctx.fillStyle = "#34424E";
+          ctx.font = "700 11px Karla, sans-serif";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "bottom";
+          ctx.fillText(fmtBRL0(value), point.x, point.y-8);
+          ctx.restore();
+        });
+      });
+    }
+  };
 
-  const meses = Object.keys(byMonth).sort();
-  const mesCtx = document.getElementById("custos-mes-chart");
-  if(mesCtx){
-    new Chart(mesCtx, {
-      type:"line",
-      data:{
-        labels: meses.map(m=>{ const [y,mo]=m.split("-"); return `${mo}/${y}`; }),
-        datasets:[{ label:"R$ por mês", data: meses.map(m=>byMonth[m]), borderColor:"#4A5C6E", backgroundColor:"rgba(201,154,75,.18)", fill:true, tension:.3, pointBackgroundColor:"#A63D4F", pointBorderColor:"#A63D4F", pointRadius:4 }]
-      },
-      options:{
-        plugins:{
-          legend:{display:false},
-          title:{display:true,text:"Gasto por mês"},
-          tooltip:{callbacks:{label:ctx=>fmtBRL0(ctx.parsed.y)}}
+  try{
+    const catCtx = document.getElementById("custos-cat-chart");
+    if(catCtx){
+      const entries = Object.entries(byCat).sort((a,b)=> b[1]-a[1]);
+      const cats = entries.map(e=>e[0]);
+      const vals = entries.map(e=>e[1]);
+      new Chart(catCtx, {
+        type:"bar",
+        data:{
+          labels: cats,
+          datasets:[{ label:"R$ por categoria", data:vals, backgroundColor: cats.map((_,i)=>CAT_PALETTE[i%CAT_PALETTE.length]), borderRadius:6, barPercentage:.7, categoryPercentage:.8 }]
         },
-        scales:{y:{ticks:{callback:v=>fmtBRL0(v), precision:0}}}
-      }
-    });
-  }
+        options:{
+          indexAxis:"y",
+          responsive:true,
+          maintainAspectRatio:false,
+          layout:{ padding:{ right:60 } },
+          plugins:{
+            legend:{display:false},
+            title:{display:true,text:"Gasto por categoria"},
+            tooltip:{callbacks:{label:ctx=>fmtBRL0(ctx.parsed.x)}}
+          },
+          scales:{
+            x:{ beginAtZero:true, ticks:{callback:v=>fmtBRL0(v), precision:0}, grace:"20%" },
+            y:{ ticks:{autoSkip:false, font:{size:12}} }
+          }
+        },
+        plugins:[barTotalsPlugin]
+      });
+    }
+  }catch(err){ console.error("Erro no gráfico de categorias:", err); }
+
+  try{
+    const meses = Object.keys(byMonth).sort();
+    const mesCtx = document.getElementById("custos-mes-chart");
+    if(mesCtx){
+      new Chart(mesCtx, {
+        type:"line",
+        data:{
+          labels: meses.map(m=>{ const [y,mo]=m.split("-"); return `${mo}/${y}`; }),
+          datasets:[{ label:"R$ por mês", data: meses.map(m=>byMonth[m]), borderColor:"#4A5C6E", backgroundColor:"rgba(201,154,75,.18)", fill:true, tension:.3, pointBackgroundColor:"#A63D4F", pointBorderColor:"#A63D4F", pointRadius:4 }]
+        },
+        options:{
+          responsive:true,
+          maintainAspectRatio:false,
+          layout:{ padding:{ top:24 } },
+          plugins:{
+            legend:{display:false},
+            title:{display:true,text:"Gasto por mês"},
+            tooltip:{callbacks:{label:ctx=>fmtBRL0(ctx.parsed.y)}}
+          },
+          scales:{y:{ beginAtZero:true, ticks:{callback:v=>fmtBRL0(v), precision:0}, grace:"20%" }}
+        },
+        plugins:[pointTotalsPlugin]
+      });
+    }
+  }catch(err){ console.error("Erro no gráfico por mês:", err); }
 }
 
 /* ============================= FORM MODAL ============================= */
