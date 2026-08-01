@@ -676,11 +676,13 @@ function renderCollection(key){
   }
   if(key==="custos"){
     const total = items.reduce((s,[,it])=> s + (Number(it.valor)||0), 0);
+    const catCount = new Set(items.map(([,it])=>it.categoria)).size;
+    const chartH = Math.max(220, catCount*50);
     extra = `
-      <div class="grid grid-3" style="margin-bottom:18px;">
-        <div class="card stat-card"><div class="lbl">Total geral</div><div class="val">R$ ${total.toFixed(2)}</div><div class="meta">${items.length} lançamento${items.length!==1?"s":""}</div></div>
-        <div class="card" style="grid-column:span 2;"><canvas id="custos-cat-chart" height="90"></canvas></div>
+      <div class="card stat-card" style="margin-bottom:14px;">
+        <div class="lbl">Total geral</div><div class="val">R$ ${total.toFixed(2)}</div><div class="meta">${items.length} lançamento${items.length!==1?"s":""}</div>
       </div>
+      <div class="card" style="margin-bottom:18px;"><div style="height:${chartH}px;"><canvas id="custos-cat-chart"></canvas></div></div>
       <div class="card" style="margin-bottom:18px;"><canvas id="custos-mes-chart" height="80"></canvas></div>
     `;
   }
@@ -772,9 +774,10 @@ function drawCustosCharts(items){
           if(value==null) return;
           ctx.save();
           ctx.fillStyle = "#34424E";
-          ctx.font = "700 11px Karla, sans-serif";
-          ctx.textAlign = "center";
-          ctx.fillText(fmtBRL0(value), bar.x, bar.y-8);
+          ctx.font = "700 12px Karla, sans-serif";
+          ctx.textAlign = "left";
+          ctx.textBaseline = "middle";
+          ctx.fillText(fmtBRL0(value), bar.x+8, bar.y);
           ctx.restore();
         });
       });
@@ -783,20 +786,27 @@ function drawCustosCharts(items){
 
   const catCtx = document.getElementById("custos-cat-chart");
   if(catCtx){
-    const cats = Object.keys(byCat);
+    const entries = Object.entries(byCat).sort((a,b)=> b[1]-a[1]);
+    const cats = entries.map(e=>e[0]);
+    const vals = entries.map(e=>e[1]);
     new Chart(catCtx, {
       type:"bar",
       data:{
         labels: cats,
-        datasets:[{ label:"R$ por categoria", data:Object.values(byCat), backgroundColor: cats.map((_,i)=>CAT_PALETTE[i%CAT_PALETTE.length]), borderRadius:6 }]
+        datasets:[{ label:"R$ por categoria", data:vals, backgroundColor: cats.map((_,i)=>CAT_PALETTE[i%CAT_PALETTE.length]), borderRadius:6, barPercentage:.7 }]
       },
       options:{
+        indexAxis:"y",
+        maintainAspectRatio:false,
         plugins:{
           legend:{display:false},
           title:{display:true,text:"Gasto por categoria"},
-          tooltip:{callbacks:{label:ctx=>fmtBRL0(ctx.parsed.y)}}
+          tooltip:{callbacks:{label:ctx=>fmtBRL0(ctx.parsed.x)}}
         },
-        scales:{y:{ticks:{callback:v=>fmtBRL0(v), precision:0}, grace:"12%"}}
+        scales:{
+          x:{ ticks:{callback:v=>fmtBRL0(v), precision:0}, grace:"18%" },
+          y:{ ticks:{autoSkip:false, font:{size:12}} }
+        }
       },
       plugins:[barTotalsPlugin]
     });
