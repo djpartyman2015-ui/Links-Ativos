@@ -624,6 +624,16 @@ async function handlePlanoCardChange(ev){
   await uploadPhotoTo("carteirinhaPlano", file, 1400, .8);
   renderInfo();
 }
+async function handleReceitaPhoto(id, ev){
+  const file = ev.target.files[0];
+  if(!file) return;
+  const dataUrl = await resizeImageFile(file, 1400, .8);
+  await fbSet(`receitas/${id}/foto`, dataUrl);
+  DATA.receitas = DATA.receitas || {};
+  DATA.receitas[id] = DATA.receitas[id] || {};
+  DATA.receitas[id].foto = dataUrl;
+  renderCollection("receitas");
+}
 
 /* ============================= GENERIC COLLECTION RENDER ============================= */
 function renderCollection(key){
@@ -695,12 +705,20 @@ function renderItem(key,id,it){
   const cfg = COLLECTIONS[key];
   const dateField = cfg.sortField;
   const dateVal = it[dateField];
+  const receitaPhoto = key==="receitas" ? `
+    <div style="margin-top:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+      ${it.foto ? `<img src="${it.foto}" onclick="showPhoto('${it.foto}')" style="width:44px;height:44px;object-fit:cover;border-radius:7px;border:1px solid var(--line);cursor:pointer;">` : ""}
+      <button class="icon-btn" style="font-size:11.5px;border:1.5px solid var(--line);border-radius:7px;padding:4px 9px;" onclick="document.getElementById('receita-photo-${id}').click()">📷 ${it.foto?"Trocar foto":"Add foto da receita"}</button>
+      <input type="file" id="receita-photo-${id}" accept="image/*" capture="environment" style="display:none" onchange="handleReceitaPhoto('${id}', event)">
+    </div>
+  ` : "";
   return `
     <div class="item">
       ${dateVal ? `<div class="date-chip">${toBR(dateVal)}</div>` : ""}
       <div class="item-main">
         <div class="item-title">${escapeHtml(cfg.itemTitle(it))}</div>
         ${cfg.itemSub(it) ? `<div class="item-sub">${escapeHtml(cfg.itemSub(it))}</div>` : ""}
+        ${receitaPhoto}
       </div>
       <div class="item-actions">
         <button class="icon-btn" title="Editar" onclick="openForm('${key}','${id}')">✎</button>
@@ -729,6 +747,10 @@ function drawPesoChart(items){
   });
 }
 
+function fmtBRL0(v){ return "R$ " + Math.round(Number(v)||0).toLocaleString("pt-BR"); }
+
+const CAT_PALETTE = ["#C99A4B","#4A5C6E","#A63D4F","#4E8B6F","#C77C2E","#7E93A8","#8A5A44","#6B4C7A","#3E6E8E","#B85C7A"];
+
 function drawCustosCharts(items){
   const byCat = {};
   const byMonth = {};
@@ -752,7 +774,7 @@ function drawCustosCharts(items){
           ctx.fillStyle = "#34424E";
           ctx.font = "700 11px Karla, sans-serif";
           ctx.textAlign = "center";
-          ctx.fillText("R$ "+Number(value).toFixed(2), bar.x, bar.y-8);
+          ctx.fillText(fmtBRL0(value), bar.x, bar.y-8);
           ctx.restore();
         });
       });
@@ -761,15 +783,20 @@ function drawCustosCharts(items){
 
   const catCtx = document.getElementById("custos-cat-chart");
   if(catCtx){
+    const cats = Object.keys(byCat);
     new Chart(catCtx, {
       type:"bar",
       data:{
-        labels: Object.keys(byCat),
-        datasets:[{ label:"R$ por categoria", data:Object.values(byCat), backgroundColor:"#C99A4B", borderRadius:6 }]
+        labels: cats,
+        datasets:[{ label:"R$ por categoria", data:Object.values(byCat), backgroundColor: cats.map((_,i)=>CAT_PALETTE[i%CAT_PALETTE.length]), borderRadius:6 }]
       },
       options:{
-        plugins:{legend:{display:false}, title:{display:true,text:"Gasto por categoria"}},
-        scales:{y:{ticks:{callback:v=>"R$ "+v}, grace:"10%"}}
+        plugins:{
+          legend:{display:false},
+          title:{display:true,text:"Gasto por categoria"},
+          tooltip:{callbacks:{label:ctx=>fmtBRL0(ctx.parsed.y)}}
+        },
+        scales:{y:{ticks:{callback:v=>fmtBRL0(v), precision:0}, grace:"12%"}}
       },
       plugins:[barTotalsPlugin]
     });
@@ -782,9 +809,16 @@ function drawCustosCharts(items){
       type:"line",
       data:{
         labels: meses.map(m=>{ const [y,mo]=m.split("-"); return `${mo}/${y}`; }),
-        datasets:[{ label:"R$ por mês", data: meses.map(m=>byMonth[m]), borderColor:"#4A5C6E", backgroundColor:"rgba(74,92,110,.12)", fill:true, tension:.3, pointBackgroundColor:"#A63D4F", pointRadius:4 }]
+        datasets:[{ label:"R$ por mês", data: meses.map(m=>byMonth[m]), borderColor:"#4A5C6E", backgroundColor:"rgba(201,154,75,.18)", fill:true, tension:.3, pointBackgroundColor:"#A63D4F", pointBorderColor:"#A63D4F", pointRadius:4 }]
       },
-      options:{ plugins:{legend:{display:false}, title:{display:true,text:"Gasto por mês"}}, scales:{y:{ticks:{callback:v=>"R$ "+v}}} }
+      options:{
+        plugins:{
+          legend:{display:false},
+          title:{display:true,text:"Gasto por mês"},
+          tooltip:{callbacks:{label:ctx=>fmtBRL0(ctx.parsed.y)}}
+        },
+        scales:{y:{ticks:{callback:v=>fmtBRL0(v), precision:0}}}
+      }
     });
   }
 }
@@ -861,9 +895,11 @@ async function saveForm(key, id){
     payload[f.name] = val;
   }
   const finalId = id || uid();
-  await fbSet(`${key}/${finalId}`, payload);
+  const existing = (id && DATA[key] && DATA[key][id]) ? DATA[key][id] : {};
+  const merged = {...existing, ...payload};
+  await fbSet(`${key}/${finalId}`, merged);
   DATA[key] = DATA[key] || {};
-  DATA[key][finalId] = payload;
+  DATA[key][finalId] = merged;
   closeModal();
   renderCollection(key);
 }
@@ -896,9 +932,24 @@ function renderInfo(){
         <h3 style="margin-top:0;">Microchip</h3>
         <textarea id="info_microchip" style="width:100%;min-height:70px;border:1.5px solid var(--line);border-radius:8px;padding:9px;">${escapeHtml(info.microchip||"")}</textarea>
       </div>
-      <div class="card">
+      <div class="card" style="grid-column:1/-1;">
         <h3 style="margin-top:0;">Clínica veterinária</h3>
-        <textarea id="info_vetClinica" style="width:100%;min-height:70px;border:1.5px solid var(--line);border-radius:8px;padding:9px;">${escapeHtml(info.vetClinica||"")}</textarea>
+        <textarea id="info_vetClinica" style="width:100%;min-height:60px;border:1.5px solid var(--line);border-radius:8px;padding:9px;" placeholder="Nome da clínica, veterinário(a)...">${escapeHtml(info.vetClinica||"")}</textarea>
+        <div class="grid grid-2" style="margin-top:10px;">
+          <div>
+            <label style="display:block;font-size:11px;font-weight:700;color:var(--ink-soft);margin-bottom:4px;text-transform:uppercase;">Endereço (para o mapa)</label>
+            <input id="info_vetEndereco" style="width:100%;padding:9px 11px;border-radius:8px;border:1.5px solid var(--line);font-size:14px;" value="${escapeHtml(info.vetEndereco||"")}" placeholder="Ex: Rua dos Andradas, 847, Indaiatuba, SP">
+          </div>
+          <div>
+            <label style="display:block;font-size:11px;font-weight:700;color:var(--ink-soft);margin-bottom:4px;text-transform:uppercase;">WhatsApp</label>
+            <input id="info_vetWhats" style="width:100%;padding:9px 11px;border-radius:8px;border:1.5px solid var(--line);font-size:14px;" value="${escapeHtml(info.vetWhats||"")}" placeholder="Ex: 5511999998888">
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;">
+          ${info.vetWhats ? `<a class="btn" style="background:#25D366;color:#fff;text-decoration:none;display:inline-flex;align-items:center;gap:6px;" href="https://wa.me/${(info.vetWhats||'').replace(/\\D/g,'')}?text=${encodeURIComponent('Olá! Aqui é sobre a Pitanga 🐾')}" target="_blank">💬 Falar no WhatsApp</a>` : ""}
+          ${info.vetEndereco ? `<a class="btn btn-ghost" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(info.vetEndereco)}" target="_blank">🗺️ Abrir no mapa</a>` : ""}
+        </div>
+        ${info.vetEndereco ? `<iframe src="https://www.google.com/maps?q=${encodeURIComponent(info.vetEndereco)}&output=embed" width="100%" height="170" style="border:0;border-radius:10px;margin-top:12px;" loading="lazy"></iframe>` : ""}
       </div>
       <div class="card">
         <h3 style="margin-top:0;">Ração</h3>
@@ -919,12 +970,14 @@ async function saveInfo(){
     plano: $("#info_plano").value,
     microchip: $("#info_microchip").value,
     vetClinica: $("#info_vetClinica").value,
+    vetEndereco: $("#info_vetEndereco").value,
+    vetWhats: $("#info_vetWhats").value,
     racao: $("#info_racao").value,
     lugares: $("#info_lugares").value,
   };
   await fbSet("info", payload);
   DATA.info = payload;
-  alert("Salvo!");
+  renderInfo();
 }
 
 /* ============================= INIT ============================= */
