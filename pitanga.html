@@ -361,6 +361,7 @@ const COLLECTIONS = {
 /* ============================= STATE ============================= */
 let DATA = {}; // full snapshot from firebase
 let currentTab = "home";
+let custosFiltro = "";
 
 /* ============================= SEED (only if empty) ============================= */
 const SEED = {
@@ -635,6 +636,14 @@ async function handleReceitaPhoto(id, ev){
   renderCollection("receitas");
 }
 
+async function adjustFiltroEstoque(delta){
+  const cur = Number(DATA.filtroEstoque||0);
+  const next = Math.max(0, cur+delta);
+  await fbSet("filtroEstoque", next);
+  DATA.filtroEstoque = next;
+  renderCollection("filtroBebedouro");
+}
+
 /* ============================= GENERIC COLLECTION RENDER ============================= */
 function renderCollection(key){
   const cfg = COLLECTIONS[key];
@@ -658,6 +667,22 @@ function renderCollection(key){
     `;
   }
   if(key==="pesagem") extra = `<div class="card" style="margin-bottom:18px;"><canvas id="peso-chart" height="90"></canvas></div>`;
+  if(key==="filtroBebedouro"){
+    const estoque = Number(DATA.filtroEstoque||0);
+    const baixo = estoque<=1;
+    extra = `
+      <div class="card" style="margin-bottom:18px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+        <div style="flex:1;min-width:170px;">
+          <div class="lbl">Estoque de filtros em casa</div>
+          <div class="val" style="font-size:24px;margin-top:2px;">${estoque} unidade${estoque!==1?"s":""} ${baixo? '<span class="badge warn">comprar mais</span>' : '<span class="badge ok">em dia</span>'}</div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-ghost" onclick="adjustFiltroEstoque(-1)" style="font-size:16px;padding:8px 16px;">−</button>
+          <button class="btn btn-ghost" onclick="adjustFiltroEstoque(1)" style="font-size:16px;padding:8px 16px;">+</button>
+        </div>
+      </div>
+    `;
+  }
   if(key==="cio" && items.length){
     const datesSorted = items.map(([,it])=>it.data).filter(Boolean).sort();
     const lastDate = datesSorted[datesSorted.length-1];
@@ -691,11 +716,17 @@ function renderCollection(key){
     <div class="page-title"><h1>${cfg.title}</h1><span class="sub">${items.length} registro${items.length!==1?"s":""}</span></div>
     ${extra}
     <div class="toolbar">
-      <div></div>
+      ${key==="custos" ? `
+        <select id="custos-filtro-select" onchange="custosFiltro=this.value; renderCollection('custos')" style="padding:8px 10px;border-radius:8px;border:1.5px solid var(--line);font-size:13px;font-weight:600;color:var(--steel-dark);">
+          <option value="">Todas as categorias</option>
+          ${COLLECTIONS.custos.fields.find(f=>f.name==="categoria").options.map(o=>`<option value="${o}" ${custosFiltro===o?"selected":""}>${o}</option>`).join("")}
+        </select>
+      ` : `<div></div>`}
       <button class="btn btn-primary" onclick="openForm('${key}')">+ Adicionar</button>
     </div>
     <div id="list">
-      ${items.length ? items.map(([id,it])=>renderItem(key,id,it)).join("") : `<div class="empty">${cfg.empty}</div>`}
+      ${(()=>{ const list = (key==="custos" && custosFiltro) ? items.filter(([,it])=>it.categoria===custosFiltro) : items;
+        return list.length ? list.map(([id,it])=>renderItem(key,id,it)).join("") : `<div class="empty">${key==="custos"&&custosFiltro? "Nenhum lançamento nessa categoria." : cfg.empty}</div>`; })()}
     </div>
   `;
 
