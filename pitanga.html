@@ -279,7 +279,6 @@ const TABS = [
   {key:"filtroBebedouro", label:"Filtro", icon:"🚰"},
   {key:"cio", label:"Cio", icon:"🩸"},
   {key:"receitas", label:"Receitas Vet", icon:"🩺"},
-  {key:"banhos", label:"Banho", icon:"🛁"},
   {key:"custos", label:"Custos", icon:"💰"},
   {key:"info", label:"Info Geral", icon:"ℹ️"},
 ];
@@ -346,22 +345,11 @@ const COLLECTIONS = {
     sortField:"data",
     itemTitle:e=>e.medicamento, itemSub:e=>[e.vet, e.dosagem, e.obs].filter(Boolean).join(" · "),
   },
-  banhos: {
-    title:"Controle de Banho", empty:"Nenhum banho registrado ainda.",
-    fields:[
-      {name:"data", label:"Data", type:"date", required:true},
-      {name:"petshop", label:"Petshop", type:"text"},
-      {name:"custo", label:"Custo (R$)", type:"number", step:"0.01"},
-      {name:"obs", label:"Observações", type:"text"},
-    ],
-    sortField:"data",
-    itemTitle:e=>e.petshop||"Banho", itemSub:e=> (e.custo!=null?`R$ ${Number(e.custo).toFixed(2)}`:"") + (e.obs?` · ${e.obs}`:""),
-  },
   custos: {
     title:"Custos Gerais", empty:"Nenhum custo registrado ainda.",
     fields:[
       {name:"data", label:"Data", type:"date", required:true},
-      {name:"categoria", label:"Categoria", type:"select", required:true, options:["Ração","Petiscos","Brinquedos","Remédios","Higiene","Acessórios","Outros"]},
+      {name:"categoria", label:"Categoria", type:"select", required:true, options:["Ração","Petiscos","Brinquedos","Remédios","Higiene","Acessórios","Exames Médicos","Assinaturas (Petiko)","Plano de Saúde","Outros"]},
       {name:"descricao", label:"Descrição", type:"text"},
       {name:"valor", label:"Valor (R$)", type:"number", step:"0.01", required:true},
     ],
@@ -421,7 +409,6 @@ const SEED = {
     {data:"2023-09-18", vet:"", medicamento:"Dipirona", dosagem:"1 gota", obs:"Reação após vacina V10."},
     {data:"2023-12-12", vet:"", medicamento:"Prednon", dosagem:"Venoso no 1º dia, seringa nos 4 seguintes", obs:"Caroço na barriga."},
   ],
-  banhos: [],
   pesagem: [],
   custos: [],
 };
@@ -520,8 +507,6 @@ function renderHome(){
   const lastPeso = lastOf("pesagem","data");
   const lastFiltro = lastOf("filtroBebedouro","data");
   const lastCio = lastOf("cio","data");
-  const lastBanho = lastOf("banhos","data");
-  const banhoTotal = Object.values(DATA.banhos||{}).reduce((s,b)=> s + (Number(b.custo)||0), 0);
   const custosTotal = Object.values(DATA.custos||{}).reduce((s,c)=> s + (Number(c.valor)||0), 0);
 
   const avgFiltro = avgIntervalDays("filtroBebedouro","data");
@@ -563,9 +548,9 @@ function renderHome(){
         <div class="meta">${lastPeso ? toBR(lastPeso.data) : "sem registro"}</div>
       </div>
       <div class="card stat-card">
-        <div class="lbl">Total gasto em banhos</div>
-        <div class="val">R$ ${banhoTotal.toFixed(2)}</div>
-        <div class="meta">${lastBanho ? "último em "+toBR(lastBanho.data) : "sem registro"}</div>
+        <div class="lbl">Gastos gerais</div>
+        <div class="val">R$ ${custosTotal.toFixed(2)}</div>
+        <div class="meta">ração, brinquedos, exames, plano e mais</div>
       </div>
       <div class="card stat-card">
         <div class="lbl">Filtro do bebedouro</div>
@@ -583,37 +568,61 @@ function renderHome(){
         <div class="val">${Object.keys(DATA.eventos||{}).length}</div>
         <div class="meta">no histórico completo</div>
       </div>
-      <div class="card stat-card">
-        <div class="lbl">Gastos gerais</div>
-        <div class="val">R$ ${custosTotal.toFixed(2)}</div>
-        <div class="meta">ração, brinquedos, petiscos e mais</div>
-      </div>
     </div>
   `;
 }
 
-function handlePhotoChange(ev){
+function resizeImageFile(file, maxDim, quality){
+  return new Promise(resolve=>{
+    const reader = new FileReader();
+    reader.onload = e=>{
+      const img = new Image();
+      img.onload = ()=>{
+        let {width,height} = img;
+        if(width>height && width>maxDim){ height*=maxDim/width; width=maxDim; }
+        else if(height>maxDim){ width*=maxDim/height; height=maxDim; }
+        const canvas = document.createElement("canvas");
+        canvas.width=width; canvas.height=height;
+        canvas.getContext("2d").drawImage(img,0,0,width,height);
+        resolve(canvas.toDataURL("image/jpeg", quality));
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+async function uploadPhotoTo(path, file, maxDim=480, quality=.82){
+  const dataUrl = await resizeImageFile(file, maxDim, quality);
+  await fbSet(path, dataUrl);
+  DATA[path] = dataUrl;
+  return dataUrl;
+}
+function showPhoto(src){
+  if(!src) return;
+  $("#modal-box").innerHTML = `
+    <div style="text-align:center;"><img src="${src}" style="max-width:100%;border-radius:10px;display:block;margin:0 auto;"></div>
+    <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal()">Fechar</button></div>
+  `;
+  $("#overlay").classList.add("open");
+}
+
+async function handlePhotoChange(ev){
   const file = ev.target.files[0];
   if(!file) return;
-  const reader = new FileReader();
-  reader.onload = e=>{
-    const img = new Image();
-    img.onload = async ()=>{
-      const maxDim = 480;
-      let {width,height} = img;
-      if(width>height && width>maxDim){ height*=maxDim/width; width=maxDim; }
-      else if(height>maxDim){ width*=maxDim/height; height=maxDim; }
-      const canvas = document.createElement("canvas");
-      canvas.width=width; canvas.height=height;
-      canvas.getContext("2d").drawImage(img,0,0,width,height);
-      const dataUrl = canvas.toDataURL("image/jpeg", .82);
-      await fbSet("foto", dataUrl);
-      DATA.foto = dataUrl;
-      renderHome();
-    };
-    img.src = e.target.result;
-  };
-  reader.readAsDataURL(file);
+  await uploadPhotoTo("foto", file, 480, .82);
+  renderHome();
+}
+async function handleVacCardChange(ev){
+  const file = ev.target.files[0];
+  if(!file) return;
+  await uploadPhotoTo("carteiraVacina", file, 1400, .8);
+  renderCollection("vacinas");
+}
+async function handlePlanoCardChange(ev){
+  const file = ev.target.files[0];
+  if(!file) return;
+  await uploadPhotoTo("carteirinhaPlano", file, 1400, .8);
+  renderInfo();
 }
 
 /* ============================= GENERIC COLLECTION RENDER ============================= */
@@ -623,7 +632,38 @@ function renderCollection(key){
   const items = Object.entries(obj).sort((a,b)=> (b[1][cfg.sortField]||"").localeCompare(a[1][cfg.sortField]||""));
 
   let extra = "";
+  if(key==="vacinas"){
+    extra = `
+      <div class="card" style="margin-bottom:18px;display:flex;gap:16px;align-items:center;flex-wrap:wrap;">
+        ${DATA.carteiraVacina
+          ? `<img src="${DATA.carteiraVacina}" onclick="showPhoto(DATA.carteiraVacina)" style="width:84px;height:84px;object-fit:cover;border-radius:10px;border:1.5px solid var(--line);cursor:pointer;">`
+          : `<div style="width:84px;height:84px;border-radius:10px;background:var(--bg);border:1.5px dashed var(--line);display:flex;align-items:center;justify-content:center;font-size:26px;">💉</div>`}
+        <div style="flex:1;min-width:180px;">
+          <div class="item-title">Carteira de vacinação</div>
+          <div class="item-sub">${DATA.carteiraVacina ? "Toque na foto para ampliar." : "Nenhuma foto salva ainda."}</div>
+        </div>
+        <button class="btn btn-ghost" onclick="document.getElementById('vac-photo-input').click()">📷 ${DATA.carteiraVacina?"Trocar foto":"Adicionar foto"}</button>
+        <input type="file" id="vac-photo-input" accept="image/*" capture="environment" style="display:none" onchange="handleVacCardChange(event)">
+      </div>
+    `;
+  }
   if(key==="pesagem") extra = `<div class="card" style="margin-bottom:18px;"><canvas id="peso-chart" height="90"></canvas></div>`;
+  if(key==="cio" && items.length){
+    const datesSorted = items.map(([,it])=>it.data).filter(Boolean).sort();
+    const lastDate = datesSorted[datesSorted.length-1];
+    const avg = avgIntervalDays("cio","data");
+    const proj = (lastDate && avg) ? addDays(lastDate, avg) : null;
+    const diasParaProj = proj ? daysBetween(todayISO(), proj) : null;
+    extra = `
+      <div class="card" style="margin-bottom:18px;">
+        <div class="lbl">Projeção do próximo cio</div>
+        ${proj ? `
+          <div class="val" style="font-size:22px;margin-top:4px;">${toBR(proj)} <span class="meta" style="font-size:13px;">${diasParaProj>=0?`(em ~${diasParaProj} dias)`:`(há ${Math.abs(diasParaProj)} dias — pode já ter ocorrido)`}</span></div>
+          <div class="meta" style="margin-top:4px;">Baseado no ciclo médio de ~${avg} dias entre os ${datesSorted.length} registros. É só uma estimativa, não substitui acompanhamento veterinário.</div>
+        ` : `<div class="meta" style="margin-top:4px;">Registre pelo menos 2 datas de cio para calcular a projeção.</div>`}
+      </div>
+    `;
+  }
   if(key==="custos"){
     const total = items.reduce((s,[,it])=> s + (Number(it.valor)||0), 0);
     extra = `
@@ -699,6 +739,26 @@ function drawCustosCharts(items){
     if(mes) byMonth[mes] = (byMonth[mes]||0) + v;
   });
 
+  const barTotalsPlugin = {
+    id: "barTotals",
+    afterDatasetsDraw(chart){
+      const {ctx} = chart;
+      chart.data.datasets.forEach((dataset,i)=>{
+        const meta = chart.getDatasetMeta(i);
+        meta.data.forEach((bar,idx)=>{
+          const value = dataset.data[idx];
+          if(value==null) return;
+          ctx.save();
+          ctx.fillStyle = "#34424E";
+          ctx.font = "700 11px Karla, sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillText("R$ "+Number(value).toFixed(2), bar.x, bar.y-8);
+          ctx.restore();
+        });
+      });
+    }
+  };
+
   const catCtx = document.getElementById("custos-cat-chart");
   if(catCtx){
     new Chart(catCtx, {
@@ -707,7 +767,11 @@ function drawCustosCharts(items){
         labels: Object.keys(byCat),
         datasets:[{ label:"R$ por categoria", data:Object.values(byCat), backgroundColor:"#C99A4B", borderRadius:6 }]
       },
-      options:{ plugins:{legend:{display:false}, title:{display:true,text:"Gasto por categoria"}}, scales:{y:{ticks:{callback:v=>"R$ "+v}}} }
+      options:{
+        plugins:{legend:{display:false}, title:{display:true,text:"Gasto por categoria"}},
+        scales:{y:{ticks:{callback:v=>"R$ "+v}, grace:"10%"}}
+      },
+      plugins:[barTotalsPlugin]
     });
   }
 
@@ -820,6 +884,13 @@ function renderInfo(){
       <div class="card">
         <h3 style="margin-top:0;">Plano de saúde</h3>
         <textarea id="info_plano" style="width:100%;min-height:70px;border:1.5px solid var(--line);border-radius:8px;padding:9px;">${escapeHtml(info.plano||"")}</textarea>
+        <div style="display:flex;gap:12px;align-items:center;margin-top:12px;flex-wrap:wrap;">
+          ${DATA.carteirinhaPlano
+            ? `<img src="${DATA.carteirinhaPlano}" onclick="showPhoto(DATA.carteirinhaPlano)" style="width:72px;height:72px;object-fit:cover;border-radius:9px;border:1.5px solid var(--line);cursor:pointer;">`
+            : `<div style="width:72px;height:72px;border-radius:9px;background:var(--bg);border:1.5px dashed var(--line);display:flex;align-items:center;justify-content:center;font-size:22px;">🪪</div>`}
+          <button class="btn btn-ghost" onclick="document.getElementById('plano-photo-input').click()">📷 ${DATA.carteirinhaPlano?"Trocar foto da carteirinha":"Adicionar foto da carteirinha"}</button>
+          <input type="file" id="plano-photo-input" accept="image/*" capture="environment" style="display:none" onchange="handlePlanoCardChange(event)">
+        </div>
       </div>
       <div class="card">
         <h3 style="margin-top:0;">Microchip</h3>
