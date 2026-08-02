@@ -705,12 +705,13 @@ function renderCollection(key){
     `;
   }
   if(key==="custos"){
-    const total = items.reduce((s,[,it])=> s + (Number(it.valor)||0), 0);
-    const catCount = new Set(items.map(([,it])=>it.categoria)).size;
-    const chartH = Math.max(220, catCount*50);
+    const filtered = custosFiltro ? items.filter(([,it])=>it.categoria===custosFiltro) : items;
+    const total = filtered.reduce((s,[,it])=> s + (Number(it.valor)||0), 0);
+    const catCount = new Set(filtered.map(([,it])=>it.categoria)).size || 1;
+    const chartH = Math.max(180, catCount*50);
     extra = `
       <div class="card stat-card" style="margin-bottom:14px;">
-        <div class="lbl">Total geral</div><div class="val">R$ ${total.toFixed(2)}</div><div class="meta">${items.length} lançamento${items.length!==1?"s":""}</div>
+        <div class="lbl">${custosFiltro ? "Total — "+custosFiltro : "Total geral"}</div><div class="val">R$ ${total.toFixed(2)}</div><div class="meta">${filtered.length} lançamento${filtered.length!==1?"s":""}</div>
       </div>
       <div class="card" style="margin-bottom:18px;"><div style="height:${chartH}px;width:100%;position:relative;"><canvas id="custos-cat-chart"></canvas></div></div>
       <div class="card" style="margin-bottom:18px;"><div style="height:220px;width:100%;position:relative;"><canvas id="custos-mes-chart"></canvas></div></div>
@@ -736,7 +737,10 @@ function renderCollection(key){
   `;
 
   if(key==="pesagem" && items.length) drawPesoChart(items);
-  if(key==="custos" && items.length) drawCustosCharts(items);
+  if(key==="custos" && items.length){
+    const filtered = custosFiltro ? items.filter(([,it])=>it.categoria===custosFiltro) : items;
+    if(filtered.length) drawCustosCharts(filtered);
+  }
 }
 
 function renderItem(key,id,it){
@@ -881,20 +885,22 @@ function drawCustosCharts(items){
         type:"line",
         data:{
           labels: meses.map(m=>{ const [y,mo]=m.split("-"); return `${mo}/${y}`; }),
-          datasets:[{ label:"R$ por mês", data: meses.map(m=>byMonth[m]), borderColor:"#4A5C6E", backgroundColor:"rgba(201,154,75,.18)", fill:true, tension:.3, pointBackgroundColor:"#A63D4F", pointBorderColor:"#A63D4F", pointRadius:4 }]
+          datasets:[{ label:"R$ por mês", data: meses.map(m=>byMonth[m]), borderColor:"#4A5C6E", backgroundColor:"rgba(201,154,75,.18)", fill:true, tension:.3, pointBackgroundColor:"#A63D4F", pointBorderColor:"#A63D4F", pointRadius:3, pointHoverRadius:6 }]
         },
         options:{
           responsive:true,
           maintainAspectRatio:false,
-          layout:{ padding:{ top:24 } },
+          interaction:{ mode:"index", intersect:false },
           plugins:{
             legend:{display:false},
-            title:{display:true,text:"Gasto por mês"},
+            title:{display:true,text:"Gasto por mês (toque num ponto para ver o valor)"},
             tooltip:{callbacks:{label:ctx=>fmtBRL0(ctx.parsed.y)}}
           },
-          scales:{y:{ beginAtZero:true, ticks:{callback:v=>fmtBRL0(v), precision:0}, grace:"20%" }}
-        },
-        plugins:[pointTotalsPlugin]
+          scales:{
+            x:{ ticks:{ autoSkip:true, maxTicksLimit:6, maxRotation:0, minRotation:0 } },
+            y:{ beginAtZero:true, ticks:{callback:v=>fmtBRL0(v), precision:0}, grace:"20%" }
+          }
+        }
       });
     }
   }catch(err){ console.error("Erro no gráfico por mês:", err); }
