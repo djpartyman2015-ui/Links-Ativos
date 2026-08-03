@@ -120,7 +120,15 @@
   }
 
   .rowbody{flex:1; padding:14px 18px 14px 22px; min-width:0;}
-  .rowtop{display:flex; justify-content:space-between; align-items:flex-start; gap:14px;}
+  .rowtop{display:flex; align-items:flex-start; gap:14px;}
+  .rowtop > div:first-child{flex:1; min-width:0;}
+  .countdown{display:flex; flex-direction:column; align-items:center; justify-content:center; min-width:122px; padding:2px 4px; flex-shrink:0;}
+  .countdown .cd-num{font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:21px; line-height:1; color:var(--accent); white-space:nowrap;}
+  .countdown .cd-clock{font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:16px; letter-spacing:.02em; color:var(--accent); white-space:nowrap; font-variant-numeric:tabular-nums;}
+  .countdown .cd-label{font-family:'IBM Plex Mono',monospace; font-size:8.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); margin-top:4px; white-space:nowrap;}
+  .countdown.today .cd-num{color:var(--gold); font-size:15px;}
+  .countdown.now .cd-num{color:var(--ok); font-size:13px;}
+  .countdown.now .cd-label{color:var(--ok);}
   .titulo{font-size:15px; font-weight:600; line-height:1.35;}
   .row.concluido .titulo, .row.cancelado .titulo{text-decoration:line-through; text-decoration-color:var(--muted);}
   .meta{display:flex; gap:10px; margin-top:6px; flex-wrap:wrap; align-items:center; font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--muted);}
@@ -171,7 +179,7 @@
 
   @media(max-width:560px){
     header{padding:32px 18px 26px;} main{padding:20px 16px 60px;}
-    .flagtag{width:42px; font-size:16px;}
+    .flagtag{width:42px; font-size:16px;} .countdown{min-width:100px;} .countdown .cd-num{font-size:17px;} .countdown .cd-clock{font-size:13px;}
     .rowbody{padding:12px 14px;}
     .stat{min-width:130px;}
   }
@@ -347,6 +355,36 @@ function countdownText(e){
   const yr=Math.round(dd/365); return 'em '+yr+' ano'+(yr>1?'s':'');
 }
 
+function pad2(n){ return String(n).padStart(2,'0'); }
+
+function formatClock(diffMs){
+  const totalSec = Math.max(0, Math.floor(diffMs/1000));
+  const days = Math.floor(totalSec/86400);
+  const hours = Math.floor((totalSec%86400)/3600);
+  const mins = Math.floor((totalSec%3600)/60);
+  const secs = totalSec%60;
+  return days+':'+pad2(hours)+':'+pad2(mins)+':'+pad2(secs);
+}
+
+function countdownBadge(e){
+  const st = statusOf(e);
+  if(st==='andamento') return '<div class="countdown now"><div class="cd-num">●</div><div class="cd-label">agora</div></div>';
+  if(st!=='previsto') return '';
+  const target = new Date(e.dataInicio+'T00:00:00').getTime();
+  const diff = target - Date.now();
+  if(diff<=0) return '<div class="countdown today"><div class="cd-num">HOJE</div><div class="cd-label">chegou</div></div>';
+  return '<div class="countdown"><div class="cd-clock" data-target="'+target+'">'+formatClock(diff)+'</div><div class="cd-label">dias:hrs:min:seg</div></div>';
+}
+
+function tickClocks(){
+  document.querySelectorAll('.cd-clock[data-target]').forEach(el=>{
+    const target = parseInt(el.dataset.target,10);
+    const diff = target - Date.now();
+    if(diff<=0){ render(); return; }
+    el.textContent = formatClock(diff);
+  });
+}
+
 function monthKey(iso){ return iso.slice(0,7); }
 function monthLabel(key){
   const p = key.split('-');
@@ -426,6 +464,7 @@ function render(){
               <span class="cattag">${cat.label}</span>
             </div>
           </div>
+          ${countdownBadge(e)}
           <div class="actions">
             ${e.notas ? `<button class="btn-icon" onclick="toggleNotas('${e.id}')" title="Ver notas"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16M4 12h16M4 18h10"/></svg></button>` : ''}
             <button class="btn-icon" onclick="openEdit('${e.id}')" title="Editar"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
@@ -530,6 +569,7 @@ document.getElementById('filterStatus').onchange = render;
 
 load(true);
 setInterval(()=>load(false), 20000);
+setInterval(tickClocks, 1000);
 </script>
 </body>
 </html>
