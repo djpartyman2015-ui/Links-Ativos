@@ -271,7 +271,7 @@
    Substitua pela URL do seu Realtime Database (mesmo padrão dos outros apps),
    ex: "https://SEU-PROJETO-default-rtdb.firebaseio.com/"
 */
-const FIREBASE_URL = "https://medicos-andrey-default-rtdb.firebaseio.com/peso/";
+const FIREBASE_URL = "https://peso-andrey-default-rtdb.firebaseio.com/";
 
 /* ====== FIREBASE REST HELPERS ====== */
 async function fbGet(path){ const r = await fetch(`${FIREBASE_URL}${path}.json`); return r.json(); }
