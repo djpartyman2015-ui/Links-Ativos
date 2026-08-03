@@ -714,6 +714,7 @@ function renderCollection(key){
         <div class="lbl">${custosFiltro ? "Total — "+custosFiltro : "Total geral"}</div><div class="val">R$ ${total.toFixed(2)}</div><div class="meta">${filtered.length} lançamento${filtered.length!==1?"s":""}</div>
       </div>
       <div class="card" style="margin-bottom:18px;"><div style="height:${chartH}px;width:100%;position:relative;"><canvas id="custos-cat-chart"></canvas></div></div>
+      <div class="card" style="margin-bottom:18px;"><div style="height:340px;width:100%;position:relative;"><canvas id="custos-pizza-chart"></canvas></div></div>
       <div class="card" style="margin-bottom:18px;"><div style="height:220px;width:100%;position:relative;"><canvas id="custos-mes-chart"></canvas></div></div>
     `;
   }
@@ -876,6 +877,51 @@ function drawCustosCharts(items){
       });
     }
   }catch(err){ console.error("Erro no gráfico de categorias:", err); }
+
+  try{
+    const pizzaCtx = document.getElementById("custos-pizza-chart");
+    if(pizzaCtx){
+      const entries = Object.entries(byCat).sort((a,b)=> b[1]-a[1]);
+      const cats = entries.map(e=>e[0]);
+      const vals = entries.map(e=>e[1]);
+      const totalPizza = vals.reduce((s,v)=>s+v,0);
+      const pctLabelsPlugin = {
+        id:"pctLabels",
+        afterDatasetsDraw(chart){
+          if(!totalPizza) return;
+          const {ctx} = chart;
+          const meta = chart.getDatasetMeta(0);
+          meta.data.forEach((arc,idx)=>{
+            const val = vals[idx];
+            if(!val) return;
+            const pct = Math.round(val/totalPizza*100);
+            if(pct<4) return;
+            const pos = arc.tooltipPosition();
+            ctx.save();
+            ctx.fillStyle = "#fff";
+            ctx.font = "700 12px Karla, sans-serif";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText(pct+"%", pos.x, pos.y);
+            ctx.restore();
+          });
+        }
+      };
+      new Chart(pizzaCtx, {
+        type:"doughnut",
+        data:{ labels:cats, datasets:[{ data:vals, backgroundColor:cats.map((_,i)=>CAT_PALETTE[i%CAT_PALETTE.length]), borderWidth:2, borderColor:"#fff" }] },
+        options:{
+          maintainAspectRatio:false,
+          plugins:{
+            legend:{ position:"bottom", labels:{ boxWidth:12, font:{size:11}, padding:12 } },
+            title:{ display:true, text:"Distribuição dos gastos" },
+            tooltip:{ callbacks:{ label:ctx=>{ const v=ctx.parsed; const pct= totalPizza? Math.round(v/totalPizza*100):0; return `${ctx.label}: ${fmtBRL0(v)} (${pct}%)`; } } }
+          }
+        },
+        plugins:[pctLabelsPlugin]
+      });
+    }
+  }catch(err){ console.error("Erro no gráfico de pizza:", err); }
 
   try{
     const meses = Object.keys(byMonth).sort();
