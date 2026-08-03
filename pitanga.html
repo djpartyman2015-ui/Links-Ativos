@@ -442,27 +442,77 @@ async function seedIfEmpty(){
 
 /* ============================= BOOT / LOAD ============================= */
 const PESAGEM_MIGRACAO = [
-  {data:"2023-09-09", peso:"1.2"},
-  {data:"2023-09-11", peso:"1.1"},
-  {data:"2023-10-13", peso:"2.1"},
-  {data:"2023-11-06", peso:"2.1"},
-  {data:"2023-12-12", peso:"2.6"},
-  {data:"2024-03-26", peso:"2.8"},
-  {data:"2024-10-14", peso:"2.3"},
-  {data:"2024-11-04", peso:"2.2"},
-  {data:"2024-11-17", peso:"3.1"},
-  {data:"2025-01-13", peso:"3.4"},
-  {data:"2025-11-17", peso:"3.5"},
-  {data:"2026-02-24", peso:"3.9"},
+  {id:"mig_peso_01", data:"2023-09-09", peso:"1.2"},
+  {id:"mig_peso_02", data:"2023-09-11", peso:"1.1"},
+  {id:"mig_peso_03", data:"2023-10-13", peso:"2.1"},
+  {id:"mig_peso_04", data:"2023-11-06", peso:"2.1"},
+  {id:"mig_peso_05", data:"2023-12-12", peso:"2.6"},
+  {id:"mig_peso_06", data:"2024-03-26", peso:"2.8"},
+  {id:"mig_peso_07", data:"2024-10-14", peso:"2.3"},
+  {id:"mig_peso_08", data:"2024-11-04", peso:"2.2"},
+  {id:"mig_peso_09", data:"2024-11-17", peso:"3.1"},
+  {id:"mig_peso_10", data:"2025-01-13", peso:"3.4"},
+  {id:"mig_peso_11", data:"2025-11-17", peso:"3.5"},
+  {id:"mig_peso_12", data:"2026-02-24", peso:"3.9"},
 ];
 async function seedPesagemIfNeeded(){
-  const flag = await fbGet("_pesagemSeeded");
-  if(flag) return;
-  const existing = await fbGet("pesagem") || {};
-  const merged = {...existing};
-  PESAGEM_MIGRACAO.forEach(item=> merged[uid()] = item);
-  await fbSet("pesagem", merged);
-  await fbSet("_pesagemSeeded", true);
+  try{
+    for(const item of PESAGEM_MIGRACAO){
+      await fbSet(`pesagem/${item.id}`, {data:item.data, peso:item.peso});
+    }
+  }catch(err){ console.error("Erro ao migrar pesagem:", err); }
+}
+
+const CUSTOS_MIGRACAO = [
+  {id:"mig_custo_01", data:"2026-08-03", categoria:"Ração", descricao:"Sachês", valor:"52.97"},
+  {id:"mig_custo_02", data:"2026-08-01", categoria:"Acessórios", descricao:"Saquinho de cocô", valor:"17.08"},
+  {id:"mig_custo_03", data:"2026-08-01", categoria:"Assinaturas (Petiko)", descricao:"3/6", valor:"83.90"},
+  {id:"mig_custo_04", data:"2026-07-18", categoria:"Ração", descricao:"", valor:"64.90"},
+  {id:"mig_custo_05", data:"2026-07-11", categoria:"Higiene", descricao:"Banho e tosa", valor:"190.00"},
+  {id:"mig_custo_06", data:"2026-07-07", categoria:"Plano de Saúde", descricao:"", valor:"109.86"},
+  {id:"mig_custo_07", data:"2026-07-01", categoria:"Assinaturas (Petiko)", descricao:"2/6", valor:"83.90"},
+  {id:"mig_custo_08", data:"2026-06-30", categoria:"Ração", descricao:"Ração + saquinho", valor:"68.89"},
+  {id:"mig_custo_09", data:"2026-06-24", categoria:"Acessórios", descricao:"Comedouro elevado", valor:"79.00"},
+  {id:"mig_custo_10", data:"2026-06-23", categoria:"Higiene", descricao:"Banho", valor:"85.00"},
+  {id:"mig_custo_11", data:"2026-06-08", categoria:"Ração", descricao:"", valor:"59.90"},
+  {id:"mig_custo_12", data:"2026-06-08", categoria:"Higiene", descricao:"Banho", valor:"85.00"},
+  {id:"mig_custo_13", data:"2026-06-07", categoria:"Plano de Saúde", descricao:"", valor:"109.86"},
+  {id:"mig_custo_14", data:"2026-06-02", categoria:"Ração", descricao:"Sachês", valor:"54.00"},
+  {id:"mig_custo_15", data:"2026-06-01", categoria:"Assinaturas (Petiko)", descricao:"1/6", valor:"83.90"},
+  {id:"mig_custo_16", data:"2026-05-07", categoria:"Plano de Saúde", descricao:"", valor:"109.86"},
+  {id:"mig_custo_17", data:"2026-05-04", categoria:"Higiene", descricao:"Banho + desembaraço", valor:"120.00"},
+  {id:"mig_custo_18", data:"2026-04-25", categoria:"Ração", descricao:"Sachês", valor:"52.00"},
+  {id:"mig_custo_19", data:"2026-04-07", categoria:"Plano de Saúde", descricao:"", valor:"109.86"},
+  {id:"mig_custo_20", data:"2026-04-04", categoria:"Ração", descricao:"", valor:"59.90"},
+  {id:"mig_custo_21", data:"2026-04-02", categoria:"Higiene", descricao:"Banho", valor:"85.00"},
+  {id:"mig_custo_22", data:"2026-03-31", categoria:"Brinquedos", descricao:"", valor:"64.99"},
+  {id:"mig_custo_23", data:"2026-03-12", categoria:"Exames Médicos", descricao:"Exames", valor:"66.00"},
+  {id:"mig_custo_24", data:"2026-03-07", categoria:"Plano de Saúde", descricao:"", valor:"109.86"},
+  {id:"mig_custo_25", data:"2026-03-06", categoria:"Higiene", descricao:"Banho", valor:"80.00"},
+  {id:"mig_custo_26", data:"2026-03-02", categoria:"Exames Médicos", descricao:"Ultrassom", valor:"65.98"},
+  {id:"mig_custo_27", data:"2026-02-25", categoria:"Ração", descricao:"Ração + petiscos", valor:"79.80"},
+  {id:"mig_custo_28", data:"2026-02-07", categoria:"Plano de Saúde", descricao:"", valor:"109.86"},
+  {id:"mig_custo_29", data:"2026-01-23", categoria:"Higiene", descricao:"Banho", valor:"75.00"},
+  {id:"mig_custo_30", data:"2026-01-07", categoria:"Plano de Saúde", descricao:"", valor:"109.86"},
+  {id:"mig_custo_31", data:"2025-05-01", categoria:"Assinaturas (Petiko)", descricao:"12/12", valor:"84.90"},
+  {id:"mig_custo_32", data:"2025-04-01", categoria:"Assinaturas (Petiko)", descricao:"11/12", valor:"84.90"},
+  {id:"mig_custo_33", data:"2025-03-01", categoria:"Assinaturas (Petiko)", descricao:"10/12", valor:"84.90"},
+  {id:"mig_custo_34", data:"2025-02-01", categoria:"Assinaturas (Petiko)", descricao:"9/12", valor:"84.90"},
+  {id:"mig_custo_35", data:"2025-01-01", categoria:"Assinaturas (Petiko)", descricao:"8/12", valor:"84.90"},
+  {id:"mig_custo_36", data:"2024-12-01", categoria:"Assinaturas (Petiko)", descricao:"7/12", valor:"84.90"},
+  {id:"mig_custo_37", data:"2024-11-01", categoria:"Assinaturas (Petiko)", descricao:"6/12", valor:"84.90"},
+  {id:"mig_custo_38", data:"2024-10-01", categoria:"Assinaturas (Petiko)", descricao:"5/12", valor:"84.90"},
+  {id:"mig_custo_39", data:"2024-09-01", categoria:"Assinaturas (Petiko)", descricao:"4/12", valor:"84.90"},
+  {id:"mig_custo_40", data:"2024-08-01", categoria:"Assinaturas (Petiko)", descricao:"3/12", valor:"84.90"},
+  {id:"mig_custo_41", data:"2024-07-01", categoria:"Assinaturas (Petiko)", descricao:"2/12", valor:"84.90"},
+  {id:"mig_custo_42", data:"2024-06-01", categoria:"Assinaturas (Petiko)", descricao:"Caixa Petiko", valor:"84.90"},
+];
+async function seedCustosIfNeeded(){
+  try{
+    for(const item of CUSTOS_MIGRACAO){
+      await fbSet(`custos/${item.id}`, {data:item.data, categoria:item.categoria, descricao:item.descricao, valor:item.valor});
+    }
+  }catch(err){ console.error("Erro ao migrar custos:", err); }
 }
 
 async function boot(){
@@ -473,6 +523,7 @@ async function boot(){
   renderNav(user);
   await seedIfEmpty();
   await seedPesagemIfNeeded();
+  await seedCustosIfNeeded();
   await loadAll();
   goTab("home");
 }
