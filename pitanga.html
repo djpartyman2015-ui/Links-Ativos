@@ -240,7 +240,7 @@
 
 <script>
 /* ============================= CONFIG ============================= */
-const DB = "https://pitanga-andrey-default-rtdb.firebaseio.com/pitanga";
+const DB = "https://medicos-andrey-default-rtdb.firebaseio.com/pitanga";
 const BIRTH = "2023-07-05"; // 05/07/2023
 
 /* ============================= UTILS ============================= */
@@ -441,6 +441,30 @@ async function seedIfEmpty(){
 }
 
 /* ============================= BOOT / LOAD ============================= */
+const PESAGEM_MIGRACAO = [
+  {data:"2023-09-09", peso:"1.2"},
+  {data:"2023-09-11", peso:"1.1"},
+  {data:"2023-10-13", peso:"2.1"},
+  {data:"2023-11-06", peso:"2.1"},
+  {data:"2023-12-12", peso:"2.6"},
+  {data:"2024-03-26", peso:"2.8"},
+  {data:"2024-10-14", peso:"2.3"},
+  {data:"2024-11-04", peso:"2.2"},
+  {data:"2024-11-17", peso:"3.1"},
+  {data:"2025-01-13", peso:"3.4"},
+  {data:"2025-11-17", peso:"3.5"},
+  {data:"2026-02-24", peso:"3.9"},
+];
+async function seedPesagemIfNeeded(){
+  const flag = await fbGet("_pesagemSeeded");
+  if(flag) return;
+  const existing = await fbGet("pesagem") || {};
+  const merged = {...existing};
+  PESAGEM_MIGRACAO.forEach(item=> merged[uid()] = item);
+  await fbSet("pesagem", merged);
+  await fbSet("_pesagemSeeded", true);
+}
+
 async function boot(){
   const user = localStorage.getItem("pitanga_user");
   if(!user){ return; }
@@ -448,6 +472,7 @@ async function boot(){
   $("#app").style.display = "flex";
   renderNav(user);
   await seedIfEmpty();
+  await seedPesagemIfNeeded();
   await loadAll();
   goTab("home");
 }
