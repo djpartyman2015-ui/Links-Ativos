@@ -330,7 +330,7 @@ main{max-width:1180px;margin:0 auto;padding:24px;}
 
 <script>
 /* ============ CONFIG ============ */
-const FIREBASE_URL = "https://farmacinha-andrey-default-rtdb.firebaseio.com";
+const FIREBASE_URL = "https://medicos-andrey-default-rtdb.firebaseio.com";
 const BASE = FIREBASE_URL + "/farmacinha";
 
 const NECESSIDADES = [
@@ -375,8 +375,8 @@ function toast(msg){
 
 /* ============ FIREBASE HELPERS ============ */
 async function fbGet(path){
-  const r = await fetch(`${BASE}/${path}.json`);
-  if(!r.ok) throw new Error('Erro ao ler '+path);
+  const r = await fetch(`${BASE}/${path}.json?_=${Date.now()}`);
+  if(!r.ok) throw new Error(`HTTP ${r.status} ao ler ${path}`);
   return r.json();
 }
 async function fbPost(path, data){
@@ -402,8 +402,10 @@ async function loadAll(){
     const [m, u] = await Promise.all([fbGet('medicamentos'), fbGet('usos')]);
     medicamentos = m || {};
     usos = u || {};
+    console.log('DEBUG farmacinha — medicamentos carregados:', Object.keys(medicamentos).length, medicamentos);
   }catch(e){
-    document.getElementById('content').innerHTML = '<div class="empty"><div class="display">Não foi possível carregar</div>Verifique a conexão com o Firebase e recarregue a página.</div>';
+    console.error('DEBUG farmacinha — erro ao carregar:', e);
+    document.getElementById('content').innerHTML = `<div class="empty"><div class="display">Não foi possível carregar</div>${escapeHtml(e.message||String(e))}<br><small>URL usada: ${BASE}/medicamentos.json</small></div>`;
     return;
   }
   renderTagChips();
@@ -509,7 +511,7 @@ function renderGrid(){
 
   const content = document.getElementById('content');
   if(list.length===0){
-    content.innerHTML = `<div class="empty"><div class="display">Nada por aqui</div>${Object.keys(medicamentos).length? 'Nenhum item bate com essa busca.' : 'Cadastre o primeiro medicamento da farmacinha.'}</div>`;
+    content.innerHTML = `<div class="empty"><div class="display">Nada por aqui</div>${Object.keys(medicamentos).length? 'Nenhum item bate com essa busca.' : 'Cadastre o primeiro medicamento da farmacinha.'}<br><small class="mono">itens no banco: ${Object.keys(medicamentos).length} · ${BASE}/medicamentos.json</small></div>`;
     return;
   }
 
