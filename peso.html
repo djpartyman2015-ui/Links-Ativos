@@ -85,7 +85,7 @@
   .btn.danger{background:transparent;color:var(--warn);border:1px solid var(--warn-dim);padding:6px 10px;font-size:12px;}
 
   /* HISTORY TABLE */
-  .hist-row{display:grid;grid-template-columns:90px 1fr 90px 60px;gap:10px;align-items:center;padding:10px 4px;border-bottom:1px solid var(--line);font-size:13.5px;}
+  .hist-row{display:grid;grid-template-columns:90px 1fr 90px 54px;gap:10px;align-items:center;padding:10px 4px;border-bottom:1px solid var(--line);font-size:13.5px;}
   .hist-row:last-child{border-bottom:none;}
   .hist-row .date{color:var(--muted);font-family:'Share Tech Mono',monospace;font-size:12.5px;}
   .hist-row .note{color:var(--muted-2);font-size:12px;}
@@ -265,6 +265,64 @@
 </div>
 
 <div id="photoModal" class="modal-bg" hidden><img id="photoModalImg"></div>
+
+<div id="editEntryModal" class="modal-bg" hidden>
+  <div class="panel" style="max-width:420px;width:100%;">
+    <h2>Editar registro</h2>
+    <div class="form-row">
+      <div class="field"><label>Data</label><input type="date" id="editEntryDate"></div>
+      <div class="field"><label>Peso (kg)</label><input type="number" step="0.1" id="editEntryWeight"></div>
+    </div>
+    <div class="form-row" style="margin-top:10px;">
+      <div class="field" style="flex:1;"><label>Observação</label><textarea id="editEntryNote"></textarea></div>
+    </div>
+    <div style="margin-top:14px;display:flex;gap:8px;">
+      <button class="btn" id="btnSaveEditEntry">Salvar</button>
+      <button class="btn secondary" onclick="closeEditEntry()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<div id="editCanetaModal" class="modal-bg" hidden>
+  <div class="panel" style="max-width:480px;width:100%;">
+    <h2>Editar ciclo</h2>
+    <div class="form-row">
+      <div class="field"><label>Marca</label>
+        <select id="editCBrand">
+          <option>Ozempic</option><option>Wegovy</option><option>Mounjaro</option>
+          <option>Saxenda</option><option>Trulicity</option><option>Outra</option>
+        </select>
+      </div>
+      <div class="field"><label>Dose</label><input type="text" id="editCDose"></div>
+    </div>
+    <div class="form-row" style="margin-top:10px;">
+      <div class="field"><label>Início</label><input type="date" id="editCStart"></div>
+      <div class="field"><label>Fim (opcional)</label><input type="date" id="editCEnd"></div>
+    </div>
+    <div class="form-row" style="margin-top:10px;">
+      <div class="field">
+        <label>Efeitos colaterais</label>
+        <div class="chip-group" id="editEffChips">
+          <span class="chip" data-eff="Náusea">Náusea</span>
+          <span class="chip" data-eff="Enjoo">Enjoo</span>
+          <span class="chip" data-eff="Dor de cabeça">Dor de cabeça</span>
+          <span class="chip" data-eff="Fadiga">Fadiga</span>
+          <span class="chip" data-eff="Constipação">Constipação</span>
+          <span class="chip" data-eff="Diarreia">Diarreia</span>
+          <span class="chip" data-eff="Refluxo">Refluxo</span>
+          <span class="chip" data-eff="Tontura">Tontura</span>
+        </div>
+      </div>
+    </div>
+    <div class="form-row" style="margin-top:10px;">
+      <div class="field" style="flex:1;"><label>Observações</label><textarea id="editCNote"></textarea></div>
+    </div>
+    <div style="margin-top:14px;display:flex;gap:8px;">
+      <button class="btn" id="btnSaveEditCaneta">Salvar</button>
+      <button class="btn secondary" onclick="closeEditCaneta()">Cancelar</button>
+    </div>
+  </div>
+</div>
 
 <script>
 /* ====== CONFIG ======
@@ -497,7 +555,7 @@ function renderHistory(list){
       <div class="date">${new Date(e.date+'T00:00').toLocaleDateString('pt-BR')}</div>
       <div class="note">${e.note||''}</div>
       <div class="w">${e.weight.toFixed(1)}kg</div>
-      <div class="hist-actions"><button class="icon-btn" onclick="deleteEntry('${e.id}')" title="excluir">✕</button></div>
+      <div class="hist-actions"><button class="icon-btn" onclick="openEditEntry('${e.id}')" title="editar">✎</button><button class="icon-btn" onclick="deleteEntry('${e.id}')" title="excluir">✕</button></div>
     </div>`).join('');
 }
 
@@ -592,7 +650,7 @@ function renderCanetas(){
       ${c.effects && c.effects.length ? `<div class="caneta-effects">${c.effects.map(e=>`<span class="eff-tag">${e}</span>`).join('')}</div>` : ''}
       ${c.note ? `<div class="caneta-note">${c.note}</div>` : ''}
       ${c.photo ? `<div class="rx-photo" onclick="openPhoto('${c.id}')"><img src="${c.photo}"></div>` : ''}
-      <div class="caneta-actions"><button class="btn danger" onclick="deleteCaneta('${c.id}')">Excluir</button></div>
+      <div class="caneta-actions"><button class="btn secondary" onclick="openEditCaneta('${c.id}')">Editar</button><button class="btn danger" onclick="deleteCaneta('${c.id}')">Excluir</button></div>
     </div>`;
   }).join('');
 }
@@ -620,6 +678,75 @@ document.getElementById('btnSaveSettings').addEventListener('click', async ()=>{
   await fbSet('settings', settings);
   render();
   alert('Meta salva.');
+});
+
+/* ====== EDIT ENTRY ====== */
+let editingEntryId = null;
+function openEditEntry(id){
+  const e = entries[id];
+  if(!e) return;
+  editingEntryId = id;
+  document.getElementById('editEntryDate').value = e.date;
+  document.getElementById('editEntryWeight').value = e.weight;
+  document.getElementById('editEntryNote').value = e.note || '';
+  document.getElementById('editEntryModal').hidden = false;
+}
+function closeEditEntry(){ document.getElementById('editEntryModal').hidden = true; editingEntryId = null; }
+document.getElementById('editEntryModal').addEventListener('click', (ev)=>{ if(ev.target.id==='editEntryModal') closeEditEntry(); });
+document.getElementById('btnSaveEditEntry').addEventListener('click', async ()=>{
+  if(!editingEntryId) return;
+  const date = document.getElementById('editEntryDate').value;
+  const weight = parseFloat(document.getElementById('editEntryWeight').value);
+  const note = document.getElementById('editEntryNote').value.trim();
+  if(!date || !weight){ alert('Preencha data e peso.'); return; }
+  const data = {date, weight, note};
+  await fbSet('entries/'+editingEntryId, data);
+  entries[editingEntryId] = data;
+  closeEditEntry();
+  render();
+});
+
+/* ====== EDIT CANETA ====== */
+let editingCanetaId = null;
+let editSelectedEffects = new Set();
+document.querySelectorAll('#editEffChips .chip').forEach(chip=>{
+  chip.addEventListener('click', ()=>{
+    const eff = chip.dataset.eff;
+    if(editSelectedEffects.has(eff)){ editSelectedEffects.delete(eff); chip.classList.remove('selected'); }
+    else { editSelectedEffects.add(eff); chip.classList.add('selected'); }
+  });
+});
+function openEditCaneta(id){
+  const c = canetas[id];
+  if(!c) return;
+  editingCanetaId = id;
+  document.getElementById('editCBrand').value = c.brand || 'Wegovy';
+  document.getElementById('editCDose').value = c.dose || '';
+  document.getElementById('editCStart').value = c.start || '';
+  document.getElementById('editCEnd').value = c.end || '';
+  document.getElementById('editCNote').value = c.note || '';
+  editSelectedEffects = new Set(c.effects || []);
+  document.querySelectorAll('#editEffChips .chip').forEach(chip=>{
+    chip.classList.toggle('selected', editSelectedEffects.has(chip.dataset.eff));
+  });
+  document.getElementById('editCanetaModal').hidden = false;
+}
+function closeEditCaneta(){ document.getElementById('editCanetaModal').hidden = true; editingCanetaId = null; }
+document.getElementById('editCanetaModal').addEventListener('click', (ev)=>{ if(ev.target.id==='editCanetaModal') closeEditCaneta(); });
+document.getElementById('btnSaveEditCaneta').addEventListener('click', async ()=>{
+  if(!editingCanetaId) return;
+  const brand = document.getElementById('editCBrand').value;
+  const dose = document.getElementById('editCDose').value.trim();
+  const start = document.getElementById('editCStart').value;
+  const end = document.getElementById('editCEnd').value || null;
+  const note = document.getElementById('editCNote').value.trim();
+  if(!start){ alert('Informe a data de início.'); return; }
+  const existing = canetas[editingCanetaId] || {};
+  const data = {...existing, brand, dose, start, end, effects:[...editSelectedEffects], note};
+  await fbSet('canetas/'+editingCanetaId, data);
+  canetas[editingCanetaId] = data;
+  closeEditCaneta();
+  render();
 });
 
 loadAll();
