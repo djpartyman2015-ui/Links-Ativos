@@ -65,6 +65,26 @@
   .search-wrap input::placeholder{ color:rgba(255,255,255,0.55); }
   .search-wrap input:focus{ background:rgba(255,255,255,0.22); }
 
+  .tab-bar{ display:flex; gap:6px; max-width:900px; margin:14px auto 0; }
+  .tab-btn{
+    flex:1; background:rgba(255,255,255,0.1); border:none; color:rgba(255,255,255,0.7);
+    padding:9px 10px; border-radius:9px; font-size:13px; font-weight:600; cursor:pointer;
+    font-family:'Inter',sans-serif; transition:background .15s, color .15s;
+  }
+  .tab-btn.active{ background:#fff; color:var(--teal-dark); }
+
+  .exame-card{
+    background:var(--surface); border:1px solid var(--border); border-radius:10px;
+    padding:14px 16px; margin-bottom:10px; box-shadow:var(--shadow); cursor:pointer;
+    display:flex; justify-content:space-between; align-items:center; gap:10px;
+  }
+  .exame-card .nome{ font-weight:600; font-size:15px; }
+  .exame-card .meta{ font-size:12.5px; color:var(--ink-muted); margin-top:2px; }
+  .status-badge{ font-size:11px; font-weight:700; padding:4px 9px; border-radius:20px; white-space:nowrap; }
+  .status-pendente{ background:var(--rust-light); color:var(--rust); }
+  .status-realizado{ background:var(--teal-light); color:var(--teal-dark); }
+
+
   main{ max-width:900px; margin:0 auto; padding:22px 18px 40px; }
 
   .section-label{
@@ -237,48 +257,152 @@
 </head>
 <body>
 
-<header>
-  <div class="header-row">
-    <button class="back-btn" id="backBtn" style="display:none;">←</button>
-    <div class="title-block">
-      <h1 id="pageTitle">🩺 Médicos</h1>
-      <div class="sub" id="pageSub">seu histórico completo por especialidade</div>
-    </div>
-  </div>
-  <div class="search-wrap" id="searchWrap">
-    <input type="text" id="searchInput" placeholder="Buscar médico ou especialidade...">
-  </div>
-</header>
-
-<main id="content"></main>
-
-<div class="overlay" id="overlay">
-  <div class="modal" id="modalBody"></div>
-</div>
-<div class="toast" id="toast"></div>
-
 <script>
 /* ---------- Firebase REST config ---------- */
 const DB_BASE = "https://medicos-andrey-default-rtdb.firebaseio.com";
+const AUTH_API_KEY = "AIzaSyBnU7bTrKb2jQT64aifNvuF74GJBBQzOMI";
+
+function authQS(){ return idToken ? `?auth=${idToken}` : ''; }
 
 async function dbGet(path){
-  const r = await fetch(`${DB_BASE}/${path}.json`);
+  const r = await fetch(`${DB_BASE}/${path}.json${authQS()}`);
   return r.json();
 }
 async function dbPost(path, data){
-  const r = await fetch(`${DB_BASE}/${path}.json`, {method:'POST', body:JSON.stringify(data)});
+  const r = await fetch(`${DB_BASE}/${path}.json${authQS()}`, {method:'POST', body:JSON.stringify(data)});
   return r.json();
 }
 async function dbPut(path, data){
-  const r = await fetch(`${DB_BASE}/${path}.json`, {method:'PUT', body:JSON.stringify(data)});
+  const r = await fetch(`${DB_BASE}/${path}.json${authQS()}`, {method:'PUT', body:JSON.stringify(data)});
   return r.json();
 }
 async function dbPatch(path, data){
-  const r = await fetch(`${DB_BASE}/${path}.json`, {method:'PATCH', body:JSON.stringify(data)});
+  const r = await fetch(`${DB_BASE}/${path}.json${authQS()}`, {method:'PATCH', body:JSON.stringify(data)});
   return r.json();
 }
 async function dbDelete(path){
-  await fetch(`${DB_BASE}/${path}.json`, {method:'DELETE'});
+  await fetch(`${DB_BASE}/${path}.json${authQS()}`, {method:'DELETE'});
+}
+
+/* ---------- Auth (Firebase Email/Password) ---------- */
+let idToken = null;
+
+function authScreen(msg){
+  document.body.innerHTML = `
+    <div style="max-width:340px;margin:18vh auto 0;padding:0 20px;">
+      <div style="text-align:center;font-size:34px;margin-bottom:6px;">🩺</div>
+      <h1 class="serif" style="text-align:center;font-size:20px;margin-bottom:22px;color:var(--ink);">Médicos</h1>
+      <div class="field"><label>E-mail</label><input id="auth_email" type="email" autocomplete="username"></div>
+      <div class="field"><label>Senha</label><input id="auth_pass" type="password" autocomplete="current-password"></div>
+      ${msg ? `<div style="color:var(--rust);font-size:13px;margin-bottom:10px;">${msg}</div>` : ''}
+      <button class="btn btn-primary" style="width:100%;" id="auth_btn" onclick="doLogin()">Entrar</button>
+    </div>
+  `;
+  document.getElementById('auth_pass').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
+}
+
+async function doLogin(){
+  const email = document.getElementById('auth_email').value.trim();
+  const password = document.getElementById('auth_pass').value;
+  const btn = document.getElementById('auth_btn');
+  btn.textContent = 'Entrando...'; btn.disabled = true;
+  try{
+    const r = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${AUTH_API_KEY}`, {
+      method:'POST',
+      body: JSON.stringify({email, password, returnSecureToken:true})
+    });
+    const data = await r.json();
+    if(data.error){ authScreen('E-mail ou senha incorretos.'); return; }
+    idToken = data.idToken;
+    localStorage.setItem('medicos_refresh', data.refreshToken);
+    startApp();
+  }catch(err){
+    authScreen('Erro de conexão. Tente novamente.');
+  }
+}
+
+async function refreshIdToken(rt){
+  const r = await fetch(`https://securetoken.googleapis.com/v1/token?key=${AUTH_API_KEY}`, {
+    method:'POST',
+    headers:{'Content-Type':'application/x-www-form-urlencoded'},
+    body: `grant_type=refresh_token&refresh_token=${encodeURIComponent(rt)}`
+  });
+  const data = await r.json();
+  if(data.error) throw new Error('refresh failed');
+  idToken = data.id_token;
+  localStorage.setItem('medicos_refresh', data.refresh_token);
+}
+
+function logout(){
+  localStorage.removeItem('medicos_refresh');
+  idToken = null;
+  location.reload();
+}
+
+function buildAppShell(){
+  document.body.innerHTML = `
+    <header>
+      <div class="header-row">
+        <button class="back-btn" id="backBtn" style="display:none;">←</button>
+        <div class="title-block">
+          <h1 id="pageTitle">🩺 Médicos</h1>
+          <div class="sub" id="pageSub">seu histórico completo por especialidade</div>
+        </div>
+        <button class="back-btn" id="logoutBtn" title="Sair">⏻</button>
+      </div>
+      <div class="search-wrap" id="searchWrap">
+        <input type="text" id="searchInput" placeholder="Buscar médico ou especialidade...">
+      </div>
+      <div class="tab-bar">
+        <button class="tab-btn" id="tabMedicos">🩺 Médicos</button>
+        <button class="tab-btn" id="tabExames">🧪 Exames</button>
+      </div>
+    </header>
+    <main id="content"></main>
+    <div class="overlay" id="overlay"><div class="modal" id="modalBody"></div></div>
+    <div class="toast" id="toast"></div>
+  `;
+  document.getElementById('tabMedicos').addEventListener('click', ()=>{ mainTab='medicos'; goHome(); });
+  document.getElementById('tabExames').addEventListener('click', ()=>{ mainTab='exames'; goExamesHome(); });
+  document.getElementById('backBtn').addEventListener('click', ()=>{
+    if(mainTab==='exames'){
+      if(exameView.screen==='detalhe'){ exameView = {screen:'lista', exameId:null}; render(); }
+      return;
+    }
+    if(view.screen==='medico'){ view.screen='especialidade'; view.medicoId=null; }
+    else if(view.screen==='especialidade'){ goHome(); return; }
+    render();
+  });
+  document.getElementById('searchInput').addEventListener('input', (e)=>{
+    searchTerm = e.target.value.toLowerCase();
+    render();
+  });
+  document.getElementById('overlay').addEventListener('click', (e)=>{
+    if(e.target.id==='overlay') closeModal();
+  });
+  document.getElementById('logoutBtn').addEventListener('click', ()=>{
+    if(confirm('Sair da conta?')) logout();
+  });
+}
+
+function startApp(){
+  buildAppShell();
+  setInterval(async ()=>{
+    const rt = localStorage.getItem('medicos_refresh');
+    if(rt){ try{ await refreshIdToken(rt); }catch(e){} }
+  }, 50*60*1000);
+  loadAll();
+}
+
+async function initAuth(){
+  const rt = localStorage.getItem('medicos_refresh');
+  if(!rt){ authScreen(); return; }
+  try{
+    await refreshIdToken(rt);
+    startApp();
+  }catch(e){
+    authScreen('Sessão expirada, faça login novamente.');
+  }
 }
 
 /* ---------- State ---------- */
@@ -286,6 +410,9 @@ let medicos = {};   // id -> {nome, especialidade, telefone, obs, proxima_consul
 let consultas = {}; // id -> {medico_id, data, observacoes, receita_texto, anexos:[], criado_em}
 let view = { screen:'home', especialidade:null, medicoId:null };
 let searchTerm = '';
+let mainTab = 'medicos';
+let exames = {}; // id -> {nome, medico_id, status, data_prevista, data_realizado, observacoes, anexos:[]}
+let exameView = { screen:'lista', exameId:null };
 
 const ICONS = {
   cardio:'❤️', dermato:'🩹', oftalmo:'👁️', orto:'🦴', pediatr:'🧸', gineco:'🌸',
@@ -306,9 +433,10 @@ function toast(msg){
 
 /* ---------- Load ---------- */
 async function loadAll(){
-  const [m, c] = await Promise.all([dbGet('medicos'), dbGet('consultas')]);
+  const [m, c, e] = await Promise.all([dbGet('medicos'), dbGet('consultas'), dbGet('exames')]);
   medicos = m || {};
   consultas = c || {};
+  exames = e || {};
   render();
 }
 
@@ -352,16 +480,8 @@ function proximasConsultas(){
 function goHome(){ view = {screen:'home', especialidade:null, medicoId:null}; searchTerm=''; render(); }
 function goEspecialidade(esp){ view = {screen:'especialidade', especialidade:esp, medicoId:null}; render(); }
 function goMedico(id){ view = {...view, screen:'medico', medicoId:id}; render(); }
-
-document.getElementById('backBtn').addEventListener('click', ()=>{
-  if(view.screen==='medico'){ view.screen='especialidade'; view.medicoId=null; }
-  else if(view.screen==='especialidade'){ goHome(); return; }
-  render();
-});
-document.getElementById('searchInput').addEventListener('input', (e)=>{
-  searchTerm = e.target.value.toLowerCase();
-  render();
-});
+function goExamesHome(){ exameView = {screen:'lista', exameId:null}; render(); }
+function goExame(id){ exameView = {screen:'detalhe', exameId:id}; render(); }
 
 /* ---------- Render ---------- */
 function render(){
@@ -370,6 +490,26 @@ function render(){
   const sub = document.getElementById('pageSub');
   const content = document.getElementById('content');
   const searchWrap = document.getElementById('searchWrap');
+
+  document.getElementById('tabMedicos').classList.toggle('active', mainTab==='medicos');
+  document.getElementById('tabExames').classList.toggle('active', mainTab==='exames');
+
+  if(mainTab==='exames'){
+    searchWrap.style.display = 'none';
+    if(exameView.screen==='lista'){
+      back.style.display = 'none';
+      title.textContent = '🧪 Exames';
+      sub.textContent = 'pendentes e realizados';
+      renderExamesLista(content);
+    } else {
+      back.style.display = 'flex';
+      const ex = exames[exameView.exameId];
+      title.textContent = ex ? ex.nome : '';
+      sub.textContent = ex && ex.status==='realizado' ? 'realizado' : 'pendente';
+      renderExameDetalhe(content);
+    }
+    return;
+  }
 
   back.style.display = view.screen==='home' ? 'none' : 'flex';
   searchWrap.style.display = view.screen==='medico' ? 'none' : 'block';
@@ -462,6 +602,213 @@ function doctorCardHtml(id,m){
   </div>`;
 }
 
+/* ---------- Exames ---------- */
+function examesOrdenados(){
+  const pendentes = Object.entries(exames).filter(([id,e])=>e.status!=='realizado')
+    .sort((a,b)=>(a[1].data_prevista||'9999').localeCompare(b[1].data_prevista||'9999'));
+  const realizados = Object.entries(exames).filter(([id,e])=>e.status==='realizado')
+    .sort((a,b)=>(b[1].data_realizado||'').localeCompare(a[1].data_realizado||''));
+  return {pendentes, realizados};
+}
+function exameCardHtml(id,e){
+  const statusHtml = e.status==='realizado'
+    ? `<span class="status-badge status-realizado">✓ Realizado</span>`
+    : `<span class="status-badge status-pendente">Pendente</span>`;
+  const medico = e.medico_id ? medicos[e.medico_id] : null;
+  const dataLabel = e.status==='realizado'
+    ? (e.data_realizado ? fmtDate(e.data_realizado) : '')
+    : (e.data_prevista ? 'prevista '+fmtDate(e.data_prevista) : 'sem data prevista');
+  return `<div class="exame-card" onclick="goExame('${id}')">
+    <div>
+      <div class="nome">${esc(e.nome)}</div>
+      <div class="meta">${dataLabel}${medico ? ' · '+esc(medico.nome) : ''}</div>
+    </div>
+    ${statusHtml}
+  </div>`;
+}
+function renderExamesLista(content){
+  const {pendentes, realizados} = examesOrdenados();
+  let html = '';
+  html += `<div class="section-label">Pendentes (${pendentes.length})</div>`;
+  html += pendentes.length ? pendentes.map(([id,e])=>exameCardHtml(id,e)).join('') : `<div class="empty-state" style="padding:24px;"><div class="em">🧪</div>Nenhum exame pendente</div>`;
+  html += `<button class="btn btn-primary" style="width:100%;margin-top:6px;" onclick="openNovoExameModal()">+ Novo exame</button>`;
+  html += `<div class="section-label">Realizados (${realizados.length})</div>`;
+  html += realizados.length ? realizados.map(([id,e])=>exameCardHtml(id,e)).join('') : `<div class="empty-state" style="padding:24px;"><div class="em">📋</div>Nenhum exame realizado ainda</div>`;
+  content.innerHTML = html;
+}
+function medicosDatalist(){
+  return `<datalist id="medicosList">${Object.entries(medicos).map(([id,m])=>`<option value="${escAttr(m.nome)}" data-id="${id}">`).join('')}</datalist>`;
+}
+function renderExameDetalhe(content){
+  const e = exames[exameView.exameId];
+  if(!e){ content.innerHTML = `<div class="empty-state">Exame não encontrado.</div>`; return; }
+  const medico = e.medico_id ? medicos[e.medico_id] : null;
+  let anexosHtml = '';
+  if(e.anexos && e.anexos.length){
+    anexosHtml = `<div class="anexos-list">` + e.anexos.map((a,i)=>{
+      if(a.tipo && a.tipo.startsWith('image')){
+        return `<img class="anexo-thumb" src="${a.dados}" onclick="verAnexoExame('${exameView.exameId}',${i})">`;
+      } else {
+        return `<a class="anexo-pdf" href="${a.dados}" target="_blank" title="${esc(a.nome)}">📄</a>`;
+      }
+    }).join('') + `</div>`;
+  }
+  let html = `<div class="profile-card">
+    ${e.status==='realizado' ? `<span class="status-badge status-realizado">✓ Realizado</span>` : `<span class="status-badge status-pendente">Pendente</span>`}
+    <h2 class="serif" style="margin-top:8px;">${esc(e.nome)}</h2>
+    ${medico ? `<div class="profile-field"><b>Médico:</b> ${esc(medico.nome)}</div>` : ''}
+    ${e.data_prevista ? `<div class="profile-field"><b>Data prevista:</b> ${fmtDate(e.data_prevista)}</div>` : ''}
+    ${e.data_realizado ? `<div class="profile-field"><b>Data de realização:</b> ${fmtDate(e.data_realizado)}</div>` : ''}
+    ${e.observacoes ? `<div class="profile-field"><b>Observações:</b> ${esc(e.observacoes)}</div>` : ''}
+    <div class="label" style="margin-top:14px;">Resultado (foto/PDF)</div>
+    ${anexosHtml || `<div class="txt empty">nenhum arquivo anexado</div>`}
+    <div class="profile-actions">
+      ${e.status!=='realizado' ? `<button class="btn btn-primary" onclick="openMarcarRealizadoModal('${exameView.exameId}')">Marcar como realizado</button>` : `<button class="btn btn-secondary" onclick="openMarcarRealizadoModal('${exameView.exameId}')">Editar resultado</button>`}
+      <button class="btn btn-ghost" onclick="openEditarExameModal('${exameView.exameId}')">Editar</button>
+      <button class="btn btn-danger" onclick="confirmarExcluirExame('${exameView.exameId}')">Excluir</button>
+    </div>
+  </div>`;
+  content.innerHTML = html;
+}
+function verAnexoExame(exameId, idx){
+  const a = exames[exameId].anexos[idx];
+  const w = window.open();
+  w.document.write(`<img src="${a.dados}" style="max-width:100%;">`);
+}
+
+function openNovoExameModal(){
+  pendingAnexos = [];
+  openModal(`
+    <h3>Novo exame</h3>
+    <div class="field"><label>Nome do exame</label><input id="ex_nome" type="text" placeholder="Ex: Exame de sangue"></div>
+    <div class="field"><label>Médico solicitante (opcional)</label><input id="ex_medico" list="medicosList"></div>
+    ${medicosDatalist()}
+    <div class="field"><label>Data prevista (opcional)</label><input id="ex_data" type="date"></div>
+    <div class="field"><label>Observações</label><textarea id="ex_obs" placeholder="Jejum, instruções, etc."></textarea></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarNovoExame()">Salvar</button>
+    </div>
+  `);
+}
+function medicoIdPorNome(nome){
+  const found = Object.entries(medicos).find(([id,m])=>m.nome===nome);
+  return found ? found[0] : '';
+}
+async function salvarNovoExame(){
+  const nome = document.getElementById('ex_nome').value.trim();
+  const medicoNome = document.getElementById('ex_medico').value.trim();
+  const data = document.getElementById('ex_data').value;
+  const obs = document.getElementById('ex_obs').value.trim();
+  if(!nome){ toast('Digite o nome do exame'); return; }
+  const novo = { nome, medico_id: medicoIdPorNome(medicoNome), status:'pendente', data_prevista:data, data_realizado:'', observacoes:obs, anexos:[], criado_em:new Date().toISOString() };
+  const res = await dbPost('exames', novo);
+  exames[res.name] = novo;
+  closeModal();
+  render();
+  toast('Exame adicionado');
+}
+
+function openEditarExameModal(id){
+  const e = exames[id];
+  const medico = e.medico_id ? medicos[e.medico_id] : null;
+  openModal(`
+    <h3>Editar exame</h3>
+    <div class="field"><label>Nome do exame</label><input id="ex_nome" type="text" value="${escAttr(e.nome)}"></div>
+    <div class="field"><label>Médico solicitante</label><input id="ex_medico" list="medicosList" value="${medico?escAttr(medico.nome):''}"></div>
+    ${medicosDatalist()}
+    <div class="field"><label>Data prevista</label><input id="ex_data" type="date" value="${e.data_prevista||''}"></div>
+    <div class="field"><label>Observações</label><textarea id="ex_obs">${esc(e.observacoes||'')}</textarea></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarEdicaoExame('${id}')">Salvar</button>
+    </div>
+  `);
+}
+async function salvarEdicaoExame(id){
+  const nome = document.getElementById('ex_nome').value.trim();
+  const medicoNome = document.getElementById('ex_medico').value.trim();
+  const data = document.getElementById('ex_data').value;
+  const obs = document.getElementById('ex_obs').value.trim();
+  if(!nome){ toast('Digite o nome do exame'); return; }
+  const updated = {...exames[id], nome, medico_id: medicoIdPorNome(medicoNome), data_prevista:data, observacoes:obs};
+  await dbPut('exames/'+id, updated);
+  exames[id] = updated;
+  closeModal();
+  render();
+  toast('Exame atualizado');
+}
+
+function openMarcarRealizadoModal(id){
+  const e = exames[id];
+  pendingAnexos = (e.anexos || []).slice();
+  const today = new Date().toISOString().slice(0,10);
+  openModal(`
+    <h3>${e.status==='realizado' ? 'Editar resultado' : 'Marcar como realizado'}</h3>
+    <div class="field"><label>Data de realização</label><input id="ex_data_real" type="date" value="${e.data_realizado||today}"></div>
+    <div class="field">
+      <label>Resultado (foto ou PDF)</label>
+      <input id="ex_anexos" type="file" accept="image/*,.pdf" multiple onchange="handleAnexosExame(event)">
+      <div class="field-hint" id="anexosExameHint">${pendingAnexos.length ? pendingAnexos.length+' arquivo(s) já anexado(s)' : 'Nenhum arquivo selecionado'}</div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-primary" id="salvarExameBtn" onclick="salvarExameRealizado('${id}')">Salvar</button>
+    </div>
+  `);
+}
+async function handleAnexosExame(e){
+  const files = Array.from(e.target.files);
+  const hint = document.getElementById('anexosExameHint');
+  hint.textContent = 'Processando...';
+  for(const file of files){
+    if(file.size > 6*1024*1024){ toast(`${file.name} é muito grande (máx 6MB)`); continue; }
+    if(file.type.startsWith('image/')){
+      const compressed = await compressImage(file);
+      pendingAnexos.push({nome:file.name, tipo:'image/jpeg', dados:compressed});
+    } else {
+      const b64 = await fileToBase64(file);
+      pendingAnexos.push({nome:file.name, tipo:file.type||'application/pdf', dados:b64});
+    }
+  }
+  hint.textContent = pendingAnexos.length ? `${pendingAnexos.length} arquivo(s) pronto(s)` : 'Nenhum arquivo selecionado';
+}
+async function salvarExameRealizado(id){
+  const dataReal = document.getElementById('ex_data_real').value;
+  if(!dataReal){ toast('Selecione a data de realização'); return; }
+  const btn = document.getElementById('salvarExameBtn');
+  btn.textContent = 'Salvando...'; btn.disabled = true;
+  try{
+    const updated = {...exames[id], status:'realizado', data_realizado:dataReal, anexos:pendingAnexos};
+    await dbPut('exames/'+id, updated);
+    exames[id] = updated;
+    closeModal();
+    render();
+    toast('Exame marcado como realizado');
+  }catch(err){
+    toast('Erro ao salvar. Tente novamente.');
+    btn.textContent = 'Salvar'; btn.disabled = false;
+  }
+}
+
+function confirmarExcluirExame(id){
+  openModal(`
+    <h3>Excluir exame?</h3>
+    <p style="font-size:14px;color:var(--ink-muted);">Essa ação não pode ser desfeita.</p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-danger" onclick="excluirExame('${id}')">Excluir</button>
+    </div>
+  `);
+}
+async function excluirExame(id){
+  await dbDelete('exames/'+id);
+  delete exames[id];
+  closeModal();
+  goExamesHome();
+  toast('Exame excluído');
+}
+
 function renderEspecialidade(content){
   const list = medicosDaEspecialidade(view.especialidade);
   let html = `<div class="section-label">${list.length} médico${list.length!==1?'s':''}</div>`;
@@ -543,9 +890,6 @@ function openModal(html){
   document.getElementById('overlay').classList.add('open');
 }
 function closeModal(){ document.getElementById('overlay').classList.remove('open'); }
-document.getElementById('overlay').addEventListener('click', (e)=>{
-  if(e.target.id==='overlay') closeModal();
-});
 
 function especialidadesDatalist(){
   const esps = Object.keys(especialidades());
@@ -765,7 +1109,7 @@ async function excluirConsulta(id){
 }
 
 /* ---------- Init ---------- */
-loadAll();
+initAuth();
 </script>
 </body>
 </html>
