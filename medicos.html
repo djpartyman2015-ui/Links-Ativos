@@ -286,33 +286,45 @@ async function dbDelete(path){
 
 /* ---------- Auth (Firebase Email/Password) ---------- */
 let idToken = null;
+const GOOGLE_CLIENT_ID = "450997342841-4hc0kf2j3fb7f9601fblpce9it62igie.apps.googleusercontent.com";
+let gsiLoaded = false;
+
+function loadGSI(cb){
+  if(gsiLoaded && window.google){ cb(); return; }
+  const s = document.createElement('script');
+  s.src = 'https://accounts.google.com/gsi/client';
+  s.onload = ()=>{ gsiLoaded = true; cb(); };
+  document.head.appendChild(s);
+}
 
 function authScreen(msg){
   document.body.innerHTML = `
-    <div style="max-width:340px;margin:18vh auto 0;padding:0 20px;">
-      <div style="text-align:center;font-size:34px;margin-bottom:6px;">🩺</div>
-      <h1 class="serif" style="text-align:center;font-size:20px;margin-bottom:22px;color:var(--ink);">Médicos</h1>
-      <div class="field"><label>E-mail</label><input id="auth_email" type="email" autocomplete="username"></div>
-      <div class="field"><label>Senha</label><input id="auth_pass" type="password" autocomplete="current-password"></div>
-      ${msg ? `<div style="color:var(--rust);font-size:13px;margin-bottom:10px;">${msg}</div>` : ''}
-      <button class="btn btn-primary" style="width:100%;" id="auth_btn" onclick="doLogin()">Entrar</button>
+    <div style="max-width:340px;margin:22vh auto 0;padding:0 20px;text-align:center;">
+      <div style="font-size:34px;margin-bottom:6px;">🩺</div>
+      <h1 class="serif" style="font-size:20px;margin-bottom:26px;color:var(--ink);">Médicos</h1>
+      ${msg ? `<div style="color:var(--rust);font-size:13px;margin-bottom:14px;">${msg}</div>` : ''}
+      <div id="googleBtn" style="display:flex;justify-content:center;"></div>
     </div>
   `;
-  document.getElementById('auth_pass').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
+  loadGSI(()=>{
+    google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: handleGoogleCredential });
+    google.accounts.id.renderButton(document.getElementById('googleBtn'), { theme:'outline', size:'large', text:'signin_with', shape:'pill' });
+  });
 }
 
-async function doLogin(){
-  const email = document.getElementById('auth_email').value.trim();
-  const password = document.getElementById('auth_pass').value;
-  const btn = document.getElementById('auth_btn');
-  btn.textContent = 'Entrando...'; btn.disabled = true;
+async function handleGoogleCredential(response){
   try{
-    const r = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${AUTH_API_KEY}`, {
+    const r = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signInWithIdp?key=${AUTH_API_KEY}`, {
       method:'POST',
-      body: JSON.stringify({email, password, returnSecureToken:true})
+      body: JSON.stringify({
+        postBody: `id_token=${response.credential}&providerId=google.com`,
+        requestUri: window.location.href,
+        returnIdpCredential: true,
+        returnSecureToken: true
+      })
     });
     const data = await r.json();
-    if(data.error){ authScreen('E-mail ou senha incorretos.'); return; }
+    if(data.error){ authScreen('Não foi possível entrar com essa conta Google.'); return; }
     idToken = data.idToken;
     localStorage.setItem('medicos_refresh', data.refreshToken);
     startApp();
