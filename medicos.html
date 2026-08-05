@@ -172,6 +172,7 @@
   .btn{
     border:none; border-radius:8px; padding:10px 16px; font-size:13.5px; font-weight:600;
     cursor:pointer; font-family:'Inter',sans-serif; transition:opacity .15s;
+    display:inline-block; text-decoration:none;
   }
   .btn:hover{ opacity:.88; }
   .btn-primary{ background:var(--teal); color:#fff; }
@@ -209,6 +210,7 @@
   .anexo-pdf{
     width:64px; height:64px; border-radius:8px; border:1px solid var(--border); background:var(--teal-light);
     display:flex; align-items:center; justify-content:center; font-size:22px; cursor:pointer; text-decoration:none;
+    font-family:'Inter',sans-serif; padding:0;
   }
   .consulta-top{ display:flex; justify-content:space-between; align-items:flex-start; gap:8px; }
   .icon-btn{
@@ -661,7 +663,7 @@ function renderExameDetalhe(content){
       if(a.tipo && a.tipo.startsWith('image')){
         return `<img class="anexo-thumb" src="${a.dados}" onclick="verAnexoExame('${exameView.exameId}',${i})">`;
       } else {
-        return `<a class="anexo-pdf" href="${a.dados}" target="_blank" title="${esc(a.nome)}">📄</a>`;
+        return `<button type="button" class="anexo-pdf" onclick="abrirPDFExame('${exameView.exameId}',${i})" title="${esc(a.nome)}">📄</button>`;
       }
     }).join('') + `</div>`;
   }
@@ -686,6 +688,25 @@ function verAnexoExame(exameId, idx){
   const a = exames[exameId].anexos[idx];
   const w = window.open();
   w.document.write(`<img src="${a.dados}" style="max-width:100%;">`);
+}
+function abrirPDFExame(exameId, idx){
+  const a = exames[exameId].anexos[idx];
+  abrirBlobPDF(a.dados);
+}
+function abrirBlobPDF(dataUri){
+  try{
+    const [head, b64] = dataUri.split(',');
+    const mimeMatch = head.match(/:(.*?);/);
+    const mime = mimeMatch ? mimeMatch[1] : 'application/pdf';
+    const bstr = atob(b64);
+    const u8 = new Uint8Array(bstr.length);
+    for(let i=0;i<bstr.length;i++) u8[i] = bstr.charCodeAt(i);
+    const blob = new Blob([u8], {type: mime});
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank');
+  }catch(e){
+    toast('Não foi possível abrir o arquivo');
+  }
 }
 
 function openNovoExameModal(){
@@ -758,16 +779,13 @@ function openMarcarRealizadoModal(id){
   openModal(`
     <h3>${e.status==='realizado' ? 'Editar resultado' : 'Marcar como realizado'}</h3>
     <div class="field"><label>Data de realização</label><input id="ex_data_real" type="date" value="${e.data_realizado||today}"></div>
-    <div class="field">
-      <label>Resultado (foto ou PDF)</label>
-      <input id="ex_anexos" type="file" accept="image/*,.pdf" multiple onchange="handleAnexosExame(event)">
-      <div class="field-hint" id="anexosExameHint">${pendingAnexos.length ? pendingAnexos.length+' arquivo(s) já anexado(s)' : 'Nenhum arquivo selecionado'}</div>
-    </div>
+    ${anexoUploadHtml('ex_anexos','ex_anexos_cam','anexosExameHint','handleAnexosExame')}
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
       <button class="btn btn-primary" id="salvarExameBtn" onclick="salvarExameRealizado('${id}')">Salvar</button>
     </div>
   `);
+  document.getElementById('anexosExameHint').textContent = pendingAnexos.length ? pendingAnexos.length+' arquivo(s) já anexado(s)' : 'Nenhum arquivo selecionado';
 }
 async function handleAnexosExame(e){
   const files = Array.from(e.target.files);
@@ -838,8 +856,13 @@ function renderMedico(content){
     <span class="esp-tag">${iconFor(m.especialidade)} ${esc(m.especialidade||'Sem especialidade')}</span>
     <h2 class="serif">${esc(m.nome)}</h2>
     ${m.telefone ? `<div class="profile-field"><b>Telefone:</b> ${esc(m.telefone)}</div>` : ''}
+    ${m.endereco ? `<div class="profile-field"><b>Endereço:</b> ${esc(m.endereco)}</div>` : ''}
     ${m.observacoes ? `<div class="profile-field"><b>Obs:</b> ${esc(m.observacoes)}</div>` : ''}
     <div class="profile-field"><b>Próxima consulta:</b> ${m.proxima_consulta ? fmtDate(m.proxima_consulta) : 'não agendada'}</div>
+    ${(m.endereco || m.telefone) ? `<div class="profile-actions" style="margin-top:10px;margin-bottom:-4px;">
+      ${m.endereco ? `<a class="btn btn-secondary btn-sm" href="https://waze.com/ul?q=${encodeURIComponent(m.endereco)}&navigate=yes" target="_blank">🧭 Waze</a>` : ''}
+      ${m.telefone ? `<a class="btn btn-secondary btn-sm" href="https://wa.me/${telefoneParaWhats(m.telefone)}" target="_blank">💬 WhatsApp</a>` : ''}
+    </div>` : ''}
     <div class="profile-actions">
       <button class="btn btn-primary" onclick="openNovaConsultaModal('${view.medicoId}')">+ Nova consulta</button>
       <button class="btn btn-ghost" onclick="openEditarMedicoModal('${view.medicoId}')">Editar médico</button>
@@ -867,7 +890,7 @@ function consultaCardHtml(id,c){
       if(a.tipo && a.tipo.startsWith('image')){
         return `<img class="anexo-thumb" src="${a.dados}" onclick="verAnexo('${id}',${i})">`;
       } else {
-        return `<a class="anexo-pdf" href="${a.dados}" target="_blank" title="${esc(a.nome)}">📄</a>`;
+        return `<button type="button" class="anexo-pdf" onclick="abrirPDFConsulta('${id}',${i})" title="${esc(a.nome)}">📄</button>`;
       }
     }).join('') + `</div>`;
   }
@@ -875,7 +898,10 @@ function consultaCardHtml(id,c){
     <div class="consulta-card">
       <div class="consulta-top">
         <div class="stamp">${fmtDate(c.data)}</div>
-        <button class="icon-btn" onclick="confirmarExcluirConsulta('${id}')" title="Excluir">🗑</button>
+        <div style="display:flex;gap:4px;">
+          <button class="icon-btn" onclick="openEditarConsultaModal('${id}')" title="Editar">✏️</button>
+          <button class="icon-btn" onclick="confirmarExcluirConsulta('${id}')" title="Excluir">🗑</button>
+        </div>
       </div>
       <div class="label">Observações</div>
       <div class="txt ${!c.observacoes ? 'empty':''}">${c.observacoes ? esc(c.observacoes) : 'sem observações'}</div>
@@ -891,10 +917,19 @@ function verAnexo(consultaId, idx){
   const w = window.open();
   w.document.write(`<img src="${a.dados}" style="max-width:100%;">`);
 }
+function abrirPDFConsulta(consultaId, idx){
+  const a = consultas[consultaId].anexos[idx];
+  abrirBlobPDF(a.dados);
+}
 
 /* ---------- esc helpers ---------- */
 function esc(s){ return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function escAttr(s){ return esc(s).replace(/'/g,"&#39;"); }
+function telefoneParaWhats(tel){
+  let digits = (tel||'').replace(/\D/g,'');
+  if(digits.length <= 11) digits = '55' + digits;
+  return digits;
+}
 
 /* ---------- Modals ---------- */
 function openModal(html){
@@ -915,7 +950,8 @@ function openNovoMedicoModal(presetEsp){
     <div class="field"><label>Especialidade</label><input id="f_esp" list="espList" value="${presetEsp?escAttr(presetEsp):''}" placeholder="Ex: Cardiologista"></div>
     ${especialidadesDatalist()}
     <div class="field"><label>Telefone (opcional)</label><input id="f_tel" type="text" placeholder="(00) 00000-0000"></div>
-    <div class="field"><label>Observações gerais (opcional)</label><textarea id="f_obs" placeholder="Endereço, convênio, etc."></textarea></div>
+    <div class="field"><label>Endereço (opcional)</label><input id="f_end" type="text" placeholder="Rua, número, bairro, cidade"></div>
+    <div class="field"><label>Observações gerais (opcional)</label><textarea id="f_obs" placeholder="Convênio, sala, referências, etc."></textarea></div>
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
       <button class="btn btn-primary" onclick="salvarNovoMedico()">Salvar</button>
@@ -926,9 +962,10 @@ async function salvarNovoMedico(){
   const nome = document.getElementById('f_nome').value.trim();
   const esp = document.getElementById('f_esp').value.trim() || 'Sem especialidade';
   const tel = document.getElementById('f_tel').value.trim();
+  const end = document.getElementById('f_end').value.trim();
   const obs = document.getElementById('f_obs').value.trim();
   if(!nome){ toast('Digite o nome do médico'); return; }
-  const novo = { nome, especialidade: esp, telefone: tel, observacoes: obs, proxima_consulta:'', criado_em: new Date().toISOString() };
+  const novo = { nome, especialidade: esp, telefone: tel, endereco: end, observacoes: obs, proxima_consulta:'', criado_em: new Date().toISOString() };
   const res = await dbPost('medicos', novo);
   medicos[res.name] = novo;
   closeModal();
@@ -945,6 +982,7 @@ function openEditarMedicoModal(id){
     <div class="field"><label>Especialidade</label><input id="f_esp" list="espList" value="${escAttr(m.especialidade||'')}"></div>
     ${especialidadesDatalist()}
     <div class="field"><label>Telefone</label><input id="f_tel" type="text" value="${escAttr(m.telefone||'')}"></div>
+    <div class="field"><label>Endereço</label><input id="f_end" type="text" value="${escAttr(m.endereco||'')}"></div>
     <div class="field"><label>Observações gerais</label><textarea id="f_obs">${esc(m.observacoes||'')}</textarea></div>
     <div class="field"><label>Próxima consulta agendada</label><input id="f_prox" type="date" value="${m.proxima_consulta||''}"></div>
     <div class="modal-actions">
@@ -957,10 +995,11 @@ async function salvarEdicaoMedico(id){
   const nome = document.getElementById('f_nome').value.trim();
   const esp = document.getElementById('f_esp').value.trim() || 'Sem especialidade';
   const tel = document.getElementById('f_tel').value.trim();
+  const end = document.getElementById('f_end').value.trim();
   const obs = document.getElementById('f_obs').value.trim();
   const prox = document.getElementById('f_prox').value;
   if(!nome){ toast('Digite o nome do médico'); return; }
-  const updated = {...medicos[id], nome, especialidade:esp, telefone:tel, observacoes:obs, proxima_consulta:prox};
+  const updated = {...medicos[id], nome, especialidade:esp, telefone:tel, endereco:end, observacoes:obs, proxima_consulta:prox};
   await dbPut('medicos/'+id, updated);
   medicos[id] = updated;
   closeModal();
@@ -995,6 +1034,18 @@ async function excluirMedico(id){
 
 /* Nova consulta */
 let pendingAnexos = [];
+function anexoUploadHtml(fileId, cameraId, hintId, handler){
+  return `
+    <div class="field">
+      <label>Anexos (foto ou PDF de receita/exame)</label>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <input id="${fileId}" type="file" accept="image/*,.pdf" multiple onchange="${handler}(event)" style="flex:1;">
+        <button type="button" class="btn btn-secondary btn-sm" style="flex-shrink:0;" onclick="document.getElementById('${cameraId}').click()">📷 Foto</button>
+      </div>
+      <input id="${cameraId}" type="file" accept="image/*" capture="environment" onchange="${handler}(event)" style="display:none;">
+      <div class="field-hint" id="${hintId}">Nenhum arquivo selecionado</div>
+    </div>`;
+}
 function openNovaConsultaModal(medicoId){
   pendingAnexos = [];
   const today = new Date().toISOString().slice(0,10);
@@ -1003,11 +1054,7 @@ function openNovaConsultaModal(medicoId){
     <div class="field"><label>Data</label><input id="c_data" type="date" value="${today}"></div>
     <div class="field"><label>Observações</label><textarea id="c_obs" placeholder="O que foi conversado, diagnóstico, orientações..."></textarea></div>
     <div class="field"><label>Receita</label><textarea id="c_receita" placeholder="Medicamentos prescritos, dosagem..."></textarea></div>
-    <div class="field">
-      <label>Anexos (foto ou PDF de receita/exame)</label>
-      <input id="c_anexos" type="file" accept="image/*,.pdf" multiple onchange="handleAnexos(event)">
-      <div class="field-hint" id="anexosHint">Nenhum arquivo selecionado</div>
-    </div>
+    ${anexoUploadHtml('c_anexos','c_anexos_cam','anexosHint','handleAnexos')}
     <div class="field">
       <label class="checkbox-row"><input type="checkbox" id="c_lembrete" onchange="toggleLembrete()"> Marcar próxima consulta / lembrete</label>
     </div>
@@ -1020,6 +1067,41 @@ function openNovaConsultaModal(medicoId){
       <button class="btn btn-primary" id="salvarConsultaBtn" onclick="salvarNovaConsulta('${medicoId}')">Salvar</button>
     </div>
   `);
+}
+function openEditarConsultaModal(id){
+  const c = consultas[id];
+  pendingAnexos = (c.anexos || []).slice();
+  openModal(`
+    <h3>Editar consulta</h3>
+    <div class="field"><label>Data</label><input id="c_data" type="date" value="${c.data||''}"></div>
+    <div class="field"><label>Observações</label><textarea id="c_obs">${esc(c.observacoes||'')}</textarea></div>
+    <div class="field"><label>Receita</label><textarea id="c_receita">${esc(c.receita_texto||'')}</textarea></div>
+    ${anexoUploadHtml('c_anexos','c_anexos_cam','anexosHint','handleAnexos')}
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-primary" id="salvarConsultaBtn" onclick="salvarEdicaoConsulta('${id}')">Salvar</button>
+    </div>
+  `);
+  document.getElementById('anexosHint').textContent = pendingAnexos.length ? pendingAnexos.length+' arquivo(s) já anexado(s)' : 'Nenhum arquivo selecionado';
+}
+async function salvarEdicaoConsulta(id){
+  const data = document.getElementById('c_data').value;
+  const obs = document.getElementById('c_obs').value.trim();
+  const receita = document.getElementById('c_receita').value.trim();
+  if(!data){ toast('Selecione a data da consulta'); return; }
+  const btn = document.getElementById('salvarConsultaBtn');
+  btn.textContent = 'Salvando...'; btn.disabled = true;
+  try{
+    const updated = {...consultas[id], data, observacoes:obs, receita_texto:receita, anexos:pendingAnexos};
+    await dbPut('consultas/'+id, updated);
+    consultas[id] = updated;
+    closeModal();
+    render();
+    toast('Consulta atualizada');
+  }catch(err){
+    toast('Erro ao salvar. Tente novamente.');
+    btn.textContent = 'Salvar'; btn.disabled = false;
+  }
 }
 function toggleLembrete(){
   const on = document.getElementById('c_lembrete').checked;
