@@ -150,6 +150,20 @@
   .stat-label { color: var(--muted); font-size: 13px; }
   .admin-list-item { background: var(--card); border-radius: 10px; padding: 14px 18px; box-shadow: var(--shadow); display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
 
+  /* FOTO */
+  .card-foto { width: 100%; max-height: 200px; object-fit: cover; cursor: pointer; transition: opacity .2s; }
+  .card-foto:hover { opacity: .9; }
+  .foto-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.85); z-index: 2000; display: none; align-items: center; justify-content: center; padding: 20px; }
+  .foto-modal-overlay.show { display: flex; }
+  .foto-modal-overlay img { max-width: 100%; max-height: 90vh; border-radius: 10px; box-shadow: 0 0 40px rgba(0,0,0,.5); }
+  .foto-close { position: absolute; top: 20px; right: 24px; color: #fff; font-size: 32px; cursor: pointer; background: rgba(0,0,0,.4); border: none; border-radius: 50%; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; }
+  .upload-area { border: 2px dashed var(--border); border-radius: 10px; padding: 20px; text-align: center; cursor: pointer; transition: all .2s; margin-top: 4px; }
+  .upload-area:hover { border-color: var(--petrol2); background: #EEF6FF; }
+  .upload-area input[type=file] { display: none; }
+  .upload-preview { width: 100%; max-height: 180px; object-fit: cover; border-radius: 8px; margin-top: 8px; display: none; }
+  .upload-progress { height: 4px; background: var(--border); border-radius: 4px; margin-top: 8px; display: none; }
+  .upload-progress-bar { height: 100%; background: var(--petrol2); border-radius: 4px; transition: width .3s; width: 0%; }
+
   /* EDIÇÃO */
   .btn-edit { background: rgba(255,255,255,.25); border: none; color: #fff; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-size: 13px; display: inline-flex; align-items: center; justify-content: center; transition: background .15s; position: absolute; top: 8px; left: 8px; }
   .btn-edit:hover { background: rgba(255,255,255,.45); }
@@ -183,6 +197,10 @@
     #admin-badge { font-size: 11px; padding: 5px 10px; top: 10px; right: 10px; }
   }
 </style>
+<!-- FIREBASE CDN (compat) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
 </head>
 <body>
 
@@ -421,6 +439,17 @@
         <label>Seu nome *</label>
         <input class="form-control" id="f-autor" placeholder="Ex: Maria - Casa 12"/>
       </div>
+      <div class="form-group">
+        <label>Foto do estabelecimento (opcional)</label>
+        <div class="upload-area" onclick="document.getElementById('f-foto-input').click()">
+          <div id="upload-placeholder">📷 Toque para tirar foto ou anexar imagem</div>
+          <input type="file" id="f-foto-input" accept="image/*" capture="environment" onchange="previewFoto(this)"/>
+          <img id="f-foto-preview" class="upload-preview"/>
+        </div>
+        <div class="upload-progress" id="upload-progress">
+          <div class="upload-progress-bar" id="upload-progress-bar"></div>
+        </div>
+      </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal()" style="color:var(--petrol);border-color:var(--border)">Cancelar</button>
@@ -450,6 +479,12 @@
 
 <div id="toast"></div>
 
+<!-- MODAL FOTO -->
+<div class="foto-modal-overlay" id="foto-modal-overlay" onclick="this.classList.remove('show')">
+  <button class="foto-close" onclick="document.getElementById('foto-modal-overlay').classList.remove('show')">✕</button>
+  <img id="foto-modal-img" src="" alt=""/>
+</div>
+
 <footer class="site-footer">
   Indiko – Vila Ytú &nbsp;·&nbsp; <a onclick="switchToAdmin()">🔐 Acesso Admin</a>
 </footer>
@@ -464,10 +499,8 @@ function checkAdminPw() { if(window._checkAdminPw) window._checkAdminPw(); else 
 function exitAdmin() { if(window._exitAdmin) window._exitAdmin(); else setTimeout(exitAdmin, 100); }
 </script>
 
-<!-- FIREBASE -->
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, addDoc as addDocAlias, query, orderBy, onSnapshot, serverTimestamp, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+<script>
 
 const firebaseConfig = {
   apiKey: "AIzaSyD0WsoLcwDZkJoUZTznx_5z2wKEg5PqZHg",
@@ -479,8 +512,9 @@ const firebaseConfig = {
   appId: "1:1014191893025:web:722ca9e85891adac435160"
 };
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const storage = firebase.storage();
 const COLECAO = "fornecedores";
 const ADMIN_PW = "vila2024"; // ← Altere a senha aqui
 
@@ -699,8 +733,7 @@ const CATEGORIAS = [
 
 // ── FIRESTORE LISTENER (tempo real) ──
 console.log("🔥 Firebase conectado, iniciando onSnapshot...");
-const q = query(collection(db, COLECAO), orderBy("data", "desc"));
-onSnapshot(q, (snapshot) => {
+db.collection(COLECAO).orderBy("data", "desc").onSnapshot((snapshot) => {
   console.log("📦 onSnapshot recebeu", snapshot.docs.length, "documentos");
   fornecedores = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
   renderCards();
@@ -755,6 +788,7 @@ function cardHtml(f) {
         <button class="btn btn-sm" style="background:none;border:1px solid var(--border);color:var(--muted)" onclick="fecharEdicaoCard('${f.id}')">Cancelar</button>
       </div>
     </div>
+    ${f.fotoUrl ? `<img class="card-foto" src="${f.fotoUrl}" alt="Foto de ${escHtml(f.nome)}" onclick="abrirFoto('${f.fotoUrl}','${escHtml(f.nome)}')"/>` : ''}
     <div class="card-body">
       <div class="rating-row">
         ${(() => { const m = calcMedia(f); const med = Math.round(m.media*10)/10; return `<div class="stars">${starsHtml(Math.round(m.media))}</div><span style="font-size:13px;color:var(--muted)">${med}/5</span><span class="media-badge">📊 ${m.total} ${m.total>1?'avaliações':'avaliação'}</span>`; })()}
@@ -861,7 +895,18 @@ window._openModal = function() {
   document.querySelectorAll('.price-opt').forEach(p=>p.classList.remove('selected'));
   document.getElementById('modal').classList.add('show');
 }
-window._closeModal = function() { document.getElementById('modal').classList.remove('show'); }
+window._closeModal = function() {
+  document.getElementById('modal').classList.remove('show');
+  // Limpar foto
+  const preview = document.getElementById('f-foto-preview');
+  const placeholder = document.getElementById('upload-placeholder');
+  const input = document.getElementById('f-foto-input');
+  const progress = document.getElementById('upload-progress');
+  if (preview) { preview.style.display = 'none'; preview.src = ''; }
+  if (placeholder) placeholder.textContent = '📷 Toque para tirar foto ou anexar imagem';
+  if (input) input.value = '';
+  if (progress) progress.style.display = 'none';
+}
 
 document.getElementById('star-picker').addEventListener('click', e => {
   if (!e.target.classList.contains('star-pick')) return;
@@ -886,11 +931,17 @@ window.salvarFornecedor = async function() {
   btn.disabled = true; btn.textContent = 'Publicando…';
   try {
     const ip = await getIP();
-    await addDoc(collection(db, COLECAO), {
+    const fotoFile = document.getElementById('f-foto-input')?.files[0];
+    const tempId = 'tmp_' + Date.now();
+    let fotoUrl = null;
+    if (fotoFile) {
+      try { fotoUrl = await uploadFoto(fotoFile, tempId); } catch(e) { console.warn('Foto falhou:', e); }
+    }
+    await db.collection(COLECAO).add({
       nome, cat, rating: selectedRating, preco: selectedPrice,
       contato: document.getElementById('f-contato').value.trim(),
-      desc, autor: autorVal,
-      data: serverTimestamp(), comentarios: [], _ip: ip, _deviceId: DEVICE_ID
+      desc, autor: autorVal, fotoUrl,
+      data: firebase.firestore.FieldValue.serverTimestamp(), comentarios: [], _ip: ip, _deviceId: DEVICE_ID
     });
     closeModal();
     toast('✅ Indicação publicada com sucesso!');
@@ -915,11 +966,10 @@ window.addComment = async function(fid) {
   if (!texto) { toast('Digite algo no comentário', true); return; }
   const rating = comRatings[fid] || 0;
   try {
-    const ref = doc(db, COLECAO, fid);
     const f = fornecedores.find(x=>x.id===fid);
     const ip = await getIP();
     const comentarios = [...(f.comentarios||[]), { autor, texto, rating, data: new Date().toISOString(), _ip: ip, _deviceId: DEVICE_ID }];
-    await updateDoc(ref, { comentarios });
+    await db.collection(COLECAO).doc(fid).update({ comentarios });
     delete comRatings[fid];
     toast('💬 Comentário publicado!');
   } catch(e) { toast('Erro ao comentar.', true); console.error(e); }
@@ -932,9 +982,44 @@ window.deleteComment = async function(fid, idx) {
   const comentarios = [...(f.comentarios||[])];
   comentarios.splice(idx,1);
   try {
-    await updateDoc(doc(db, COLECAO, fid), { comentarios });
+    await db.collection(COLECAO).doc(fid).update({ comentarios });
     toast('Comentário removido');
   } catch(e) { toast('Erro ao remover.', true); }
+}
+
+// ── FOTO ──────────────────────────────────────────────
+window.previewFoto = function(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const preview = document.getElementById('f-foto-preview');
+    const placeholder = document.getElementById('upload-placeholder');
+    if (preview) { preview.src = e.target.result; preview.style.display = 'block'; }
+    if (placeholder) placeholder.textContent = '\u2705 ' + file.name;
+  };
+  reader.readAsDataURL(file);
+}
+async function uploadFoto(file, tempId) {
+  if (!file) return null;
+  const ext = file.name.split('.').pop() || 'jpg';
+  const ref = storage.ref('fornecedores/' + tempId + '.' + ext);
+  const progress = document.getElementById('upload-progress');
+  const bar = document.getElementById('upload-progress-bar');
+  if (progress) progress.style.display = 'block';
+  return new Promise((resolve, reject) => {
+    const task = ref.put(file);
+    task.on('state_changed',
+      snap => { if (bar) bar.style.width = (snap.bytesTransferred/snap.totalBytes*100)+'%'; },
+      reject,
+      async () => { resolve(await task.snapshot.ref.getDownloadURL()); }
+    );
+  });
+}
+window.abrirFoto = function(url, nome) {
+  const overlay = document.getElementById('foto-modal-overlay');
+  const img = document.getElementById('foto-modal-img');
+  if (overlay && img) { img.src = url; img.alt = nome; overlay.classList.add('show'); }
 }
 
 // ── ADMIN ──
@@ -968,7 +1053,7 @@ window._exitAdmin = function() {
 window.deleteFornecedor = async function(id) {
   if (!confirm('Remover este fornecedor e todos os seus comentários?')) return;
   try {
-    await deleteDoc(doc(db, COLECAO, id));
+    await db.collection(COLECAO).doc(id).delete();
     toast('🗑️ Fornecedor removido');
   } catch(e) { toast('Erro ao remover.', true); }
 }
@@ -1363,11 +1448,11 @@ window.confirmarImportacao = async function() {
   if (!nome || !cat || !desc) { toast('Preencha pelo menos nome, categoria e descrição', true); return; }
   const ip = await getIP();
   try {
-    await addDoc(collection(db, COLECAO), {
+    await db.collection(COLECAO).add({
       nome, cat, rating: importRating, preco: importPrice,
       contato: document.getElementById('ip-contato').value.trim(),
       desc, autor: document.getElementById('ip-autor').value.trim() || 'Admin',
-      data: serverTimestamp(), comentarios: [], _ip: ip, _importado: true, _deviceId: DEVICE_ID
+      data: firebase.firestore.FieldValue.serverTimestamp(), comentarios: [], _ip: ip, _importado: true, _deviceId: DEVICE_ID
     });
     document.getElementById('import-input').value = '';
     document.getElementById('import-preview').style.display = 'none';
@@ -1423,7 +1508,7 @@ window.adminSalvarEdicao = async function(fid) {
     texto: document.getElementById('ae-com-txt-'+fid+'-'+i)?.value.trim() || c.texto,
   }));
   try {
-    await updateDoc(doc(db, COLECAO, fid), { nome, cat, contato, preco, autor, desc, rating, comentarios });
+    await db.collection(COLECAO).doc(fid).update({ nome, cat, contato, preco, autor, desc, rating, comentarios });
     toast('✅ Fornecedor atualizado!');
     adminFecharEdicao(fid);
   } catch(e) { toast('Erro ao salvar.', true); console.error(e); }
@@ -1444,7 +1529,7 @@ window.salvarEdicaoCard = async function(fid) {
   const contato = document.getElementById('edit-contato-'+fid)?.value.trim();
   if (!nome || !desc) { toast('Nome e descrição são obrigatórios', true); return; }
   try {
-    await updateDoc(doc(db, COLECAO, fid), { nome, desc, contato });
+    await db.collection(COLECAO).doc(fid).update({ nome, desc, contato });
     toast('✅ Indicação atualizada!');
     fecharEdicaoCard(fid);
   } catch(e) { toast('Erro ao salvar.', true); }
@@ -1474,7 +1559,7 @@ window.salvarEdicaoComentario = async function(fid, idx) {
   const comentarios = [...(f.comentarios||[])];
   comentarios[idx] = { ...comentarios[idx], texto: novoTexto };
   try {
-    await updateDoc(doc(db, COLECAO, fid), { comentarios });
+    await db.collection(COLECAO).doc(fid).update({ comentarios });
     toast('✅ Comentário atualizado!');
     fecharEdicaoComentario(fid, idx);
   } catch(e) { toast('Erro ao salvar.', true); }
