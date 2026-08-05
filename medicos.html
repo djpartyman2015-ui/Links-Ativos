@@ -686,8 +686,7 @@ function renderExameDetalhe(content){
 }
 function verAnexoExame(exameId, idx){
   const a = exames[exameId].anexos[idx];
-  const w = window.open();
-  w.document.write(`<img src="${a.dados}" style="max-width:100%;">`);
+  showImageLightbox(a.dados);
 }
 function abrirPDFExame(exameId, idx){
   const a = exames[exameId].anexos[idx];
@@ -914,8 +913,17 @@ function consultaCardHtml(id,c){
 
 function verAnexo(consultaId, idx){
   const a = consultas[consultaId].anexos[idx];
-  const w = window.open();
-  w.document.write(`<img src="${a.dados}" style="max-width:100%;">`);
+  showImageLightbox(a.dados);
+}
+function showImageLightbox(dataUri){
+  const div = document.createElement('div');
+  div.style.cssText = 'position:fixed;inset:0;background:rgba(15,20,19,0.94);z-index:300;display:flex;align-items:center;justify-content:center;';
+  div.innerHTML = `
+    <button type="button" style="position:absolute;top:18px;right:18px;background:rgba(255,255,255,0.15);color:#fff;border:none;width:40px;height:40px;border-radius:50%;font-size:20px;cursor:pointer;line-height:1;">✕</button>
+    <img src="${dataUri}" style="max-width:92vw;max-height:88vh;border-radius:8px;object-fit:contain;">
+  `;
+  div.addEventListener('click', (e)=>{ if(e.target===div || e.target.tagName==='BUTTON') div.remove(); });
+  document.body.appendChild(div);
 }
 function abrirPDFConsulta(consultaId, idx){
   const a = consultas[consultaId].anexos[idx];
