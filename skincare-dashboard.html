@@ -160,6 +160,27 @@
   .compare-wrap{display:grid; grid-template-columns:1fr 1fr; gap:14px;}
   .compare-col img{width:100%; border-radius:8px; display:block; background:#000; aspect-ratio:3/4; object-fit:cover;}
   .compare-col{text-align:center;}
+  .compare-col img{cursor:zoom-in;}
+
+  /* ZOOM MODAL */
+  .zoom-modal{
+    display:none; position:fixed; inset:0; background:rgba(10,11,13,0.96); z-index:1000;
+    padding:20px; overflow:auto;
+  }
+  .zoom-modal.open{display:flex; flex-direction:column;}
+  .zoom-modal-close{
+    align-self:flex-end; background:var(--panel-2); border:1px solid var(--line); color:var(--text);
+    border-radius:8px; width:38px; height:38px; font-size:18px; cursor:pointer; margin-bottom:14px; flex-shrink:0;
+  }
+  .zoom-modal-imgs{display:flex; gap:16px; flex:1; align-items:flex-start; justify-content:center; flex-wrap:wrap;}
+  .zoom-modal-col{text-align:center; max-width:100%;}
+  .zoom-modal-col .photo-day-label{margin-bottom:8px; font-size:13px;}
+  .zoom-modal-col img{
+    max-width:min(90vw, 480px); width:100%; height:auto; border-radius:10px; display:block; touch-action:pinch-zoom;
+  }
+  @media(max-width:700px){
+    .zoom-modal-imgs{flex-direction:column; align-items:center;}
+  }
   .compare-empty{
     aspect-ratio:3/4; border-radius:8px; border:1px dashed var(--line); display:flex;
     align-items:center; justify-content:center; color:var(--sub); font-size:12px;
@@ -339,6 +360,11 @@
   </div>
 
   <footer>Painel pessoal de skincare · dados salvos na nuvem (Firebase) com fallback local · Creamy Skincare</footer>
+</div>
+
+<div class="zoom-modal" id="zoomModal">
+  <button class="zoom-modal-close" id="zoomModalClose">✕</button>
+  <div class="zoom-modal-imgs" id="zoomModalImgs"></div>
 </div>
 
 <script>
@@ -971,13 +997,35 @@ function renderComparison(){
   wrap.innerHTML = `
     <div class="compare-col">
       <div class="photo-day-label">Dia 1 · ${firstDate}</div>
-      <img src="${PHOTOS[firstDate]}">
+      <img src="${PHOTOS[firstDate]}" id="compareImgFirst">
     </div>
     <div class="compare-col">
       <div class="photo-day-label">Mais recente · ${lastDate}</div>
-      <img src="${PHOTOS[lastDate]}">
+      <img src="${PHOTOS[lastDate]}" id="compareImgLast">
     </div>`;
+
+  const openZoom = ()=>{
+    document.getElementById("zoomModalImgs").innerHTML = `
+      <div class="zoom-modal-col">
+        <div class="photo-day-label">Dia 1 · ${firstDate}</div>
+        <img src="${PHOTOS[firstDate]}">
+      </div>
+      <div class="zoom-modal-col">
+        <div class="photo-day-label">Mais recente · ${lastDate}</div>
+        <img src="${PHOTOS[lastDate]}">
+      </div>`;
+    document.getElementById("zoomModal").classList.add("open");
+  };
+  document.getElementById("compareImgFirst").addEventListener("click", openZoom);
+  document.getElementById("compareImgLast").addEventListener("click", openZoom);
 }
+
+document.getElementById("zoomModalClose").addEventListener("click", ()=>{
+  document.getElementById("zoomModal").classList.remove("open");
+});
+document.getElementById("zoomModal").addEventListener("click", (e)=>{
+  if(e.target.id === "zoomModal") document.getElementById("zoomModal").classList.remove("open");
+});
 
 function dataUrlToBase64(dataUrl){
   const [header, data] = dataUrl.split(",");
