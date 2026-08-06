@@ -153,8 +153,8 @@ button{cursor:pointer;}
 .mini-bar-wrap{flex:1;height:4px;border-radius:4px;background:rgba(255,255,255,.08);overflow:hidden;}
 .mini-bar{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--purple),var(--purple2));transition:width .5s;}
 .trip-arrow{color:var(--dim);font-size:18px;}
-.trip-delete-btn{background:none;border:none;font-size:18px;padding:4px 6px;border-radius:8px;color:var(--dim);transition:all .2s;flex-shrink:0;}
-.trip-delete-btn:hover{color:var(--red);background:rgba(248,113,113,.12);}
+.trip-delete-btn{background:none;border:none;font-size:16px;padding:4px 8px;border-radius:8px;color:rgba(248,113,113,.5);transition:all .2s;flex-shrink:0;margin-left:auto;}
+.trip-delete-btn:hover,.trip-delete-btn:active{color:var(--red);background:rgba(248,113,113,.15);}
 .empty-trips{text-align:center;padding:60px 20px;color:var(--dim);}
 
 /* MALA SCREEN */
@@ -747,13 +747,20 @@ function renderTrips(data){
             ${ti.length?`<div class="mala-badge tiago">👨 ${tp}%</div>`:'<div class="mala-badge tiago" style="opacity:.4">👨 —</div>'}
           </div>
         </div>
-        <div class="trip-arrow">›</div>
       </div>
       <div class="trip-card-footer">
         <div class="mini-bar-wrap"><div class="mini-bar" style="width:${gp}%"></div></div>
         <span style="font-size:11px;color:var(--dim)">${gp}% geral</span>
+        <button class="trip-delete-btn" title="Apagar viagem">🗑️</button>
       </div>`;
-    card.addEventListener('click',()=>abrirMala(trip));
+    card.addEventListener('click',(e)=>{
+      if(e.target.closest('.trip-delete-btn')){
+        e.stopPropagation();
+        openDeleteTrip(trip.id, trip.nome);
+        return;
+      }
+      abrirMala(trip);
+    });
     list.appendChild(card);
   });
 }
@@ -1019,21 +1026,25 @@ function loadFotos(){
 async function uploadFoto(user,input){
   const file=input.files[0];if(!file)return;
   const ph=document.getElementById('foto-ph-'+user);
-  ph.style.display='flex';ph.innerHTML='<div class="spinner"></div>';
-  const reader=new FileReader();
-  reader.onload=async(e)=>{
-    const base64=e.target.result;
-    try{
-      const storageRef=sRef(storage,`viagens/${currentTrip.id}/fotos/${user}`);
-      await uploadString(storageRef,base64,'data_url');
-      const url=await getDownloadURL(storageRef);
-      await dbSet(dbRef(db,`viagens/${currentTrip.id}/fotos/${user}`),url);
-    }catch(err){
-      // fallback: salva base64 direto no DB (funciona para imagens pequenas)
-      await dbSet(dbRef(db,`viagens/${currentTrip.id}/fotos/${user}`),base64);
-    }
-  };
-  reader.readAsDataURL(file);
+  if(ph){ph.style.display='flex';ph.innerHTML='<div class="spinner"></div>';}
+  try{
+    // Redimensiona para 400x300 e comprime
+    const canvas=document.createElement('canvas');
+    canvas.width=400;canvas.height=300;
+    const ctx=canvas.getContext('2d');
+    const bmp=await createImageBitmap(file);
+    // fit dentro de 400x300 mantendo proporção
+    const ratio=Math.min(400/bmp.width,300/bmp.height);
+    const w=bmp.width*ratio, h=bmp.height*ratio;
+    const ox=(400-w)/2, oy=(300-h)/2;
+    ctx.fillStyle='#111';ctx.fillRect(0,0,400,300);
+    ctx.drawImage(bmp,ox,oy,w,h);
+    const base64=canvas.toDataURL('image/jpeg',0.65);
+    await dbSet(dbRef(db,`viagens/${currentTrip.id}/fotos/${user}`),base64);
+  }catch(err){
+    console.error('Erro ao salvar foto:',err);
+    if(ph){ph.innerHTML='<div class="icon">❌</div><div>Erro</div>';}
+  }
   input.value='';
 }
 
@@ -1106,21 +1117,25 @@ function loadAvatars(){
 
 async function uploadAvatar(user,input){
   const file=input.files[0];if(!file)return;
-  // resize para economizar espaço
-  const canvas=document.createElement('canvas');
-  canvas.width=200;canvas.height=200;
-  const ctx=canvas.getContext('2d');
-  const bmp=await createImageBitmap(file,{resizeWidth:200,resizeHeight:200,resizeQuality:'medium'});
-  ctx.drawImage(bmp,0,0,200,200);
-  const base64=canvas.toDataURL('image/jpeg',0.7);
+  // Mostra loading no card
+  const emojiEl=document.getElementById('avatar-emoji-'+user);
+  if(emojiEl)emojiEl.textContent='⏳';
   try{
-    const storageRef=sRef(storage,`perfis/${user}/avatar`);
-    await uploadString(storageRef,base64,'data_url');
-    const url=await getDownloadURL(storageRef);
-    await dbSet(dbRef(db,`perfis/${user}/avatar`),url);
-  }catch(err){
-    // fallback direto no DB
+    // Redimensiona para 160x160 e comprime bastante para caber no Realtime DB
+    const canvas=document.createElement('canvas');
+    canvas.width=160;canvas.height=160;
+    const ctx=canvas.getContext('2d');
+    const bmp=await createImageBitmap(file);
+    // crop quadrado centralizado
+    const sz=Math.min(bmp.width,bmp.height);
+    const ox=(bmp.width-sz)/2, oy=(bmp.height-sz)/2;
+    ctx.drawImage(bmp,ox,oy,sz,sz,0,0,160,160);
+    const base64=canvas.toDataURL('image/jpeg',0.6);
+    // Salva direto no Realtime DB (sem Storage)
     await dbSet(dbRef(db,`perfis/${user}/avatar`),base64);
+  }catch(err){
+    console.error('Erro ao salvar avatar:',err);
+    if(emojiEl)emojiEl.textContent=user==='andrey'?'🧔':'👨';
   }
   input.value='';
 }
