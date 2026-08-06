@@ -35,8 +35,8 @@ window.dispatchEvent(new Event("firebase-ready"));
   --purple:#7c3aed;--purple2:#a855f7;--soft:#c4b5fd;
   --text:#e2e8f0;--muted:#94a3b8;--dim:#64748b;
   --green:#4ade80;--red:#f87171;--yellow:#facc15;--orange:#fb923c;
-  --andrey:#818cf8;--tiago:#f472b6;
-  --andrey-bg:rgba(129,140,248,.1);--tiago-bg:rgba(244,114,182,.1);
+  --andrey:#818cf8;--tiago:#38bdf8;
+  --andrey-bg:rgba(129,140,248,.1);--tiago-bg:rgba(56,189,248,.1);
 }
 body{min-height:100vh;background:linear-gradient(135deg,var(--bg) 0%,var(--bg2) 40%,var(--bg3) 100%);font-family:'Segoe UI',system-ui,sans-serif;color:var(--text);}
 input,select,textarea,button{font-family:inherit;}
@@ -73,12 +73,16 @@ button{cursor:pointer;}
 .who-card:hover{transform:translateY(-4px);}
 .who-card.andrey{border-color:rgba(129,140,248,.4);}
 .who-card.andrey:hover{background:var(--andrey-bg);border-color:var(--andrey);}
-.who-card.tiago{border-color:rgba(244,114,182,.4);}
+.who-card.tiago{border-color:rgba(56,189,248,.4);}
 .who-card.tiago:hover{background:var(--tiago-bg);border-color:var(--tiago);}
-.who-avatar{font-size:52px;margin-bottom:12px;}
+.who-avatar{font-size:52px;margin-bottom:12px;line-height:1;}
+.who-avatar-img{width:80px;height:80px;border-radius:50%;object-fit:cover;margin-bottom:12px;border:3px solid;}
+.who-card.andrey .who-avatar-img{border-color:var(--andrey);}
+.who-card.tiago .who-avatar-img{border-color:var(--tiago);}
 .who-name{font-size:18px;font-weight:800;}
 .who-card.andrey .who-name{color:var(--andrey);}
 .who-card.tiago .who-name{color:var(--tiago);}
+.who-edit-photo{font-size:10px;color:var(--dim);margin-top:6px;letter-spacing:1px;}
 
 /* TOP BAR */
 .top-bar{background:linear-gradient(135deg,#1e1b4b 0%,#312e81 50%,#1e1b4b 100%);border-bottom:1px solid rgba(139,92,246,.3);padding:20px 20px 16px;text-align:center;position:relative;overflow:hidden;}
@@ -118,7 +122,7 @@ button{cursor:pointer;}
 .mini-dash{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;}
 .dash-card{padding:14px 16px;border-radius:14px;border:1px solid;text-align:center;}
 .dash-card.andrey{border-color:rgba(129,140,248,.3);background:var(--andrey-bg);}
-.dash-card.tiago{border-color:rgba(244,114,182,.3);background:var(--tiago-bg);}
+.dash-card.tiago{border-color:rgba(56,189,248,.3);background:var(--tiago-bg);}
 .dash-name{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;}
 .dash-card.andrey .dash-name{color:var(--andrey);}
 .dash-card.tiago .dash-name{color:var(--tiago);}
@@ -144,17 +148,19 @@ button{cursor:pointer;}
 .trip-badges{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;}
 .mala-badge{display:flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;border:1px solid;}
 .mala-badge.andrey{color:var(--andrey);border-color:rgba(129,140,248,.3);background:var(--andrey-bg);}
-.mala-badge.tiago{color:var(--tiago);border-color:rgba(244,114,182,.3);background:var(--tiago-bg);}
+.mala-badge.tiago{color:var(--tiago);border-color:rgba(56,189,248,.3);background:var(--tiago-bg);}
 .trip-card-footer{padding:0 18px 14px;display:flex;gap:8px;align-items:center;}
 .mini-bar-wrap{flex:1;height:4px;border-radius:4px;background:rgba(255,255,255,.08);overflow:hidden;}
 .mini-bar{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--purple),var(--purple2));transition:width .5s;}
 .trip-arrow{color:var(--dim);font-size:18px;}
+.trip-delete-btn{background:none;border:none;font-size:18px;padding:4px 6px;border-radius:8px;color:var(--dim);transition:all .2s;flex-shrink:0;}
+.trip-delete-btn:hover{color:var(--red);background:rgba(248,113,113,.12);}
 .empty-trips{text-align:center;padding:60px 20px;color:var(--dim);}
 
 /* MALA SCREEN */
 .mala-top-bar{padding:20px 20px 20px;position:relative;overflow:hidden;transition:background .5s;}
 .mala-top-bar.andrey-bg{background:linear-gradient(135deg,#1e1b4b 0%,#312e81 50%,#1e1b4b 100%);border-bottom:1px solid rgba(129,140,248,.3);}
-.mala-top-bar.tiago-bg{background:linear-gradient(135deg,#2d1b3d 0%,#6b21a8 50%,#2d1b3d 100%);border-bottom:1px solid rgba(244,114,182,.4);}
+.mala-top-bar.tiago-bg{background:linear-gradient(135deg,#2d1b3d 0%,#6b21a8 50%,#2d1b3d 100%);border-bottom:1px solid rgba(56,189,248,.4);}
 .back-btn{display:inline-flex;align-items:center;gap:6px;color:var(--soft);font-size:13px;font-weight:600;background:none;border:none;padding:0;margin-bottom:12px;}
 .mala-trip-name{font-size:12px;letter-spacing:3px;text-transform:uppercase;color:var(--soft);margin-bottom:6px;}
 .mala-owner-row{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap;}
@@ -163,7 +169,7 @@ button{cursor:pointer;}
 .mala-owner-name.tiago{color:var(--tiago);}
 .other-peek-btn{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;border:1px solid;transition:all .2s;}
 .other-peek-btn.andrey{color:var(--andrey);border-color:rgba(129,140,248,.3);background:var(--andrey-bg);}
-.other-peek-btn.tiago{color:var(--tiago);border-color:rgba(244,114,182,.3);background:var(--tiago-bg);}
+.other-peek-btn.tiago{color:var(--tiago);border-color:rgba(56,189,248,.3);background:var(--tiago-bg);}
 
 /* PROGRESS RING */
 .progress-area{display:flex;align-items:center;justify-content:center;gap:24px;flex-wrap:wrap;}
@@ -207,7 +213,7 @@ input[type=file]{display:none;}
 .peek-panel.visible{display:block;}
 .peek-box{border-radius:14px;border:1px solid;padding:14px 16px;transition:all .3s;}
 .peek-box.andrey{border-color:rgba(129,140,248,.25);background:rgba(129,140,248,.06);}
-.peek-box.tiago{border-color:rgba(244,114,182,.25);background:rgba(244,114,182,.06);}
+.peek-box.tiago{border-color:rgba(56,189,248,.25);background:rgba(56,189,248,.06);}
 .peek-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;}
 .peek-title.andrey{color:var(--andrey);}
 .peek-title.tiago{color:var(--tiago);}
@@ -287,7 +293,7 @@ input[type=file]{display:none;}
     <div class="plane-wrap"><div class="plane-emoji">✈️</div><div class="trail"></div></div>
     <div class="loading-phrase" id="loading-phrase">A próxima aventura começa com uma mala bem feita.</div>
     <div class="loading-sub">preparando sua viagem</div>
-    <div class="scroll-hint"><span>aguarde</span><div class="arrow-down">↓</div></div>
+    <div class="scroll-hint"><span>bora começar? 🚀</span><div class="arrow-down">↓</div></div>
   </div>
 </div>
 
@@ -298,8 +304,20 @@ input[type=file]{display:none;}
     <div class="who-title">Malas & Viagens</div>
     <div class="who-sub">Quem é você?</div>
     <div class="who-cards">
-      <button class="who-card andrey" onclick="selectUser('andrey')"><div class="who-avatar">🧔</div><div class="who-name">Andrey</div></button>
-      <button class="who-card tiago" onclick="selectUser('tiago')"><div class="who-avatar">👨</div><div class="who-name">Tiago</div></button>
+      <div class="who-card andrey" onclick="selectUser('andrey')">
+        <img id="avatar-img-andrey" class="who-avatar-img" style="display:none" alt="Andrey"/>
+        <div class="who-avatar" id="avatar-emoji-andrey">🧔</div>
+        <div class="who-name">Andrey</div>
+        <div class="who-edit-photo" onclick="event.stopPropagation();document.getElementById('file-avatar-andrey').click()">✏️ trocar foto</div>
+        <input type="file" id="file-avatar-andrey" accept="image/*" style="display:none" onchange="uploadAvatar('andrey',this)"/>
+      </div>
+      <div class="who-card tiago" onclick="selectUser('tiago')">
+        <img id="avatar-img-tiago" class="who-avatar-img" style="display:none" alt="Tiago"/>
+        <div class="who-avatar" id="avatar-emoji-tiago">👨</div>
+        <div class="who-name">Tiago</div>
+        <div class="who-edit-photo" onclick="event.stopPropagation();document.getElementById('file-avatar-tiago').click()">✏️ trocar foto</div>
+        <input type="file" id="file-avatar-tiago" accept="image/*" style="display:none" onchange="uploadAvatar('tiago',this)"/>
+      </div>
     </div>
   </div>
 </div>
@@ -340,7 +358,7 @@ input[type=file]{display:none;}
       <div style="display:flex;gap:8px;">
         <button class="btn-criar" style="flex:1" onclick="criarViagem()">+ Criar Viagem</button>
       </div>
-      <button class="btn-join" onclick="openJoin()">📎 Entrar em viagem existente pelo código</button>
+      <button class="btn-join" onclick="openJoin()">📎 Já tenho um código de viagem</button>
     </div>
 
     <div class="section-title">Suas Viagens</div>
@@ -479,7 +497,7 @@ input[type=file]{display:none;}
     <div id="trip-code-display" style="font-size:32px;font-weight:800;color:#c4b5fd;letter-spacing:6px;padding:16px;background:rgba(0,0,0,.3);border-radius:10px;margin-bottom:16px;font-family:monospace"></div>
     <div class="modal-btn-row">
       <button class="btn-cancel" onclick="closeModal('modal-code')">Fechar</button>
-      <button class="btn-confirm" id="btn-copy-code" onclick="copyCodeClipboard()">📋 Copiar</button>
+      <button class="btn-confirm" id="btn-copy-code" onclick="shareOrCopyCode()">📤 Compartilhar</button>
     </div>
   </div>
 </div>
@@ -605,6 +623,7 @@ window.addEventListener('firebase-ready',()=>{
   db=window._db; storage=window._storage;
   ({ref:dbRef,set:dbSet,get:dbGet,onValue:dbOnValue,update:dbUpdate,push:dbPush,remove:dbRemove}=window._dbFns);
   ({sRef,uploadString,getDownloadURL}=window._storageFns);
+  loadAvatars();
   const saved=sessionStorage.getItem('mala-user');
   if(saved){currentUser=saved;showScreen('viagens');loadViagens();}
   else showScreen('who');
@@ -1033,8 +1052,94 @@ async function doReset(){const path=`viagens/${currentTrip.id}/malas/${currentUs
 function copyTripCode(){document.getElementById('trip-code-display').textContent=currentTrip.id;document.getElementById('btn-copy-code').textContent='📋 Copiar';document.getElementById('modal-code').classList.add('visible');}
 function copyCodeClipboard(){navigator.clipboard.writeText(currentTrip.id).then(()=>{document.getElementById('btn-copy-code').textContent='✅ Copiado!';setTimeout(()=>document.getElementById('btn-copy-code').textContent='📋 Copiar',2000);});}
 
+// ══ DELETE TRIP ══
+let deletingTripId=null;
+function openDeleteTrip(id,nome){
+  deletingTripId=id;
+  document.getElementById('delete-trip-desc').innerHTML=`Tem certeza que quer apagar <strong style="color:#c4b5fd">${nome}</strong>?`;
+  document.getElementById('modal-delete-trip').classList.add('visible');
+}
+async function confirmDeleteTrip(){
+  if(!deletingTripId)return;
+  await dbRemove(dbRef(db,`viagens/${deletingTripId}`));
+  deletingTripId=null;
+  closeModal('modal-delete-trip');
+}
+
+// ══ SHARE CODE ══
+function shareOrCopyCode(){
+  const code=currentTrip.id;
+  const text=`🧳 Entra na nossa viagem no Malas & Viagens!
+Código: ${code}
+https://djpartyman2015-ui.github.io/Links-Ativos/malas-viagens.html`;
+  if(navigator.share){
+    navigator.share({title:'Malas & Viagens',text}).catch(()=>copyFallback(code));
+  } else {
+    navigator.clipboard.writeText(text).then(()=>{
+      document.getElementById('btn-copy-code').textContent='✅ Copiado!';
+      setTimeout(()=>document.getElementById('btn-copy-code').textContent='📤 Compartilhar',2000);
+    });
+  }
+}
+function copyFallback(code){
+  navigator.clipboard.writeText(code).then(()=>{
+    document.getElementById('btn-copy-code').textContent='✅ Copiado!';
+    setTimeout(()=>document.getElementById('btn-copy-code').textContent='📤 Compartilhar',2000);
+  });
+}
+
+// ══ ITENS PERSISTIDOS POR VIAGEM ══
+// Garante que itens adicionados/editados persistem por viagem no Firebase (já garantido pelo onValue)
+
+// ══ AVATARES ══
+function loadAvatars(){
+  ['andrey','tiago'].forEach(u=>{
+    dbOnValue(dbRef(db,`perfis/${u}/avatar`),snap=>{
+      const url=snap.val();
+      const img=document.getElementById('avatar-img-'+u);
+      const emoji=document.getElementById('avatar-emoji-'+u);
+      if(url&&img){img.src=url;img.style.display='block';if(emoji)emoji.style.display='none';}
+      else{if(img)img.style.display='none';if(emoji)emoji.style.display='block';}
+    });
+  });
+}
+
+async function uploadAvatar(user,input){
+  const file=input.files[0];if(!file)return;
+  // resize para economizar espaço
+  const canvas=document.createElement('canvas');
+  canvas.width=200;canvas.height=200;
+  const ctx=canvas.getContext('2d');
+  const bmp=await createImageBitmap(file,{resizeWidth:200,resizeHeight:200,resizeQuality:'medium'});
+  ctx.drawImage(bmp,0,0,200,200);
+  const base64=canvas.toDataURL('image/jpeg',0.7);
+  try{
+    const storageRef=sRef(storage,`perfis/${user}/avatar`);
+    await uploadString(storageRef,base64,'data_url');
+    const url=await getDownloadURL(storageRef);
+    await dbSet(dbRef(db,`perfis/${user}/avatar`),url);
+  }catch(err){
+    // fallback direto no DB
+    await dbSet(dbRef(db,`perfis/${user}/avatar`),base64);
+  }
+  input.value='';
+}
+
 // ══ MODALS ══
 function closeModal(id){document.getElementById(id).classList.remove('visible');}
 </script>
+
+<div class="modal-overlay" id="modal-delete-trip">
+  <div class="modal-box">
+    <div class="modal-icon">🗑️</div>
+    <div class="modal-title">Apagar Viagem?</div>
+    <div class="modal-desc" id="delete-trip-desc"></div>
+    <div style="font-size:12px;color:var(--red);margin-bottom:14px;padding:8px 12px;background:rgba(248,113,113,.08);border-radius:8px;border:1px solid rgba(248,113,113,.2)">⚠️ Essa ação apaga a viagem para os dois e não pode ser desfeita.</div>
+    <div class="modal-btn-row">
+      <button class="btn-cancel" onclick="closeModal('modal-delete-trip')">Cancelar</button>
+      <button class="btn-danger" style="flex:2" onclick="confirmDeleteTrip()">🗑️ Sim, apagar</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
