@@ -1,3 +1,5 @@
+---
+---
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -85,8 +87,6 @@ button{cursor:pointer;}
 .who-edit-photo{font-size:10px;color:var(--dim);margin-top:6px;letter-spacing:1px;}
 
 /* TOP BAR */
-.top-bar{background:linear-gradient(135deg,#1e1b4b 0%,#312e81 50%,#1e1b4b 100%);border-bottom:1px solid rgba(139,92,246,.3);padding:20px 20px 16px;text-align:center;position:relative;overflow:hidden;}
-.app-title{font-size:clamp(20px,4vw,30px);font-weight:800;background:linear-gradient(90deg,#c4b5fd,#e879f9,#818cf8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
 .app-sub{font-size:13px;color:var(--soft);margin-top:2px;}
 .star{position:absolute;border-radius:50%;animation:twinkle 2.5s infinite alternate;pointer-events:none;}
 @keyframes twinkle{from{opacity:.3;transform:scale(1)}to{opacity:1;transform:scale(1.6)}}
@@ -100,6 +100,29 @@ button{cursor:pointer;}
 .user-chip.andrey{color:var(--andrey);border-color:rgba(129,140,248,.35);background:var(--andrey-bg);}
 .user-chip.tiago{color:var(--tiago);border-color:rgba(244,114,182,.35);background:var(--tiago-bg);}
 
+/* VIAGENS HEADER */
+.viagens-header{background:linear-gradient(135deg,#1e1b4b 0%,#312e81 50%,#1e1b4b 100%);border-bottom:1px solid rgba(139,92,246,.3);padding:16px 20px 12px;}
+.viagens-header-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;}
+.app-logo{font-size:18px;font-weight:800;background:linear-gradient(90deg,#c4b5fd,#e879f9,#818cf8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.app-live{font-size:12px;color:var(--soft);display:flex;align-items:center;gap:4px;}
+.user-chip{display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:20px;font-size:13px;font-weight:700;border:1px solid;background:none;}
+.user-chip.andrey{color:var(--andrey);border-color:rgba(129,140,248,.4);background:var(--andrey-bg);}
+.user-chip.tiago{color:var(--tiago);border-color:rgba(56,189,248,.4);background:var(--tiago-bg);}
+
+/* COUNTDOWN GLOBAL */
+.countdown-bar{display:flex;align-items:center;justify-content:center;gap:12px;padding:12px 16px;border-radius:14px;background:linear-gradient(135deg,rgba(124,58,237,.15),rgba(168,85,247,.1));border:1px solid rgba(139,92,246,.25);margin-bottom:4px;flex-wrap:wrap;}
+.cd-block{text-align:center;min-width:36px;}
+.cd-num{font-size:24px;font-weight:800;color:var(--soft);line-height:1;}
+.cd-lbl{font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:1px;}
+.cd-sep{font-size:20px;color:rgba(139,92,246,.4);align-self:flex-start;margin-top:2px;}
+.cd-trip-name{width:100%;text-align:center;font-size:12px;font-weight:700;color:var(--muted);}
+
+/* SECTION */
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+
+/* NOVA VIAGEM */
+.new-trip-toggle{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-radius:14px;border:1px dashed rgba(139,92,246,.35);background:rgba(139,92,246,.05);cursor:pointer;font-size:14px;font-weight:600;color:var(--soft);margin-top:24px;transition:background .2s;}
+.new-trip-toggle:hover{background:rgba(139,92,246,.1);}
 /* NOVA VIAGEM */
 .new-trip-box{padding:20px;border-radius:16px;border:1px dashed rgba(139,92,246,.4);background:rgba(139,92,246,.06);margin-bottom:28px;}
 .new-trip-grid{display:grid;grid-template-columns:1fr auto;gap:8px;margin-bottom:8px;}
@@ -108,7 +131,7 @@ button{cursor:pointer;}
 .input-field::-webkit-calendar-picker-indicator{filter:invert(.5);}
 .input-label{font-size:11px;color:var(--dim);margin-bottom:4px;letter-spacing:1px;text-transform:uppercase;}
 .btn-criar{padding:10px 20px;border-radius:10px;border:none;background:linear-gradient(135deg,var(--purple),var(--purple2));color:#fff;font-size:14px;font-weight:700;white-space:nowrap;}
-.btn-join{width:100%;padding:9px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:transparent;color:var(--muted);font-size:13px;margin-top:4px;}
+
 
 /* COUNTDOWN */
 .countdown-bar{display:flex;align-items:center;justify-content:center;gap:16px;padding:14px 20px;border-radius:14px;background:rgba(139,92,246,.1);border:1px solid rgba(139,92,246,.2);margin-bottom:16px;flex-wrap:wrap;}
@@ -324,18 +347,35 @@ input[type=file]{display:none;}
 
 <!-- VIAGENS -->
 <div id="screen-viagens" class="screen">
-  <div class="top-bar" id="viagens-topbar">
-    <div class="app-title">🧳 Malas & Viagens</div>
-    <div class="app-sub"><span class="live-dot"></span>em tempo real</div>
+
+  <!-- HEADER COM USUÁRIO -->
+  <div class="viagens-header">
+    <div class="viagens-header-top">
+      <div class="app-logo">🧳 Malas & Viagens</div>
+      <button class="user-chip" id="user-chip" onclick="showScreen('who')"></button>
+    </div>
+    <div class="app-live"><span class="live-dot"></span>em tempo real</div>
   </div>
+
+  <!-- COUNTDOWN DA PRÓXIMA VIAGEM -->
+  <div id="global-countdown" style="display:none;padding:0 16px 4px;max-width:720px;margin:0 auto;"></div>
+
   <div class="page-wrap">
-    <button class="user-chip" id="user-chip" onclick="showScreen('who')"></button>
 
-    <!-- countdown global -->
-    <div id="global-countdown" style="display:none"></div>
+    <!-- SUAS VIAGENS -->
+    <div class="section-header">
+      <div class="section-title">Suas Viagens</div>
+    </div>
+    <div class="trips-list" id="trips-list">
+      <div class="inline-loading"><div class="spinner"></div><br>Carregando...</div>
+    </div>
 
-    <div class="section-title">Nova Viagem</div>
-    <div class="new-trip-box">
+    <!-- NOVA VIAGEM — colapsável -->
+    <div class="new-trip-toggle" onclick="toggleNewTrip()" id="new-trip-toggle">
+      <span>✈️ Planejar nova viagem</span>
+      <span id="new-trip-arrow" style="transition:transform .3s">▼</span>
+    </div>
+    <div class="new-trip-box" id="new-trip-box" style="display:none">
       <div class="new-trip-grid">
         <div>
           <div class="input-label">Nome da viagem</div>
@@ -355,14 +395,9 @@ input[type=file]{display:none;}
           <input type="date" class="input-field" id="new-trip-volta"/>
         </div>
       </div>
-      <div style="display:flex;gap:8px;">
-        <button class="btn-criar" style="flex:1" onclick="criarViagem()">+ Criar Viagem</button>
-      </div>
-      <button class="btn-join" onclick="openJoin()">📎 Já tenho um código de viagem</button>
+      <button class="btn-criar" style="width:100%;margin-top:4px" onclick="criarViagem()">+ Criar Viagem</button>
     </div>
 
-    <div class="section-title">Suas Viagens</div>
-    <div class="trips-list" id="trips-list"><div class="inline-loading"><div class="spinner"></div><br>Carregando...</div></div>
   </div>
 </div>
 
@@ -409,7 +444,6 @@ input[type=file]{display:none;}
     </div>
     <div class="mala-actions">
       <button class="btn-mala" style="color:#fca5a5;border-color:rgba(248,113,113,.35);background:rgba(248,113,113,.1)" onclick="openReset()">🔄 Zerar</button>
-      <button class="btn-mala" style="color:#a5b4fc;border-color:rgba(129,140,248,.35);background:rgba(129,140,248,.1)" onclick="copyTripCode()">📎 Código</button>
     </div>
   </div>
 
@@ -475,32 +509,7 @@ input[type=file]{display:none;}
 </div>
 
 <!-- MODALS -->
-<div class="modal-overlay" id="modal-join">
-  <div class="modal-box">
-    <div class="modal-icon">📎</div>
-    <div class="modal-title">Entrar na Viagem</div>
-    <div class="modal-desc">Cole o código compartilhado:</div>
-    <input class="modal-input" id="join-code-input" placeholder="Código da viagem..."/>
-    <div class="error-msg" id="join-error" style="display:none"></div>
-    <div class="modal-btn-row">
-      <button class="btn-cancel" onclick="closeModal('modal-join')">Cancelar</button>
-      <button class="btn-confirm" onclick="joinViagem()">Entrar</button>
-    </div>
-  </div>
-</div>
 
-<div class="modal-overlay" id="modal-code">
-  <div class="modal-box">
-    <div class="modal-icon">📎</div>
-    <div class="modal-title">Código da Viagem</div>
-    <div class="modal-desc">Compartilhe com o Tiago para entrar na mesma viagem:</div>
-    <div id="trip-code-display" style="font-size:32px;font-weight:800;color:#c4b5fd;letter-spacing:6px;padding:16px;background:rgba(0,0,0,.3);border-radius:10px;margin-bottom:16px;font-family:monospace"></div>
-    <div class="modal-btn-row">
-      <button class="btn-cancel" onclick="closeModal('modal-code')">Fechar</button>
-      <button class="btn-confirm" id="btn-copy-code" onclick="shareOrCopyCode()">📤 Compartilhar</button>
-    </div>
-  </div>
-</div>
 
 <div class="modal-overlay" id="modal-reset">
   <div class="modal-box">
@@ -616,7 +625,7 @@ function rotateFrase(){
   el.style.opacity='0';
   setTimeout(()=>{fraseIdx=(fraseIdx+1)%FRASES.length;el.textContent=FRASES[fraseIdx];el.style.opacity='1';},500);
 }
-setInterval(rotateFrase,3000);
+setInterval(rotateFrase,6000);
 
 // ══ FIREBASE INIT ══
 window.addEventListener('firebase-ready',()=>{
@@ -639,7 +648,7 @@ function makeStars(el){
     el.appendChild(d);
   }
 }
-makeStars(document.getElementById('viagens-topbar'));
+// stars removed from viagens
 
 // ══ SCREENS ══
 function showScreen(name){
@@ -774,11 +783,16 @@ async function criarViagem(){
   const dataVolta=document.getElementById('new-trip-volta').value;
   if(!nome){document.getElementById('new-trip-name').focus();return;}
   const code=Math.random().toString(36).substring(2,8).toUpperCase();
-  const tripData={nome,emoji,dataIda:dataIda||null,dataVolta:dataVolta||null,criadoEm:Date.now(),codigo:code,malas:{[currentUser]:{itens:makeFirebaseItems()}}};
+  // Cria mala para os dois desde o início
+  const tripData={nome,emoji,dataIda:dataIda||null,dataVolta:dataVolta||null,criadoEm:Date.now(),malas:{andrey:{itens:makeFirebaseItems()},tiago:{itens:makeFirebaseItems()}}};
   await dbSet(dbRef(db,`viagens/${code}`),tripData);
   document.getElementById('new-trip-name').value='';
   document.getElementById('new-trip-ida').value='';
   document.getElementById('new-trip-volta').value='';
+  // Fechar form
+  newTripOpen=false;
+  document.getElementById('new-trip-box').style.display='none';
+  document.getElementById('new-trip-arrow').style.transform='';
   abrirMala({id:code,...tripData});
 }
 
@@ -788,44 +802,9 @@ function makeFirebaseItems(){
   return obj;
 }
 
-function openJoin(){document.getElementById('join-code-input').value='';document.getElementById('join-error').style.display='none';document.getElementById('modal-join').classList.add('visible');}
 
-async function joinViagem(){
-  const code=document.getElementById('join-code-input').value.trim().toUpperCase();
-  const btn=document.querySelector('#modal-join .btn-confirm');
-  btn.textContent='Entrando...';btn.disabled=true;
 
-  try{
-    const snap=await dbGet(dbRef(db,`viagens/${code}`));
-    if(!snap.exists()){
-      document.getElementById('join-error').textContent='Viagem não encontrada.';
-      document.getElementById('join-error').style.display='block';
-      btn.textContent='Entrar';btn.disabled=false;
-      return;
-    }
 
-    // Garante que a mala do usuário existe ANTES de abrir
-    const malaPath=`viagens/${code}/malas/${currentUser}`;
-    const malaSnap=await dbGet(dbRef(db,malaPath));
-    if(!malaSnap.exists()){
-      await dbSet(dbRef(db,malaPath),{itens:makeFirebaseItems()});
-    }
-
-    // Reler o trip completo após garantir a mala
-    const snapFull=await dbGet(dbRef(db,`viagens/${code}`));
-    const trip={id:code,...snapFull.val()};
-
-    closeModal('modal-join');
-    btn.textContent='Entrar';btn.disabled=false;
-    abrirMala(trip);
-
-  }catch(err){
-    console.error('Erro ao entrar na viagem:',err);
-    document.getElementById('join-error').textContent='Erro ao conectar. Tente novamente.';
-    document.getElementById('join-error').style.display='block';
-    btn.textContent='Entrar';btn.disabled=false;
-  }
-}
 
 // ══ MALA ══
 function abrirMala(trip){
@@ -1091,9 +1070,15 @@ function zoomFoto(user){
 function openReset(){const done=myItems.filter(i=>i.done).length;document.getElementById('reset-desc').innerHTML=`Todos os <strong style="color:#4ade80">${done} itens marcados</strong> da sua mala serão desmarcados.`;document.getElementById('modal-reset').classList.add('visible');}
 async function doReset(){const path=`viagens/${currentTrip.id}/malas/${currentUser}/itens`;const upd={};myItems.forEach(item=>{upd[`${path}/${item.id}/done`]=false;});await dbUpdate(dbRef(db),upd);closeModal('modal-reset');}
 
-// ══ CODE ══
-function copyTripCode(){document.getElementById('trip-code-display').textContent=currentTrip.id;document.getElementById('btn-copy-code').textContent='📋 Copiar';document.getElementById('modal-code').classList.add('visible');}
-function copyCodeClipboard(){navigator.clipboard.writeText(currentTrip.id).then(()=>{document.getElementById('btn-copy-code').textContent='✅ Copiado!';setTimeout(()=>document.getElementById('btn-copy-code').textContent='📋 Copiar',2000);});}
+
+// ══ NOVA VIAGEM TOGGLE ══
+let newTripOpen = false;
+function toggleNewTrip(){
+  newTripOpen = !newTripOpen;
+  document.getElementById('new-trip-box').style.display = newTripOpen ? 'block' : 'none';
+  document.getElementById('new-trip-arrow').style.transform = newTripOpen ? 'rotate(180deg)' : '';
+  if(newTripOpen) setTimeout(()=>document.getElementById('new-trip-name').focus(), 100);
+}
 
 // ══ DELETE TRIP ══
 let deletingTripId=null;
@@ -1109,21 +1094,7 @@ async function confirmDeleteTrip(){
   closeModal('modal-delete-trip');
 }
 
-// ══ SHARE CODE ══
-function shareOrCopyCode(){
-  const code=currentTrip.id;
-  const text=`🧳 Entra na nossa viagem no Malas & Viagens!
-Código: ${code}
-https://djpartyman2015-ui.github.io/Links-Ativos/malas-viagens.html`;
-  if(navigator.share){
-    navigator.share({title:'Malas & Viagens',text}).catch(()=>copyFallback(code));
-  } else {
-    navigator.clipboard.writeText(text).then(()=>{
-      document.getElementById('btn-copy-code').textContent='✅ Copiado!';
-      setTimeout(()=>document.getElementById('btn-copy-code').textContent='📤 Compartilhar',2000);
-    });
-  }
-}
+
 function copyFallback(code){
   navigator.clipboard.writeText(code).then(()=>{
     document.getElementById('btn-copy-code').textContent='✅ Copiado!';
