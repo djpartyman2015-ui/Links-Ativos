@@ -256,7 +256,9 @@ input[type=file]{display:none;}
 /* MODELO */
 .mod-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);margin-bottom:4px;}
 .mod-cat{font-size:10px;color:var(--dim);background:rgba(255,255,255,.08);padding:2px 8px;border-radius:10px;white-space:nowrap;}
-.mod-del{background:none;border:none;color:rgba(248,113,113,.4);font-size:14px;padding:2px 6px;border-radius:6px;margin-left:auto;flex-shrink:0;}
+.mod-edit-btn{background:none;border:none;color:var(--dim);font-size:13px;padding:2px 6px;border-radius:6px;margin-left:auto;flex-shrink:0;}
+.mod-edit-btn:hover{color:var(--soft);background:rgba(255,255,255,.08);}
+.mod-del{background:none;border:none;color:rgba(248,113,113,.4);font-size:14px;padding:2px 6px;border-radius:6px;flex-shrink:0;}
 .mod-del:hover{color:var(--re);background:rgba(248,113,113,.1);}
 
 /* MODALS */
@@ -455,6 +457,21 @@ input[type=file]{display:none;}
       💡 Alterações aqui afetam apenas <strong>novas viagens</strong>
     </div>
     <div id="mod-list"><div class="il2"><div class="sp"></div><br>Carregando...</div></div>
+  </div>
+</div>
+
+<!-- MODAL EDIT MODELO -->
+<div class="mo" id="m-mod-edit">
+  <div class="mb2">
+    <div class="moi">✏️</div>
+    <div class="mot">Editar Item Modelo</div>
+    <input class="moin" id="mod-ei-lbl" placeholder="Nome..."/>
+    <select class="mose" id="mod-ei-cat"></select>
+    <div class="mbr">
+      <button class="bde" onclick="delModelo(editModId)">🗑️ Apagar</button>
+      <button class="bca" onclick="closeM('m-mod-edit')">Cancelar</button>
+      <button class="bco" onclick="saveModEdit()">Salvar</button>
+    </div>
   </div>
 </div>
 
@@ -854,7 +871,7 @@ function rendModelo(data){
     wrap.appendChild(hdr);
     grp[cat].forEach(x=>{
       const row=document.createElement('div');row.className='mod-item';
-      row.innerHTML=`<span style="font-size:13px;flex:1">${x.label}</span><button class="mod-del" onclick="delModelo('${x.id}')">🗑️</button>`;
+      row.innerHTML=`<span style="font-size:13px;flex:1">${x.label}</span><button class="mod-edit-btn" onclick="openModEdit('${x.id}','${x.label.replace(/'/g,'\\'+'\'')}','${x.category}')">✏️</button><button class="mod-del" onclick="delModelo('${x.id}')">🗑️</button>`;
       wrap.appendChild(row);
     });
   });
@@ -877,6 +894,25 @@ async function addModelo(){
   const nr=fn.push(fn.ref(db,'listaModelo'));
   await fn.set(nr,{label:l,category:cat,id:nr.key});
   document.getElementById('mod-nin').value='';
+}
+
+let editModId=null;
+
+function openModEdit(id,label,category){
+  editModId=id;
+  document.getElementById('mod-ei-lbl').value=label;
+  const s=document.getElementById('mod-ei-cat');
+  s.innerHTML=CATS.map(ct=>`<option value="${ct}"${ct===category?' selected':''}>${CI[ct]||'📦'} ${ct}</option>`).join('');
+  document.getElementById('m-mod-edit').classList.add('on');
+}
+
+async function saveModEdit(){
+  if(!editModId)return;
+  const l=document.getElementById('mod-ei-lbl').value.trim();
+  const cat=document.getElementById('mod-ei-cat').value;
+  if(!l)return;
+  await fn.update(fn.ref(db,`listaModelo/${editModId}`),{label:l,category:cat});
+  closeM('m-mod-edit');
 }
 
 async function delModelo(id){
