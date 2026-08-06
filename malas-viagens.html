@@ -792,12 +792,39 @@ function openJoin(){document.getElementById('join-code-input').value='';document
 
 async function joinViagem(){
   const code=document.getElementById('join-code-input').value.trim().toUpperCase();
-  const snap=await dbGet(dbRef(db,`viagens/${code}`));
-  if(!snap.exists()){document.getElementById('join-error').textContent='Viagem não encontrada.';document.getElementById('join-error').style.display='block';return;}
-  const trip={id:code,...snap.val()};
-  if(!trip.malas?.[currentUser])await dbSet(dbRef(db,`viagens/${code}/malas/${currentUser}`),{itens:makeFirebaseItems()});
-  closeModal('modal-join');
-  abrirMala(trip);
+  const btn=document.querySelector('#modal-join .btn-confirm');
+  btn.textContent='Entrando...';btn.disabled=true;
+
+  try{
+    const snap=await dbGet(dbRef(db,`viagens/${code}`));
+    if(!snap.exists()){
+      document.getElementById('join-error').textContent='Viagem não encontrada.';
+      document.getElementById('join-error').style.display='block';
+      btn.textContent='Entrar';btn.disabled=false;
+      return;
+    }
+
+    // Garante que a mala do usuário existe ANTES de abrir
+    const malaPath=`viagens/${code}/malas/${currentUser}`;
+    const malaSnap=await dbGet(dbRef(db,malaPath));
+    if(!malaSnap.exists()){
+      await dbSet(dbRef(db,malaPath),{itens:makeFirebaseItems()});
+    }
+
+    // Reler o trip completo após garantir a mala
+    const snapFull=await dbGet(dbRef(db,`viagens/${code}`));
+    const trip={id:code,...snapFull.val()};
+
+    closeModal('modal-join');
+    btn.textContent='Entrar';btn.disabled=false;
+    abrirMala(trip);
+
+  }catch(err){
+    console.error('Erro ao entrar na viagem:',err);
+    document.getElementById('join-error').textContent='Erro ao conectar. Tente novamente.';
+    document.getElementById('join-error').style.display='block';
+    btn.textContent='Entrar';btn.disabled=false;
+  }
 }
 
 // ══ MALA ══
@@ -912,7 +939,12 @@ function renderItems(){
     const mf=currentFilter==='all'||(currentFilter==='done'&&item.done)||(currentFilter==='pending'&&!item.done);
     return mf&&item.label.toLowerCase().includes(search);
   });
-  if(!filtered.length){wrap.innerHTML=`<div class="inline-loading" style="color:var(--dim)">Nenhum item</div>`;return;}
+  if(!filtered.length){
+    wrap.innerHTML=myItems.length===0
+      ?`<div class="inline-loading"><div class="spinner"></div><br>Carregando itens...</div>`
+      :`<div class="inline-loading" style="color:var(--dim)">Nenhum item encontrado</div>`;
+    return;
+  }
   const grouped={};
   filtered.forEach(item=>{if(!grouped[item.category])grouped[item.category]=[];grouped[item.category].push(item);});
   const cats=Object.keys(grouped).sort((a,b)=>{if(a==='🐾 Pitanga')return -1;if(b==='🐾 Pitanga')return 1;return a.localeCompare(b);});
