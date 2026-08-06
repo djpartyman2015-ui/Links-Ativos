@@ -1,4 +1,4 @@
---- 
+---
 ---
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -253,6 +253,12 @@ input[type=file]{display:none;}
 .sp{display:inline-block;width:22px;height:22px;border:3px solid rgba(139,92,246,.3);border-top-color:#a855f7;border-radius:50%;animation:spin .7s linear infinite;margin-bottom:6px;}
 @keyframes spin{to{transform:rotate(360deg)}}
 
+/* MODELO */
+.mod-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);margin-bottom:4px;}
+.mod-cat{font-size:10px;color:var(--dim);background:rgba(255,255,255,.08);padding:2px 8px;border-radius:10px;white-space:nowrap;}
+.mod-del{background:none;border:none;color:rgba(248,113,113,.4);font-size:14px;padding:2px 6px;border-radius:6px;margin-left:auto;flex-shrink:0;}
+.mod-del:hover{color:var(--re);background:rgba(248,113,113,.1);}
+
 /* MODALS */
 .mo{display:none;position:fixed;inset:0;z-index:200;align-items:center;justify-content:center;background:rgba(0,0,0,.82);backdrop-filter:blur(6px);}
 .mo.on{display:flex;}
@@ -322,6 +328,12 @@ input[type=file]{display:none;}
     <div class="ntt" onclick="togNewTrip()" id="ntt">
       <span>✈️ Planejar nova viagem</span>
       <span id="nta" style="transition:transform .3s">▼</span>
+    </div>
+
+    <!-- LISTA MODELO -->
+    <div class="ntt" onclick="showSc('modelo')" style="margin-top:10px;border-color:rgba(99,202,183,.35);background:rgba(99,202,183,.05);color:#6bcab4;">
+      <span>📋 Editar Lista Modelo</span>
+      <span>›</span>
     </div>
     <div class="ntb" id="ntb">
       <div class="g2">
@@ -424,6 +436,28 @@ input[type=file]{display:none;}
   </div>
 </div>
 
+<!-- MODELO SCREEN -->
+<div id="sc-modelo" class="sc">
+  <div class="mh mha" style="padding-bottom:16px">
+    <button class="bb" onclick="showSc('via')">← Voltar</button>
+    <div style="font-size:clamp(18px,4vw,24px);font-weight:800;color:#6bcab4;margin-bottom:4px">📋 Lista Modelo</div>
+    <div style="font-size:12px;color:var(--mu)">Edite aqui para definir os itens de todas as novas viagens</div>
+  </div>
+
+  <div style="max-width:720px;margin:0 auto;padding:12px 16px;">
+    <!-- Add item form always visible -->
+    <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
+      <input class="ani" type="text" id="mod-nin" placeholder="Novo item..." onkeydown="if(event.key==='Enter')addModelo()" style="flex:2 1 160px"/>
+      <select class="acs" id="mod-ncat" style="flex:1 1 120px"></select>
+      <button class="bac" onclick="addModelo()" style="background:linear-gradient(135deg,#3d9e8c,#6bcab4)">+ Adicionar</button>
+    </div>
+    <div style="font-size:11px;color:var(--dim);margin-bottom:12px;text-align:center">
+      💡 Alterações aqui afetam apenas <strong>novas viagens</strong>
+    </div>
+    <div id="mod-list"><div class="il2"><div class="sp"></div><br>Carregando...</div></div>
+  </div>
+</div>
+
 <!-- MODAL DELETE TRIP -->
 <div class="mo" id="m-del">
   <div class="mb2">
@@ -470,17 +504,16 @@ const CI={"Higiene":"🧴","Roupas":"👕","Calçados":"👟","Acessórios":"�
 const CATS=Object.keys(CI);
 const FRASES=["A próxima aventura começa com uma mala bem feita.","Viajar é a única coisa que te enriquece ao gastar.","O mundo é um livro — quem não viaja lê só uma página.","Cada destino novo é uma versão nova de você.","A melhor decisão que você pode tomar é a próxima viagem.","Bagagem organizada, mente livre para curtir.","Novas paisagens, novas histórias, novas memórias.","Não adie a viagem dos seus sonhos. A vida é agora."];
 const BASE=[
-  {l:"Sabonete",c:"Higiene"},{l:"Repelente",c:"Higiene"},{l:"Shampoo",c:"Higiene"},{l:"Pasta de Dente",c:"Higiene"},{l:"Necessaire",c:"Higiene"},{l:"Protetor Solar",c:"Higiene"},{l:"Manteiga de Cacau",c:"Higiene"},{l:"Cortar Unha",c:"Higiene"},{l:"Perfume",c:"Higiene"},{l:"Lenço Umedecido Óculos",c:"Higiene"},{l:"Toalha de Banho",c:"Higiene"},
+  {l:"Sabonete",c:"Higiene"},{l:"Repelente",c:"Higiene"},{l:"Shampoo",c:"Higiene"},{l:"Pasta de Dente",c:"Higiene"},{l:"Necessaire",c:"Higiene"},{l:"Protetor Solar Rosto",c:"Higiene"},{l:"Protetor Solar Corpo",c:"Higiene"},{l:"Manteiga de Cacau",c:"Higiene"},{l:"Creme Hidratante",c:"Higiene"},{l:"Fio Dental",c:"Higiene"},{l:"Produtos Skincare",c:"Higiene"},{l:"Cortar Unha",c:"Higiene"},{l:"Perfume",c:"Higiene"},{l:"Lenço Umedecido Óculos",c:"Higiene"},{l:"Toalha de Banho",c:"Higiene"},
   {l:"Pano de Chão",c:"Casa"},{l:"Raquete de Inseto",c:"Casa"},{l:"Roupa de Cama",c:"Casa"},{l:"Gás / Chapa Portátil",c:"Casa"},{l:"Forninho Portátil",c:"Casa"},{l:"Travesseiro",c:"Casa"},{l:"Edredom",c:"Casa"},{l:"Martelo",c:"Casa"},{l:"Molhar Plantas",c:"Casa"},
   {l:"Caixinha de Som",c:"Eletrônicos"},{l:"Lira",c:"Eletrônicos"},{l:"Extensão para Computador",c:"Eletrônicos"},{l:"Power Bank",c:"Eletrônicos"},{l:"Projetor",c:"Eletrônicos"},{l:"Chip para Celular",c:"Eletrônicos"},{l:"Suporte Celular para Carro",c:"Eletrônicos"},{l:"AirTAG",c:"Eletrônicos"},{l:"5x1 Luz",c:"Eletrônicos"},{l:"Computador",c:"Eletrônicos"},{l:"Cabos de Celular",c:"Eletrônicos"},{l:"Cabo do Pod",c:"Eletrônicos"},
   {l:"Gorro",c:"Roupas"},{l:"Cachecol",c:"Roupas"},{l:"Cinto",c:"Roupas"},{l:"Roupão",c:"Roupas"},{l:"Roupas de Frio",c:"Roupas"},{l:"Calça Jeans",c:"Roupas"},{l:"Foundeezeira",c:"Roupas"},{l:"Pijama",c:"Roupas"},{l:"Camisetas",c:"Roupas"},{l:"Regatas",c:"Roupas"},{l:"Bermudas",c:"Roupas"},{l:"Capa de Chuva",c:"Roupas"},{l:"Camisa de Neoprene Azul",c:"Roupas"},{l:"Roupas de Festa",c:"Roupas"},{l:"Cueca",c:"Roupas"},{l:"Meia",c:"Roupas"},
   {l:"Moedas Estrangeiras",c:"Documentos & $"},{l:"Cartão Corporativo",c:"Documentos & $"},{l:"Porta Valores",c:"Documentos & $"},{l:"Cartão Mercado Pago",c:"Documentos & $"},{l:"Dinheirinho",c:"Documentos & $"},{l:"Passaporte",c:"Documentos & $"},{l:"Cash",c:"Documentos & $"},
   {l:"Apito Ansiedade",c:"Saúde"},{l:"Estojo de Lente de Contato",c:"Saúde"},{l:"Lentes de Contato",c:"Saúde"},{l:"Óculos de Grau",c:"Saúde"},{l:"Líquido da Lente",c:"Saúde"},{l:"Máscara",c:"Saúde"},{l:"Remédios",c:"Saúde"},
-  {l:"Óculos de Sol",c:"Acessórios"},{l:"Relógio",c:"Acessórios"},{l:"Pulseiras / Acessórios",c:"Acessórios"},{l:"Boné",c:"Acessórios"},{l:"Carteira Havaiana Praia",c:"Acessórios"},
+  {l:"Óculos de Sol",c:"Acessórios"},{l:"Relógio",c:"Acessórios"},{l:"Pulseiras / Acessórios",c:"Acessórios"},{l:"Boné",c:"Acessórios"},{l:"Carteira Havaiana Praia",c:"Acessórios"},{l:"Travesseiro de Vôo",c:"Acessórios"},
   {l:"Vodka",c:"Bebidas"},{l:"Energético",c:"Bebidas"},{l:"Garrafinha de Água",c:"Bebidas"},{l:"Água",c:"Bebidas"},{l:"Dosador de Bebida",c:"Bebidas"},{l:"Copo de Café Stanley",c:"Bebidas"},{l:"Cerveja",c:"Bebidas"},{l:"Caixa Térmica",c:"Bebidas"},{l:"Abridor de Garrafa",c:"Bebidas"},{l:"Copos Stanley",c:"Bebidas"},
-  {l:"Tênis",c:"Calçados"},{l:"Sapato",c:"Calçados"},{l:"Chinelo",c:"Calçados"},
-  {l:"Cadeado",c:"Segurança"},{l:"Jogos",c:"Entretenimento"},{l:"Mochila de Praia",c:"Bags"},{l:"Pod (Cig Eletrônico)",c:"Pessoal"},{l:"Gelox",c:"Alimentação"},
-  {l:"Canga",c:"Praia"},{l:"Toalha de Praia",c:"Praia"},{l:"Sunga",c:"Praia"},
+  {l:"Tênis",c:"Calçados"},{l:"Sapato Social",c:"Calçados"},{l:"Sapatênis",c:"Calçados"},{l:"Chinelo",c:"Calçados"},{l:"Sapatilha de Praia",c:"Calçados"},
+  {l:"Cadeado",c:"Segurança"},{l:"Jogos",c:"Entretenimento"},{l:"Mochila de Praia",c:"Bags"},{l:"Pod (Cig Eletrônico)",c:"Pessoal"},  {l:"Canga",c:"Praia"},{l:"Toalha de Praia",c:"Praia"},{l:"Sunga",c:"Praia"},{l:"Snorkel",c:"Praia"},{l:"Capinha Celular à Prova d'Água",c:"Praia"},
   {l:"Espátula da Pitanga",c:"🐾 Pitanga"},{l:"Coleira da Pitanga",c:"🐾 Pitanga"},{l:"Potinhos da Pitanga",c:"🐾 Pitanga"},{l:"Sacolinha de Cocô da Pitanga",c:"🐾 Pitanga"},{l:"Petisco da Pitanga",c:"🐾 Pitanga"},{l:"Brinquedos da Pitanga",c:"🐾 Pitanga"},{l:"Frigideira da Pitanga",c:"🐾 Pitanga"},{l:"Fraldinha de Xixi da Pitanga",c:"🐾 Pitanga"},{l:"Caminha da Pitanga",c:"🐾 Pitanga"},{l:"Sachê da Pitanga",c:"🐾 Pitanga"},{l:"Frango da Pitanga",c:"🐾 Pitanga"},{l:"Pano pra Limpar Sujeira da Pitanga",c:"🐾 Pitanga"},{l:"Ração da Pitanga",c:"🐾 Pitanga"},{l:"Carteirinha de Vacina da Pitanga / Plano Médico",c:"🐾 Pitanga"}
 ];
 
@@ -509,7 +542,7 @@ window.addEventListener('fb-ready',()=>{
   else showSc('who');
 });
 
-function showSc(n){document.querySelectorAll('.sc').forEach(s=>s.classList.remove('on'));document.getElementById('sc-'+n).classList.add('on');}
+function showSc(n){document.querySelectorAll('.sc').forEach(s=>s.classList.remove('on'));document.getElementById('sc-'+n).classList.add('on');if(n==='modelo')loadModelo();}
 
 // USER
 function selUser(u){cu=u;sessionStorage.setItem('mu',u);setChip();showSc('via');loadViagens();}
@@ -599,7 +632,8 @@ async function criarViagem(){
   const nome=document.getElementById('ntn').value.trim();if(!nome){document.getElementById('ntn').focus();return;}
   const emoji=document.getElementById('nte').value,di=document.getElementById('nti').value,dv=document.getElementById('ntv').value;
   const code=Math.random().toString(36).substring(2,8).toUpperCase();
-  await fn.set(fn.ref(db,`viagens/${code}`),{nome,emoji,dataIda:di||null,dataVolta:dv||null,criadoEm:Date.now(),malas:{a:{itens:mkItems()},t:{itens:mkItems()}}});
+  const itensModelo=await mkItemsFromModelo();
+  await fn.set(fn.ref(db,`viagens/${code}`),{nome,emoji,dataIda:di||null,dataVolta:dv||null,criadoEm:Date.now(),malas:{a:{itens:itensModelo},t:{itens:{...itensModelo}}}});
   document.getElementById('ntn').value='';document.getElementById('nti').value='';document.getElementById('ntv').value='';
   ntO=false;document.getElementById('ntb').style.display='none';document.getElementById('nta').style.transform='';
   const snap=await fn.get(fn.ref(db,`viagens/${code}`));
@@ -786,6 +820,84 @@ async function doReset(){const p=`viagens/${trip.id}/malas/${cu}/itens`,u={};myI
 // DELETE TRIP
 function openDel(id,nome){delId=id;document.getElementById('m-del-desc').innerHTML=`Apagar <strong style="color:#c4b5fd">${nome}</strong>?`;document.getElementById('m-del').classList.add('on');}
 async function confirmDel(){if(!delId)return;await fn.remove(fn.ref(db,`viagens/${delId}`));delId=null;closeM('m-del');}
+
+// ══ LISTA MODELO ══
+// Firebase path: /listaModelo/{id} = {label, category}
+// Loaded when creating new trip instead of hardcoded BASE
+
+function loadModelo(){
+  updModCatSel();
+  fn.onValue(fn.ref(db,'listaModelo'),snap=>{
+    const data=snap.val();
+    // If no custom model yet, seed from BASE
+    if(!data){
+      const obj={};BASE.forEach((x,i)=>{const k='m'+i;obj[k]={label:x.l,category:x.c,id:k};});
+      fn.set(fn.ref(db,'listaModelo'),obj);
+      return;
+    }
+    rendModelo(data);
+  });
+}
+
+function rendModelo(data){
+  const wrap=document.getElementById('mod-list');
+  const items=Object.entries(data).map(([k,v])=>({...v,id:k})).sort((a,b)=>a.category.localeCompare(b.category)||a.label.localeCompare(b.label));
+  if(!items.length){wrap.innerHTML='<div class="il2" style="color:var(--dim)">Lista vazia — adicione itens acima</div>';return;}
+  // Group by category
+  const grp={};items.forEach(x=>{if(!grp[x.category])grp[x.category]=[];grp[x.category].push(x);});
+  const cats=Object.keys(grp).sort((a,b)=>{if(a==='🐾 Pitanga')return-1;if(b==='🐾 Pitanga')return 1;return a.localeCompare(b);});
+  wrap.innerHTML='';
+  cats.forEach(cat=>{
+    const hdr=document.createElement('div');
+    hdr.style.cssText='font-size:11px;font-weight:700;color:#a78bfa;text-transform:uppercase;letter-spacing:1px;margin:12px 0 6px;';
+    hdr.textContent=`${CI[cat]||'📦'} ${cat} (${grp[cat].length})`;
+    wrap.appendChild(hdr);
+    grp[cat].forEach(x=>{
+      const row=document.createElement('div');row.className='mod-item';
+      row.innerHTML=`<span style="font-size:13px;flex:1">${x.label}</span><button class="mod-del" onclick="delModelo('${x.id}')">🗑️</button>`;
+      wrap.appendChild(row);
+    });
+  });
+  // Total count
+  const tot=document.createElement('div');
+  tot.style.cssText='text-align:center;font-size:11px;color:var(--dim);margin-top:16px;padding:10px;border-top:1px solid rgba(255,255,255,.07)';
+  tot.textContent=`${items.length} itens na lista modelo`;
+  wrap.appendChild(tot);
+}
+
+function updModCatSel(){
+  const s=document.getElementById('mod-ncat');
+  if(s)s.innerHTML=CATS.map(c=>`<option value="${c}">${CI[c]||'📦'} ${c}</option>`).join('');
+}
+
+async function addModelo(){
+  const l=document.getElementById('mod-nin').value.trim();
+  const cat=document.getElementById('mod-ncat').value;
+  if(!l)return;
+  const nr=fn.push(fn.ref(db,'listaModelo'));
+  await fn.set(nr,{label:l,category:cat,id:nr.key});
+  document.getElementById('mod-nin').value='';
+}
+
+async function delModelo(id){
+  await fn.remove(fn.ref(db,`listaModelo/${id}`));
+}
+
+// Override mkItems to use Firebase modelo
+async function mkItemsFromModelo(){
+  const snap=await fn.get(fn.ref(db,'listaModelo'));
+  const data=snap.val();
+  if(!data){
+    // fallback to BASE
+    return mkItems();
+  }
+  const obj={};
+  Object.entries(data).forEach(([k,v],i)=>{
+    const key='i'+i;
+    obj[key]={label:v.label,category:v.category,done:false,id:key};
+  });
+  return obj;
+}
 
 function closeM(id){document.getElementById(id).classList.remove('on');}
 </script>
