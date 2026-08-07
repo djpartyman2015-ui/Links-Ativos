@@ -429,7 +429,11 @@ async function dbGet(key){
   return JSON.parse(localStorage.getItem(key) || "{}");
 }
 async function dbSet(key, value){
-  localStorage.setItem(key, JSON.stringify(value)); // sempre espelha localmente
+  try{
+    localStorage.setItem(key, JSON.stringify(value)); // sempre espelha localmente, best-effort
+  }catch(e){
+    console.warn("localStorage cheio, pulando espelho local:", e);
+  }
   if(FIREBASE_DB_URL){
     try{
       await fetch(`${FIREBASE_DB_URL}/${key}.json`, {
@@ -442,7 +446,11 @@ async function dbSet(key, value){
 // Salva só UM item dentro de uma chave (ex: uma foto específica), evitando reenviar tudo.
 // Faz timeout em 20s pra nunca travar o botão pra sempre.
 async function dbSetPath(key, subKey, value, localFullObject){
-  localStorage.setItem(key, JSON.stringify(localFullObject)); // espelha local completo
+  try{
+    localStorage.setItem(key, JSON.stringify(localFullObject)); // espelho local, best-effort
+  }catch(e){
+    console.warn("localStorage cheio, pulando espelho local (não afeta o Firebase):", e);
+  }
   if(FIREBASE_DB_URL){
     const controller = new AbortController();
     const timeout = setTimeout(()=>controller.abort(), 20000);
