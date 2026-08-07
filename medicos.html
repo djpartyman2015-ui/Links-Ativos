@@ -352,6 +352,20 @@ function logout(){
   idToken = null;
   location.reload();
 }
+async function forceRefresh(){
+  try{
+    if('caches' in window){
+      const names = await caches.keys();
+      await Promise.all(names.map(n=>caches.delete(n)));
+    }
+    if('serviceWorker' in navigator){
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(r=>r.unregister()));
+    }
+  }catch(e){}
+  const base = window.location.origin + window.location.pathname;
+  window.location.href = base + '?v=' + Date.now();
+}
 
 function buildAppShell(){
   document.body.innerHTML = `
@@ -362,6 +376,7 @@ function buildAppShell(){
           <h1 id="pageTitle">🩺 Médicos</h1>
           <div class="sub" id="pageSub">seu histórico completo por especialidade</div>
         </div>
+        <button class="back-btn" id="refreshBtn" title="Atualizar app" style="opacity:0.55;font-size:15px;">🔄</button>
         <button class="back-btn" id="logoutBtn" title="Sair">⏻</button>
       </div>
       <div class="search-wrap" id="searchWrap">
@@ -378,6 +393,7 @@ function buildAppShell(){
   `;
   document.getElementById('tabMedicos').addEventListener('click', ()=>{ mainTab='medicos'; goHome(); });
   document.getElementById('tabExames').addEventListener('click', ()=>{ mainTab='exames'; goExamesHome(); });
+  document.getElementById('refreshBtn').addEventListener('click', forceRefresh);
   document.getElementById('backBtn').addEventListener('click', ()=>{
     if(mainTab==='exames'){
       if(exameView.screen==='detalhe'){ exameView = {screen:'lista', exameId:null}; render(); }
