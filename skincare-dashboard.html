@@ -359,7 +359,12 @@
     <div class="timeline-scroll" id="timelineScroll"></div>
   </div>
 
-  <footer>Painel pessoal de skincare · dados salvos na nuvem (Firebase) com fallback local · Creamy Skincare</footer>
+  <footer>
+    Painel pessoal de skincare · dados salvos na nuvem (Firebase) com fallback local · Creamy Skincare
+    <div style="margin-top:10px;">
+      <button id="forceRefreshBtn" style="background:none; border:1px solid var(--line); color:var(--sub); border-radius:6px; padding:5px 10px; font-size:11px; cursor:pointer;">🔄 Forçar atualização</button>
+    </div>
+  </footer>
 </div>
 
 <div class="zoom-modal" id="zoomModal">
@@ -928,6 +933,8 @@ function renderPhotoUpload(){
   const refreshView = ()=>{
     const d = dateInput.value;
     pendingPhotoDataUrl = null;
+    saveBtn.textContent = "Salvar foto";
+    saveBtn.disabled = false;
     if(PHOTOS[d]){
       preview.src = PHOTOS[d];
       preview.style.display = "block";
@@ -957,6 +964,8 @@ function renderPhotoUpload(){
     preview.src = pendingPhotoDataUrl;
     preview.style.display = "block";
     buttons.style.display = "none";
+    saveBtn.textContent = "Salvar foto";
+    saveBtn.disabled = false;
     saveBtn.style.display = "block";
   };
 
@@ -1137,6 +1146,11 @@ async function init(){
   renderNotes();
 }
 init();
+
+document.getElementById("forceRefreshBtn").addEventListener("click", ()=>{
+  const url = window.location.pathname + "?v=" + Date.now();
+  window.location.replace(url);
+});
 </script>
 </body>
 </html>
