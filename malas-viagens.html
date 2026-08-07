@@ -735,7 +735,8 @@ function subOtI(){
 
 // DASH
 function updDash(u,items){
-  const tot=items.length,done=items.filter(i=>i.done).length,pct=tot?Math.round(done/tot*100):0;
+  const filtered=items.filter(i=>i.category!=='🐾 Pitanga'&&i.category!=='Pitanga');
+  const tot=filtered.length,done=filtered.filter(i=>i.done).length,pct=tot?Math.round(done/tot*100):0;
   const key=u==='a'?'a':'t';
   document.getElementById('dp'+key).textContent=pct+'%';
   document.getElementById('dd'+key).textContent=`${done}/${tot}`;
@@ -745,7 +746,8 @@ function updDash(u,items){
 // PROGRESS
 function pCol(p){return p>=90?'#4ade80':p>=60?'#facc15':p>=30?'#fb923c':'#f87171';}
 function updProg(){
-  const tot=myI.length,done=myI.filter(i=>i.done).length,pct=tot?Math.round(done/tot*100):0,col=pCol(pct);
+  const myIFiltered=myI.filter(i=>i.category!=='🐾 Pitanga'&&i.category!=='Pitanga');
+  const tot=myIFiltered.length,done=myIFiltered.filter(i=>i.done).length,pct=tot?Math.round(done/tot*100):0,col=pCol(pct);
   document.getElementById('rp').textContent=pct+'%';document.getElementById('rp').style.color=col;
   document.getElementById('rc').setAttribute('stroke-dasharray',`${(pct/100)*CIRC} ${CIRC}`);
   document.getElementById('rc').setAttribute('stroke',col);
@@ -763,7 +765,8 @@ function rendItems(){
   const wrap=document.getElementById('iw'),s=srch.toLowerCase();
   const fil=myI.filter(x=>{
     const mf=filt==='all'||(filt==='don'&&x.done)||(filt==='pen'&&!x.done);
-    return mf&&x.label.toLowerCase().includes(s);
+    const notPit=x.category!=='🐾 Pitanga'&&x.category!=='Pitanga';
+    return mf&&notPit&&x.label.toLowerCase().includes(s);
   });
   if(!fil.length){wrap.innerHTML=myI.length===0?`<div class="il2"><div class="sp"></div><br>Carregando...</div>`:`<div class="il2" style="color:var(--dim)">Nenhum item</div>`;return;}
   const grp={};fil.forEach(x=>{if(!grp[x.category])grp[x.category]=[];grp[x.category].push(x);});
@@ -842,8 +845,13 @@ function rendPeek(){
 // ══ PITANGA ══
 let pitItems=[], uPit=null;
 
-function subPitanga(){
+async function subPitanga(){
   if(uPit)uPit();
+  // Garantir que mala da Pitanga existe
+  const pitSnap=await fn.get(fn.ref(db,`viagens/${trip.id}/malas/pitanga/itens`));
+  if(!pitSnap.exists()){
+    await fn.set(fn.ref(db,`viagens/${trip.id}/malas/pitanga/itens`),mkPitangaItems());
+  }
   uPit=fn.onValue(fn.ref(db,`viagens/${trip.id}/malas/pitanga/itens`),snap=>{
     const d=snap.val()||{};
     pitItems=Object.entries(d).map(([k,v])=>({...v,id:k}));
