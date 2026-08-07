@@ -403,6 +403,23 @@
     .footer a:hover { text-decoration: underline; }
 
     /* ── MOBILE ── */
+
+    .btn-refresh {
+      display: block;
+      margin: 16px auto 0;
+      background: none;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 20px;
+      color: var(--muted);
+      font-size: 10px;
+      font-family: 'Inter', sans-serif;
+      letter-spacing: 0.1em;
+      padding: 4px 12px;
+      cursor: pointer;
+      opacity: 0.4;
+      transition: opacity 0.2s, border-color 0.2s;
+    }
+    .btn-refresh:hover { opacity: 1; border-color: var(--cyan); color: var(--cyan); }
     @media (max-width: 480px) {
       .grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
       .page { padding: 40px 16px 60px; }
@@ -1119,6 +1136,37 @@
       </div>
     </a>
 
+    <a class="card" data-color="cyan" data-id="peso"
+       href="https://djpartyman2015-ui.github.io/Links-Ativos/peso.html"
+       target="_blank" rel="noopener">
+      <span class="drag-handle">⠿</span>
+      <button class="delete-btn" title="Remover card">✕</button>
+      <button class="edit-btn" title="Editar card">✏️</button>
+      <span class="card-icon">⚖️</span>
+      <span class="card-tag">Saúde</span>
+      <div class="card-body">
+        <span class="card-title">Controle de Peso</span>
+        <span class="card-desc">Acompanhamento de peso e evolução corporal</span>
+      </div>
+      <span class="card-date">📅 Jul/26</span>
+      <span class="card-arrow">↗</span>
+      <div class="edit-panel">
+        <div><label>Emoji + Categoria</label>
+          <div class="edit-panel-row">
+            <input class="edit-panel-emoji" type="text" data-field="icon" maxlength="4" value="⚖️" />
+            <input style="flex:1" type="text" data-field="tag" value="Saúde" />
+          </div>
+        </div>
+        <div><label>Título</label><input type="text" data-field="title" value="Controle de Peso" /></div>
+        <div><label>Descrição</label><input type="text" data-field="desc" value="Acompanhamento de peso e evolução corporal" /></div>
+        <div><label>Cor</label><div class="color-picker" data-for="color"></div></div>
+        <div class="edit-actions">
+          <button class="btn-cancel">Cancelar</button>
+          <button class="btn-save">Salvar</button>
+        </div>
+      </div>
+    </a>
+
     <!-- Botão adicionar novo card — aparece só no modo organizar -->
     <div class="card add-card" id="add-card-btn" onclick="openModal('pes')">
       <span class="add-card-icon">＋</span>
@@ -1159,6 +1207,8 @@
     Feito à mão por Andrey Cappa ·
     <a href="https://github.com/djpartyman2015-ui" target="_blank" rel="noopener">GitHub</a>
     · 2026
+  
+    <button class="btn-refresh" onclick="forceRefresh()" title="Limpar cache e recarregar">↺ atualizar</button>
   </footer>
 
 </div>
@@ -1591,6 +1641,16 @@
     touchCard = null; touchGrid = null;
   });
 
+
+  function forceRefresh() {
+    if ('caches' in window) {
+      caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k)))).then(() => {
+        location.reload(true);
+      });
+    } else {
+      location.reload(true);
+    }
+  }
   /* ── Init ── */
   Object.entries(GRIDS).forEach(([key, g]) => {
     g.el.querySelectorAll('.card:not(.wip):not(.add-card)').forEach(wireCard);
