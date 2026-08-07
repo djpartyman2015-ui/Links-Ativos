@@ -194,6 +194,24 @@ button{cursor:pointer;}
 .fub{display:block;width:100%;padding:7px;font-size:11px;font-weight:600;border:none;background:rgba(255,255,255,.05);color:var(--mu);border-top:1px solid rgba(255,255,255,.06);}
 input[type=file]{display:none;}
 
+/* PITANGA */
+.pitanga-card{border-radius:14px;border:1px solid rgba(255,180,0,.25);background:linear-gradient(135deg,rgba(255,160,0,.06),rgba(255,100,0,.04));overflow:hidden;margin-bottom:4px;}
+.pitanga-header{padding:12px 14px 8px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;border-bottom:1px solid rgba(255,160,0,.12);}
+.pitanga-title{font-size:13px;font-weight:800;color:#fbbf24;letter-spacing:.5px;}
+.pitanga-stats{font-size:11px;color:var(--dim);margin-left:auto;}
+.pitanga-bar-wrap{width:100%;height:3px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden;}
+.pitanga-bar{height:100%;border-radius:3px;background:linear-gradient(90deg,#f59e0b,#fbbf24);transition:width .5s;}
+.pitanga-items{padding:8px 6px;}
+.pit-item{display:flex;align-items:center;gap:10px;padding:8px 8px;border-radius:8px;cursor:pointer;transition:background .15s;margin-bottom:3px;}
+.pit-item:hover{background:rgba(255,160,0,.06);}
+.pit-item.done{opacity:.6;}
+.pit-check{width:20px;height:20px;border-radius:5px;flex-shrink:0;border:2px solid rgba(251,191,36,.35);display:flex;align-items:center;justify-content:center;transition:all .2s;}
+.pit-item.done .pit-check{border-color:#fbbf24;background:rgba(251,191,36,.2);}
+.pit-check svg{display:none;}
+.pit-item.done .pit-check svg{display:block;}
+.pit-label{font-size:13px;font-weight:500;flex:1;color:var(--tx);}
+.pit-item.done .pit-label{text-decoration:line-through;color:var(--dim);}
+
 /* PEEK */
 .pp{display:none;padding:0 16px 8px;max-width:720px;margin:0 auto;}
 .pp.on{display:block;}
@@ -321,7 +339,7 @@ input[type=file]{display:none;}
       <div class="logo">🧳 Malas & Viagens</div>
       <button class="uc" id="uc" onclick="showSc('who')"></button>
     </div>
-    <div class="vsub"><span class="live"></span>em tempo real</div>
+    <div class="vsub"><span class="live"></span>em tempo real <button onclick="forceReload()" style="background:none;border:none;color:var(--dim);font-size:11px;cursor:pointer;padding:0 4px;letter-spacing:1px;" title="Forçar atualização">↻</button></div>
   </div>
   <div id="gcd" style="display:none;padding:12px 16px 0;max-width:720px;margin:0 auto;"></div>
   <div class="pw2">
@@ -363,9 +381,10 @@ input[type=file]{display:none;}
       <button class="opb t" id="opb" onclick="togPeek()"></button>
     </div>
     <div id="mcd" style="margin-bottom:10px;display:none"></div>
-    <div class="md">
+    <div class="md" style="grid-template-columns:1fr 1fr 1fr">
       <div class="dc a"><div class="dn">🧔 Andrey</div><div class="dp" id="dpa">0%</div><div class="dd" id="dda">0/0</div><div class="dmb"><div class="dmf" id="dba" style="width:0%"></div></div></div>
       <div class="dc t"><div class="dn">👨 Tiago</div><div class="dp" id="dpt">0%</div><div class="dd" id="ddt">0/0</div><div class="dmb"><div class="dmf" id="dbt" style="width:0%"></div></div></div>
+      <div class="dc" style="border-color:rgba(251,191,36,.3);background:rgba(251,191,36,.06)"><div class="dn" style="color:#fbbf24">🐾 Pitanga</div><div class="dp" id="dpp" style="color:#fbbf24">0%</div><div class="dd" id="ddp">0/0</div><div class="dmb"><div class="dmf" id="dbp" style="width:0%;background:#fbbf24"></div></div></div>
     </div>
     <div class="pa">
       <div class="rw">
@@ -398,6 +417,18 @@ input[type=file]{display:none;}
         <button class="fub" onclick="document.getElementById('ff-t').click()">📷 Foto</button>
         <input type="file" id="ff-t" accept="image/*" capture="environment" onchange="upFoto('t',this)"/>
       </div>
+    </div>
+  </div>
+
+  <!-- PITANGA -->
+  <div id="pitanga-section" style="max-width:720px;margin:0 auto;padding:0 16px 8px;">
+    <div class="pitanga-card">
+      <div class="pitanga-header">
+        <div class="pitanga-title">🐾 Mala da Pitanga</div>
+        <div class="pitanga-stats" id="pit-stats">0/0 • 0%</div>
+        <div class="pitanga-bar-wrap"><div class="pitanga-bar" id="pit-bar" style="width:0%"></div></div>
+      </div>
+      <div id="pit-items" class="pitanga-items"></div>
     </div>
   </div>
 
@@ -650,7 +681,7 @@ async function criarViagem(){
   const emoji=document.getElementById('nte').value,di=document.getElementById('nti').value,dv=document.getElementById('ntv').value;
   const code=Math.random().toString(36).substring(2,8).toUpperCase();
   const itensModelo=await mkItemsFromModelo();
-  await fn.set(fn.ref(db,`viagens/${code}`),{nome,emoji,dataIda:di||null,dataVolta:dv||null,criadoEm:Date.now(),malas:{a:{itens:itensModelo},t:{itens:{...itensModelo}}}});
+  await fn.set(fn.ref(db,`viagens/${code}`),{nome,emoji,dataIda:di||null,dataVolta:dv||null,criadoEm:Date.now(),malas:{a:{itens:itensModelo},t:{itens:{...itensModelo}},pitanga:{itens:mkPitangaItems()}}});
   document.getElementById('ntn').value='';document.getElementById('nti').value='';document.getElementById('ntv').value='';
   ntO=false;document.getElementById('ntb').style.display='none';document.getElementById('nta').style.transform='';
   const snap=await fn.get(fn.ref(db,`viagens/${code}`));
@@ -677,12 +708,12 @@ function abrirMala(t){
   const mcd=document.getElementById('mcd');
   function tickCD(){rendCD(trip.dataIda,trip.dataVolta,mcd,trip.nome,trip.emoji);}
   tickCD();cdi=setInterval(tickCD,1000);
-  subMyI();subOtI();loadFotos();
+  subMyI();subOtI();subPitanga();loadFotos();
   updCatSel();
 }
 
 function voltarVia(){
-  if(uMy){uMy();uMy=null;}if(uOt){uOt();uOt=null;}
+  if(uMy){uMy();uMy=null;}if(uOt){uOt();uOt=null;}if(uPit){uPit();uPit=null;}
   if(cdi){clearInterval(cdi);cdi=null;}
   trip=null;showSc('via');
 }
@@ -807,6 +838,62 @@ function rendPeek(){
 }
 
 // FOTOS
+
+// ══ PITANGA ══
+let pitItems=[], uPit=null;
+
+function subPitanga(){
+  if(uPit)uPit();
+  uPit=fn.onValue(fn.ref(db,`viagens/${trip.id}/malas/pitanga/itens`),snap=>{
+    const d=snap.val()||{};
+    pitItems=Object.entries(d).map(([k,v])=>({...v,id:k}));
+    rendPitanga();
+    updDashPit();
+  });
+}
+
+function updDashPit(){
+  const tot=pitItems.length,done=pitItems.filter(i=>i.done).length;
+  const pct=tot?Math.round(done/tot*100):0;
+  const dpp=document.getElementById('dpp');
+  const ddp=document.getElementById('ddp');
+  const dbp=document.getElementById('dbp');
+  const ps=document.getElementById('pit-stats');
+  const pb=document.getElementById('pit-bar');
+  if(dpp)dpp.textContent=pct+'%';
+  if(ddp)ddp.textContent=`${done}/${tot}`;
+  if(dbp)dbp.style.width=pct+'%';
+  if(ps)ps.textContent=`${done}/${tot} • ${pct}%`;
+  if(pb)pb.style.width=pct+'%';
+}
+
+function rendPitanga(){
+  const wrap=document.getElementById('pit-items');
+  if(!wrap)return;
+  if(!pitItems.length){wrap.innerHTML='<div style="text-align:center;padding:20px;color:var(--dim);font-size:12px">Nenhum item</div>';return;}
+  const sorted=[...pitItems].sort((a,b)=>a.label.localeCompare(b.label));
+  wrap.innerHTML='';
+  sorted.forEach(x=>{
+    const row=document.createElement('div');
+    row.className='pit-item'+(x.done?' done':'');
+    row.innerHTML=`<div class="pit-check" onclick="event.stopPropagation();togglePit('${x.id}',${!x.done})">
+      <svg width="11" height="11" viewBox="0 0 13 13" fill="none"><path d="M2 6.5L5.5 10L11 3" stroke="#fbbf24" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div><span class="pit-label">${x.label}</span>`;
+    row.addEventListener('click',()=>togglePit(x.id,!x.done));
+    wrap.appendChild(row);
+  });
+}
+
+async function togglePit(id,v){
+  await fn.set(fn.ref(db,`viagens/${trip.id}/malas/pitanga/itens/${id}/done`),v);
+}
+
+function mkPitangaItems(){
+  const base=["Caminha da Pitanga","Espátula da Pitanga","Sachê da Pitanga","Coleira da Pitanga","Potinhos da Pitanga","Sacolinha de Cocô da Pitanga","Frango da Pitanga","Pano pra Limpar Sujeira da Pitanga","Ração da Pitanga","Carteirinha de Vacina da Pitanga / Plano Médico","Petisco da Pitanga","Brinquedos da Pitanga","Frigideira da Pitanga","Fraldinha de Xixi da Pitanga","Remédios da Pitanga"];
+  const obj={};base.forEach((l,i)=>{const k='p'+i;obj[k]={label:l,category:"Pitanga",done:false,id:k};});
+  return obj;
+}
+
 function loadFotos(){
   ['a','t'].forEach(u=>{
     fn.onValue(fn.ref(db,`viagens/${trip.id}/fotos/${u}`),snap=>{
@@ -837,6 +924,15 @@ async function doReset(){const p=`viagens/${trip.id}/malas/${cu}/itens`,u={};myI
 // DELETE TRIP
 function openDel(id,nome){delId=id;document.getElementById('m-del-desc').innerHTML=`Apagar <strong style="color:#c4b5fd">${nome}</strong>?`;document.getElementById('m-del').classList.add('on');}
 async function confirmDel(){if(!delId)return;await fn.remove(fn.ref(db,`viagens/${delId}`));delId=null;closeM('m-del');}
+
+// ══ FORCE RELOAD ══
+function forceReload(){
+  if('caches' in window){
+    caches.keys().then(names=>Promise.all(names.map(n=>caches.delete(n)))).then(()=>location.reload(true));
+  } else {
+    location.reload(true);
+  }
+}
 
 // ══ LISTA MODELO ══
 // Firebase path: /listaModelo/{id} = {label, category}
