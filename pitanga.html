@@ -457,9 +457,10 @@ const PESAGEM_MIGRACAO = [
 ];
 async function seedPesagemIfNeeded(){
   try{
-    for(const item of PESAGEM_MIGRACAO){
-      await fbSet(`pesagem/${item.id}`, {data:item.data, peso:item.peso});
-    }
+    const done = await fbGet("_pesagemMigDone");
+    if(done) return;
+    await Promise.all(PESAGEM_MIGRACAO.map(item=> fbSet(`pesagem/${item.id}`, {data:item.data, peso:item.peso})));
+    await fbSet("_pesagemMigDone", true);
   }catch(err){ console.error("Erro ao migrar pesagem:", err); }
 }
 
@@ -509,9 +510,10 @@ const CUSTOS_MIGRACAO = [
 ];
 async function seedCustosIfNeeded(){
   try{
-    for(const item of CUSTOS_MIGRACAO){
-      await fbSet(`custos/${item.id}`, {data:item.data, categoria:item.categoria, descricao:item.descricao, valor:item.valor});
-    }
+    const done = await fbGet("_custosMigDone");
+    if(done) return;
+    await Promise.all(CUSTOS_MIGRACAO.map(item=> fbSet(`custos/${item.id}`, {data:item.data, categoria:item.categoria, descricao:item.descricao, valor:item.valor})));
+    await fbSet("_custosMigDone", true);
   }catch(err){ console.error("Erro ao migrar custos:", err); }
 }
 
@@ -521,10 +523,12 @@ async function boot(){
   $("#login-screen").style.display = "none";
   $("#app").style.display = "flex";
   renderNav(user);
-  await seedIfEmpty();
-  await seedPesagemIfNeeded();
-  await seedCustosIfNeeded();
-  await loadAll();
+  DATA = await fbGet("") || {};
+  let precisaRecarregar = false;
+  if(!DATA._seeded){ await seedIfEmpty(); precisaRecarregar = true; }
+  if(!DATA._pesagemMigDone){ await seedPesagemIfNeeded(); precisaRecarregar = true; }
+  if(!DATA._custosMigDone){ await seedCustosIfNeeded(); precisaRecarregar = true; }
+  if(precisaRecarregar) DATA = await fbGet("") || {};
   goTab("home");
 }
 async function loadAll(){
