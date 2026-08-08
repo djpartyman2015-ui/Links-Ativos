@@ -29,6 +29,10 @@
   .tabs{display:flex;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:4px;}
   .tab-btn{border:none;background:transparent;color:var(--muted);font-family:inherit;font-weight:600;font-size:13px;padding:8px 14px;border-radius:9px;cursor:pointer;transition:.15s;}
   .tab-btn.active{background:var(--surface-2);color:var(--lcd);}
+  .refresh-btn{background:transparent;border:1px solid var(--line);color:var(--muted);width:34px;height:34px;border-radius:10px;cursor:pointer;font-size:16px;line-height:1;transition:.15s;}
+  .refresh-btn:hover{color:var(--lcd);border-color:var(--lcd-dim);}
+  .refresh-btn.spinning{animation:spin .6s linear;}
+  @keyframes spin{to{transform:rotate(360deg);}}
 
   section[hidden]{display:none !important;}
 
@@ -52,11 +56,11 @@
   .goal-bar-fill{height:100%;background:linear-gradient(90deg,var(--lcd-dim),var(--lcd));border-radius:6px;}
 
   /* GRID / CARDS */
-  .cards-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:18px 0;}
-  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;}
-  .card .k{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:1.2px;font-weight:700;}
-  .card .v{font-family:'Share Tech Mono',monospace;font-size:28px;margin-top:6px;color:var(--text);}
-  .card .sub{font-size:12px;color:var(--muted-2);margin-top:4px;}
+  .cards-row{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin:18px 0;}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px;}
+  .card .k{color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:1px;font-weight:700;white-space:nowrap;}
+  .card .v{font-family:'Share Tech Mono',monospace;font-size:22px;margin-top:5px;color:var(--text);}
+  .card .sub{font-size:11px;color:var(--muted-2);margin-top:3px;}
 
   .panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:20px;margin-bottom:16px;}
   .panel h2{font-size:14px;margin:0 0 14px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);font-weight:700;}
@@ -131,7 +135,7 @@
   @media(max-width:640px){
     .hero{grid-template-columns:1fr;}
     .hero-right{align-items:flex-start;}
-    .cards-row{grid-template-columns:1fr;}
+    .cards-row{grid-template-columns:repeat(2,1fr);}
     .lcd-display{font-size:48px;}
     .hist-row{grid-template-columns:70px 1fr 70px 50px;font-size:12.5px;}
   }
@@ -142,10 +146,13 @@
 
   <div class="topbar">
     <div class="brand"><span class="dot"></span><h1>peso.</h1></div>
-    <div class="tabs">
-      <button class="tab-btn active" data-tab="dashboard">Dashboard</button>
-      <button class="tab-btn" data-tab="canetas">Canetas</button>
-      <button class="tab-btn" data-tab="settings">Meta</button>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <button id="btnForceRefresh" class="refresh-btn" title="Forçar atualização (ignora cache)">↻</button>
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="dashboard">Dashboard</button>
+        <button class="tab-btn" data-tab="canetas">Canetas</button>
+        <button class="tab-btn" data-tab="settings">Meta</button>
+      </div>
     </div>
   </div>
 
@@ -175,6 +182,7 @@
       <div class="card"><div class="k">Média mensal</div><div class="v" id="avgMonth">--.-</div><div class="sub" id="avgMonthSub">últimos 30 dias</div></div>
       <div class="card"><div class="k">Média anual</div><div class="v" id="avgYear">--.-</div><div class="sub" id="avgYearSub">últimos 365 dias</div></div>
       <div class="card" id="toGoalCard" hidden><div class="k">Faltam pra meta</div><div class="v" id="toGoalValue">--.-</div><div class="sub" id="toGoalSub"></div></div>
+      <div class="card" id="totalLostCard" hidden><div class="k">Desde o início</div><div class="v" id="totalLostValue">--.-</div><div class="sub" id="totalLostSub"></div></div>
     </div>
 
     <div class="panel">
@@ -344,6 +352,16 @@ let canetas = {};   // id -> {brand, dose, start, end, effects[], note, photo}
 let settings = {};  // {goal, height}
 let chart;
 
+document.getElementById('btnForceRefresh').addEventListener('click', async ()=>{
+  const btn = document.getElementById('btnForceRefresh');
+  btn.classList.add('spinning');
+  try{
+    if(window.caches){ const keys = await caches.keys(); await Promise.all(keys.map(k=>caches.delete(k))); }
+    if(navigator.serviceWorker){ const regs = await navigator.serviceWorker.getRegistrations(); await Promise.all(regs.map(r=>r.unregister())); }
+  }catch(e){}
+  location.href = location.pathname + '?v=' + Date.now();
+});
+
 /* ====== TABS ====== */
 document.querySelectorAll('.tab-btn').forEach(b=>{
   b.addEventListener('click', ()=>{
@@ -392,9 +410,18 @@ function daysBetween(a,b){ return Math.round((new Date(b) - new Date(a)) / 86400
 function renderHero(list){
   const heroEl = document.getElementById('heroWeight');
   const deltaEl = document.getElementById('heroDelta');
-  if(!list.length){ heroEl.innerHTML = '--.-<span class="unit">kg</span>'; deltaEl.innerHTML=''; document.getElementById('streakNum').textContent='0'; return; }
+  if(!list.length){ heroEl.innerHTML = '--.-<span class="unit">kg</span>'; deltaEl.innerHTML=''; document.getElementById('streakNum').textContent='0'; document.getElementById('totalLostCard').hidden = true; return; }
   const last = list[list.length-1];
   heroEl.innerHTML = `${last.weight.toFixed(1)}<span class="unit">kg</span>`;
+
+  const totalCard = document.getElementById('totalLostCard');
+  if(list.length > 1){
+    const first = list[0];
+    const totalDiff = first.weight - last.weight;
+    totalCard.hidden = false;
+    document.getElementById('totalLostValue').textContent = Math.abs(totalDiff).toFixed(1);
+    document.getElementById('totalLostSub').textContent = (totalDiff >= 0 ? 'kg perdidos' : 'kg ganhos') + ' desde ' + new Date(first.date+'T00:00').toLocaleDateString('pt-BR');
+  } else { totalCard.hidden = true; }
 
   if(list.length > 1){
     const prev = list[list.length-2];
