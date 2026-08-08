@@ -321,11 +321,20 @@ function todayISO(){
   return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 }
 
+function eventStartMs(e){
+  const timePart = e.horaInicio ? e.horaInicio+':00' : '00:00:00';
+  return new Date(e.dataInicio+'T'+timePart).getTime();
+}
+
+function eventEndMs(e){
+  return new Date((e.dataFim||e.dataInicio)+'T23:59:59').getTime();
+}
+
 function statusOf(e){
-  const t = todayISO();
   if(e.cancelado) return 'cancelado';
-  if(e.dataFim < t) return 'concluido';
-  if(e.dataInicio <= t && t <= e.dataFim) return 'andamento';
+  const now = Date.now();
+  if(now > eventEndMs(e)) return 'concluido';
+  if(now >= eventStartMs(e)) return 'andamento';
   return 'previsto';
 }
 
