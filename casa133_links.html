@@ -192,6 +192,15 @@
     color: #8b8878;
     text-transform: uppercase;
   }
+  #forceRefresh{
+    background:none; border:none; cursor:pointer;
+    color: #8b8878; opacity: 0.45;
+    font-size: 13px; margin-left: 8px;
+    vertical-align: middle;
+    transition: opacity .15s ease, transform .4s ease;
+  }
+  #forceRefresh:hover{ opacity: 0.9; }
+  #forceRefresh.spinning{ transform: rotate(360deg); }
 
   .overlay{
     display:none; position:fixed; inset:0; background: rgba(10,12,15,0.6);
@@ -243,7 +252,9 @@
     <div class="grid" id="grid"></div>
     <div class="sync-note" id="syncNote">Sincronizando…</div>
 
-    <footer>Casa 133 · alterações ficam salvas e visíveis para todos</footer>
+    <footer>Casa 133 · alterações ficam salvas e visíveis para todos
+      <button id="forceRefresh" title="Forçar atualização (limpar cache)" aria-label="Forçar atualização">⟳</button>
+    </footer>
   </div>
 
   <div class="overlay" id="overlay">
@@ -262,7 +273,7 @@
 
 <script>
   // Reaproveita o Firebase Realtime Database já usado nos outros apps da casa (via REST, sem SDK)
-  const DB_URL = 'https://casa133-andrey-default-rtdb.firebaseio.com/casa133_apps.json';
+  const DB_URL = 'https://medicos-andrey-default-rtdb.firebaseio.com/casa133_apps.json';
 
   const defaultApps = [
     {
@@ -282,6 +293,12 @@
       desc: "Punch list de manutenção da casa: serviços, prioridade, preço estimado e histórico.",
       icon: "🛠️",
       url: "https://djpartyman2015-ui.github.io/Links-Ativos/manutencao133.html"
+    },
+    {
+      title: "Agenda 133",
+      desc: "Agenda compartilhada da casa: eventos previstos e histórico.",
+      icon: "📅",
+      url: "https://djpartyman2015-ui.github.io/Links-Ativos/agenda.html"
     }
   ];
 
@@ -296,7 +313,7 @@
 
   async function fetchApps(){
     try{
-      const res = await fetch(DB_URL);
+      const res = await fetch(DB_URL, { cache: 'no-store' });
       const data = await res.json();
       if(Array.isArray(data) && data.length) return data;
       if(data && typeof data === 'object'){
@@ -377,6 +394,17 @@
       grid.appendChild(card);
     });
   }
+
+  document.getElementById('forceRefresh').addEventListener('click', async (e) => {
+    e.currentTarget.classList.add('spinning');
+    try{
+      if('caches' in window){
+        const keys = await caches.keys();
+        await Promise.all(keys.map(k => caches.delete(k)));
+      }
+    }catch(err){ console.error(err); }
+    window.location.href = window.location.pathname + '?v=' + Date.now();
+  });
 
   async function init(){
     addBtn.disabled = true;
