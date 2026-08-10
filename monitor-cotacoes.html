@@ -189,6 +189,36 @@
 
   </div>
 
+  <!-- Calculadoras DOP -->
+  <div class="section-title" style="display:flex;align-items:center;gap:8px;">🇩🇴 Peso Dominicano (temporário) <span style="font-size:10px;background:var(--surface2);border:1px solid var(--border2);border-radius:20px;padding:2px 8px;color:var(--text3);font-weight:400;">DOP</span></div>
+  <div class="calc-grid" style="margin-bottom:1.5rem;">
+
+    <!-- USD → DOP -->
+    <div class="calc-card">
+      <div class="calc-card-title"><i class="ti ti-currency-dollar" style="font-size:16px;color:#7C3ABB"></i> USD ↔ DOP</div>
+      <div class="field-label" id="udop-lbl-a">Valor em USD</div>
+      <input class="calc-input" type="number" id="udop-a" placeholder="0.00" min="0" step="0.01" oninput="calcUDOP('a')" />
+      <button class="swap-btn" onclick="swapCalc('udop')"><i class="ti ti-arrows-exchange"></i> Inverter direção</button>
+      <div class="field-label" id="udop-lbl-b">Resultado em DOP</div>
+      <input class="calc-input" type="number" id="udop-b" placeholder="0.00" min="0" step="0.01" oninput="calcUDOP('b')" />
+      <div class="calc-result-box"><div class="calc-result-value" id="udop-result" style="color:#7C3ABB">—</div></div>
+      <div class="calc-rate-note" id="udop-rate">Cotação: carregando...</div>
+    </div>
+
+    <!-- BRL → DOP -->
+    <div class="calc-card">
+      <div class="calc-card-title"><i class="ti ti-currency" style="font-size:16px;color:#0E7490"></i> BRL ↔ DOP</div>
+      <div class="field-label" id="bdop-lbl-a">Valor em BRL</div>
+      <input class="calc-input" type="number" id="bdop-a" placeholder="0.00" min="0" step="0.01" oninput="calcBDOP('a')" />
+      <button class="swap-btn" onclick="swapCalc('bdop')"><i class="ti ti-arrows-exchange"></i> Inverter direção</button>
+      <div class="field-label" id="bdop-lbl-b">Resultado em DOP</div>
+      <input class="calc-input" type="number" id="bdop-b" placeholder="0.00" min="0" step="0.01" oninput="calcBDOP('b')" />
+      <div class="calc-result-box"><div class="calc-result-value" id="bdop-result" style="color:#0E7490">—</div></div>
+      <div class="calc-rate-note" id="bdop-rate">Cotação: carregando...</div>
+    </div>
+
+  </div>
+
   <!-- Gráfico -->
   <div class="section-title">Evolução — últimos 15 dias</div>
   <div class="chart-card">
@@ -215,8 +245,8 @@
 <script>
 let chartInstance = null;
 let allData = { USD: null, EUR: null, BTC: null };
-let rates = { usd: null, eur: null, btc: null };
-let swapped = { usd: false, eur: false, btc: false };
+let rates = { usd: null, eur: null, btc: null, udop: null, bdop: null };
+let swapped = { usd: false, eur: false, btc: false, udop: false, bdop: false };
 let currentTab = 'USD';
 
 const CHART_COLORS = {
@@ -307,13 +337,57 @@ function calcBTC(from) {
   }
 }
 
+function fmtDOP(v) {
+  return 'RD$ ' + parseFloat(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function calcUDOP(from) {
+  if (!rates.udop) return;
+  const s = swapped.udop;
+  const a = document.getElementById('udop-a');
+  const b = document.getElementById('udop-b');
+  const res = document.getElementById('udop-result');
+  if (from === 'a') {
+    const v = parseFloat(a.value);
+    if (isNaN(v) || a.value === '') { res.textContent = '—'; return; }
+    const r = s ? v / rates.udop : v * rates.udop;
+    res.textContent = s ? v.toFixed(2) + ' USD' : fmtDOP(r);
+  } else {
+    const v = parseFloat(b.value);
+    if (isNaN(v) || b.value === '') { res.textContent = '—'; return; }
+    const r = s ? v * rates.udop : v / rates.udop;
+    res.textContent = s ? fmtDOP(r) : r.toFixed(2) + ' USD';
+  }
+}
+
+function calcBDOP(from) {
+  if (!rates.bdop) return;
+  const s = swapped.bdop;
+  const a = document.getElementById('bdop-a');
+  const b = document.getElementById('bdop-b');
+  const res = document.getElementById('bdop-result');
+  if (from === 'a') {
+    const v = parseFloat(a.value);
+    if (isNaN(v) || a.value === '') { res.textContent = '—'; return; }
+    const r = s ? v / rates.bdop : v * rates.bdop;
+    res.textContent = s ? fmtBRL(r) : fmtDOP(r);
+  } else {
+    const v = parseFloat(b.value);
+    if (isNaN(v) || b.value === '') { res.textContent = '—'; return; }
+    const r = s ? v * rates.bdop : v / rates.bdop;
+    res.textContent = s ? fmtDOP(r) : fmtBRL(r);
+  }
+}
+
 function swapCalc(cur) {
   swapped[cur] = !swapped[cur];
   const s = swapped[cur];
   const map = {
-    usd: { a: ['Valor em USD', 'Valor em BRL'], b: ['Resultado em BRL', 'Resultado em USD'] },
-    eur: { a: ['Valor em EUR', 'Valor em BRL'], b: ['Resultado em BRL', 'Resultado em EUR'] },
-    btc: { a: ['Valor em BTC', 'Valor em BRL'], b: ['Resultado em BRL', 'Resultado em BTC'] }
+    usd:  { a: ['Valor em USD',  'Valor em BRL'], b: ['Resultado em BRL', 'Resultado em USD'] },
+    eur:  { a: ['Valor em EUR',  'Valor em BRL'], b: ['Resultado em BRL', 'Resultado em EUR'] },
+    btc:  { a: ['Valor em BTC',  'Valor em BRL'], b: ['Resultado em BRL', 'Resultado em BTC'] },
+    udop: { a: ['Valor em USD',  'Valor em DOP'], b: ['Resultado em DOP', 'Resultado em USD'] },
+    bdop: { a: ['Valor em BRL',  'Valor em DOP'], b: ['Resultado em DOP', 'Resultado em BRL'] }
   };
   document.getElementById(cur + '-lbl-a').textContent = map[cur].a[s ? 1 : 0];
   document.getElementById(cur + '-lbl-b').textContent = map[cur].b[s ? 1 : 0];
