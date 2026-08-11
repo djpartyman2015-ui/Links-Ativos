@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Farmacinha · Relatório de uso</title>
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<meta name="theme-color" content="#1F3D3B">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#F4F7F5; --paper:#FFFFFF; --ink:#182420; --ink-soft:#5B6B65;
+  --pine:#1F3D3B; --pine-deep:#122624; --sage:#6B8F87; --sage-pale:#DCEAE5;
+  --amber:#E2870F; --amber-pale:#FBEBD3; --danger:#C0392B; --danger-pale:#FBE1DD;
+  --ok:#3C8562; --line:#DDE5E1; --radius:14px;
+  --shadow:0 1px 2px rgba(18,38,36,.06), 0 6px 20px -8px rgba(18,38,36,.12);
+}
+*{box-sizing:border-box;}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans',sans-serif;-webkit-font-smoothing:antialiased;}
+h1,h2,h3,.display{font-family:'Fraunces',serif;}
+.mono{font-family:'IBM Plex Mono',monospace;}
+a{color:inherit;text-decoration:none;}
+button,select,input{font-family:inherit;}
+
+header{
+  background:var(--pine); color:#fff; padding:18px 24px; padding-top:max(18px, env(safe-area-inset-top));
+  display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
+  position:sticky; top:0; z-index:20; box-shadow:var(--shadow);
+}
+.brand{display:flex; align-items:center; gap:12px;}
+.brand-mark{width:38px;height:38px;border-radius:10px;background:var(--amber);display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:inset 0 -3px 0 rgba(0,0,0,.15);}
+.brand h1{margin:0;font-size:22px;font-weight:600;}
+.brand small{display:block;font-size:11px;color:#BFD4CF;letter-spacing:.08em;text-transform:uppercase;font-family:'IBM Plex Mono',monospace;}
+.back-link{background:rgba(255,255,255,.10);border:none;color:#DCEAE5;padding:9px 16px;border-radius:999px;font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:6px;}
+.back-link:hover{background:rgba(255,255,255,.2);}
+
+main{max-width:1180px;margin:0 auto;padding:24px;}
+
+.filters{background:var(--paper);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px;display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;margin-bottom:20px;}
+.field{display:flex;flex-direction:column;gap:5px;}
+.field label{font-size:11.5px;font-weight:600;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.03em;}
+.field input,.field select{padding:9px 11px;border:1px solid var(--line);border-radius:8px;font-size:14px;background:#fcfdfd;min-width:150px;}
+.btn{border:none;border-radius:8px;padding:10px 18px;font-weight:600;font-size:13.5px;cursor:pointer;}
+.btn-primary{background:var(--pine);color:#fff;}
+.btn-primary:hover{background:var(--pine-deep);}
+.btn-ghost{background:var(--paper);color:var(--pine);border:1px solid var(--line);}
+.btn-ghost:hover{background:var(--sage-pale);}
+
+.summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:20px;}
+.sum-card{background:var(--paper);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow);border-left:5px solid var(--sage);}
+.sum-card .num{font-family:'Fraunces',serif;font-size:28px;font-weight:600;line-height:1;}
+.sum-card .lbl{font-size:12px;color:var(--ink-soft);margin-top:4px;}
+
+.panel{background:var(--paper);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px;margin-bottom:20px;}
+.panel h2{margin:0 0 14px;font-size:17px;font-weight:600;}
+.chart-wrap{position:relative;height:260px;}
+
+table{width:100%;border-collapse:collapse;font-size:13.5px;}
+th{text-align:left;padding:9px 10px;border-bottom:2px solid var(--line);color:var(--ink-soft);font-size:11.5px;text-transform:uppercase;letter-spacing:.03em;font-weight:600;}
+td{padding:9px 10px;border-bottom:1px dashed var(--line);}
+tr:hover td{background:var(--sage-pale);}
+.pill{display:inline-block;padding:2px 9px;border-radius:999px;background:var(--sage-pale);color:var(--pine-deep);font-size:11.5px;font-weight:600;}
+.empty{text-align:center;padding:50px 20px;color:var(--ink-soft);}
+.loading{text-align:center;padding:50px;color:var(--ink-soft);}
+.table-wrap{max-height:520px;overflow-y:auto;}
+@media(max-width:600px){ .field input,.field select{min-width:120px;} }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="brand-mark">📊</div>
+    <div>
+      <h1>Relatório de uso</h1>
+      <small>Farmacinha · consumo por dia e pessoa</small>
+    </div>
+  </div>
+  <a class="back-link" href="farmacinha.html">← Voltar à Farmacinha</a>
+</header>
+
+<main>
+  <div class="filters">
+    <div class="field">
+      <label>De</label>
+      <input type="date" id="f_de">
+    </div>
+    <div class="field">
+      <label>Até</label>
+      <input type="date" id="f_ate">
+    </div>
+    <div class="field">
+      <label>Pessoa</label>
+      <select id="f_pessoa"><option value="">Todas</option></select>
+    </div>
+    <div class="field">
+      <label>Medicamento</label>
+      <select id="f_medicamento"><option value="">Todos</option></select>
+    </div>
+    <button class="btn btn-primary" onclick="aplicarFiltros()">Filtrar</button>
+    <button class="btn btn-ghost" onclick="limparFiltros()">Limpar</button>
+  </div>
+
+  <div class="summary" id="summary"></div>
+
+  <div class="panel">
+    <h2>Consumo por dia</h2>
+    <div class="chart-wrap"><canvas id="chartDia"></canvas></div>
+  </div>
+
+  <div class="panel">
+    <h2>Consumo por pessoa</h2>
+    <div class="chart-wrap" style="height:220px;"><canvas id="chartPessoa"></canvas></div>
+  </div>
+
+  <div class="panel">
+    <h2>Registros de uso</h2>
+    <div id="tableWrap"><div class="loading">Carregando…</div></div>
+  </div>
+</main>
+
+<script>
+const FIREBASE_URL = "https://medicos-andrey-default-rtdb.firebaseio.com";
+const BASE = FIREBASE_URL + "/farmacinha";
+
+let medicamentos = {};
+let usos = [];
+let chartDia, chartPessoa;
+
+async function fbGet(path){
+  const r = await fetch(`${BASE}/${path}.json?_=${Date.now()}`);
+  if(!r.ok) throw new Error('HTTP '+r.status);
+  return r.json();
+}
+function fmtData(dataStr){
+  if(!dataStr) return '—';
+  const [y,m,d] = dataStr.split('-');
+  return `${d}/${m}/${y}`;
+}
+function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+async function carregar(){
+  try{
+    const [m, u] = await Promise.all([fbGet('medicamentos'), fbGet('usos')]);
+    medicamentos = m || {};
+    usos = Object.entries(u || {}).map(([id, v]) => ({
+      id, ...v,
+      medicamentoNome: (medicamentos[v.medicamentoId]?.nome) || '(medicamento removido)',
+      unidade: (medicamentos[v.medicamentoId]?.unidade) || ''
+    }));
+  }catch(e){
+    document.getElementById('tableWrap').innerHTML = `<div class="empty">Não foi possível carregar: ${escapeHtml(e.message)}</div>`;
+    return;
+  }
+  popularFiltros();
+  render(usos);
+}
+
+function popularFiltros(){
+  const pessoas = [...new Set(usos.map(u=>u.pessoa).filter(Boolean))].sort();
+  const meds = [...new Set(usos.map(u=>u.medicamentoNome).filter(Boolean))].sort();
+  document.getElementById('f_pessoa').innerHTML = '<option value="">Todas</option>' + pessoas.map(p=>`<option>${escapeHtml(p)}</option>`).join('');
+  document.getElementById('f_medicamento').innerHTML = '<option value="">Todos</option>' + meds.map(m=>`<option>${escapeHtml(m)}</option>`).join('');
+}
+
+function aplicarFiltros(){
+  const de = document.getElementById('f_de').value;
+  const ate = document.getElementById('f_ate').value;
+  const pessoa = document.getElementById('f_pessoa').value;
+  const med = document.getElementById('f_medicamento').value;
+
+  let filtrado = usos.slice();
+  if(de) filtrado = filtrado.filter(u => u.data >= de);
+  if(ate) filtrado = filtrado.filter(u => u.data <= ate);
+  if(pessoa) filtrado = filtrado.filter(u => u.pessoa === pessoa);
+  if(med) filtrado = filtrado.filter(u => u.medicamentoNome === med);
+
+  render(filtrado);
+}
+function limparFiltros(){
+  document.getElementById('f_de').value = '';
+  document.getElementById('f_ate').value = '';
+  document.getElementById('f_pessoa').value = '';
+  document.getElementById('f_medicamento').value = '';
+  render(usos);
+}
+
+function render(lista){
+  renderSummary(lista);
+  renderChartDia(lista);
+  renderChartPessoa(lista);
+  renderTable(lista);
+}
+
+function renderSummary(lista){
+  const dias = new Set(lista.map(u=>u.data)).size;
+  const pessoas = new Set(lista.map(u=>u.pessoa)).size;
+  const meds = new Set(lista.map(u=>u.medicamentoNome)).size;
+  const totalUnidades = lista.reduce((s,u)=>s+Number(u.qtde||0),0);
+  document.getElementById('summary').innerHTML = `
+    <div class="sum-card"><div class="num">${lista.length}</div><div class="lbl">Registros de uso</div></div>
+    <div class="sum-card"><div class="num">${totalUnidades}</div><div class="lbl">Unidades consumidas</div></div>
+    <div class="sum-card"><div class="num">${dias}</div><div class="lbl">Dias com uso</div></div>
+    <div class="sum-card"><div class="num">${meds}</div><div class="lbl">Medicamentos diferentes</div></div>
+  `;
+}
+
+function renderChartDia(lista){
+  const porDia = {};
+  lista.forEach(u=>{
+    const d = u.data || '—';
+    porDia[d] = (porDia[d]||0) + Number(u.qtde||0);
+  });
+  const dias = Object.keys(porDia).sort();
+  const valores = dias.map(d=>porDia[d]);
+
+  if(chartDia) chartDia.destroy();
+  chartDia = new Chart(document.getElementById('chartDia'), {
+    type: 'bar',
+    data: {
+      labels: dias.map(fmtData),
+      datasets: [{ label: 'Unidades usadas', data: valores, backgroundColor: '#6B8F87', borderRadius: 4 }]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false} },
+      scales:{ y:{ beginAtZero:true, ticks:{ precision:0 } } }
+    }
+  });
+}
+
+function renderChartPessoa(lista){
+  const porPessoa = {};
+  lista.forEach(u=>{
+    const p = u.pessoa || 'Não informado';
+    porPessoa[p] = (porPessoa[p]||0) + Number(u.qtde||0);
+  });
+  const pessoas = Object.keys(porPessoa);
+  const valores = pessoas.map(p=>porPessoa[p]);
+  const cores = ['#1F3D3B','#E2870F','#6B8F87','#C0392B','#8A5A05','#3C8562'];
+
+  if(chartPessoa) chartPessoa.destroy();
+  chartPessoa = new Chart(document.getElementById('chartPessoa'), {
+    type: 'bar',
+    data: {
+      labels: pessoas,
+      datasets: [{ label: 'Unidades usadas', data: valores, backgroundColor: pessoas.map((_,i)=>cores[i%cores.length]), borderRadius: 4 }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false} },
+      scales:{ x:{ beginAtZero:true, ticks:{ precision:0 } } }
+    }
+  });
+}
+
+function renderTable(lista){
+  const wrap = document.getElementById('tableWrap');
+  if(lista.length===0){
+    wrap.innerHTML = '<div class="empty">Nenhum uso registrado nesse filtro.</div>';
+    return;
+  }
+  const ordenado = lista.slice().sort((a,b)=> (b.data||'').localeCompare(a.data||'') || (b.criadoEm||0)-(a.criadoEm||0));
+  wrap.innerHTML = `<div class="table-wrap"><table>
+    <thead><tr><th>Data</th><th>Pessoa</th><th>Medicamento</th><th>Qtde</th></tr></thead>
+    <tbody>
+      ${ordenado.map(u=>`<tr>
+        <td class="mono">${fmtData(u.data)}</td>
+        <td>${escapeHtml(u.pessoa||'—')}</td>
+        <td>${escapeHtml(u.medicamentoNome)}</td>
+        <td><span class="pill">${u.qtde||0} ${escapeHtml(u.unidade||'')}</span></td>
+      </tr>`).join('')}
+    </tbody>
+  </table></div>`;
+}
+
+carregar();
+</script>
+</body>
+</html>
