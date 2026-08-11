@@ -225,7 +225,8 @@
 </div>
 
 <script>
-const DB_URL = "https://casa133-andrey-default-rtdb.firebaseio.com/manutencao133.json";
+const BASE_URL = "https://medicos-andrey-default-rtdb.firebaseio.com/manutencao133";
+const DB_URL = BASE_URL + ".json";
 let items = {};
 let editingId = null;
 
@@ -278,13 +279,25 @@ async function load(initial=false){
   }
 }
 
-async function saveAll(){
+// Grava/edita SOMENTE o item alterado (nunca a lista inteira),
+// para dois editores não sobrescreverem um ao outro.
+async function saveItem(id, obj){
   setSync('busy','salvando...');
   try{
-    await fetch(DB_URL, {method:'PUT', body: JSON.stringify(items)});
+    await fetch(BASE_URL + "/" + id + ".json", {method:'PUT', body: JSON.stringify(obj)});
     setSync('ok','salvo');
   }catch(e){
-    setSync('busy','erro ao salvar');
+    setSync('busy','erro ao salvar — verifique a internet');
+  }
+}
+
+async function deleteItem(id){
+  setSync('busy','excluindo...');
+  try{
+    await fetch(BASE_URL + "/" + id + ".json", {method:'DELETE'});
+    setSync('ok','salvo');
+  }catch(e){
+    setSync('busy','erro ao excluir — verifique a internet');
   }
 }
 
@@ -427,16 +440,17 @@ async function save(){
   items[id] = obj;
   closeModal();
   render();
-  await saveAll();
+  await saveItem(id, obj);
 }
 
 async function del(){
   if(!editingId) return;
   if(!confirm('Excluir este serviço da lista?')) return;
-  delete items[editingId];
+  const id = editingId;
+  delete items[id];
   closeModal();
   render();
-  await saveAll();
+  await deleteItem(id);
 }
 
 document.getElementById('btnAdd').onclick = openAdd;
