@@ -126,6 +126,28 @@
 
   .empty{color:var(--muted-2);font-size:13px;padding:20px 4px;text-align:center;}
 
+  .cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+  .cal-weekdays{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:6px;}
+  .cal-weekdays span{text-align:center;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:700;}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;}
+  .cal-cell{aspect-ratio:1;border-radius:10px;background:var(--surface-2);border:1px solid var(--line);padding:6px;display:flex;flex-direction:column;justify-content:space-between;}
+  .cal-cell.empty-cell{background:transparent;border:none;}
+  .cal-cell.today{border-color:var(--lcd-dim);}
+  .cal-day{font-size:11px;color:var(--muted-2);}
+  .cal-weight{font-family:'Share Tech Mono',monospace;font-size:12.5px;font-weight:700;line-height:1.1;}
+  .cal-weight.down{color:var(--lcd);}
+  .cal-weight.up{color:var(--warn);}
+  .cal-weight.flat{color:var(--text);}
+  .cal-legend{display:flex;gap:18px;margin-top:14px;font-size:11.5px;color:var(--muted);flex-wrap:wrap;}
+  .cal-legend .dot-lcd,.cal-legend .dot-warn{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;}
+  .cal-legend .dot-lcd{background:var(--lcd);}
+  .cal-legend .dot-warn{background:var(--warn);}
+  @media(max-width:640px){
+    .cal-cell{padding:4px;}
+    .cal-day{font-size:10px;}
+    .cal-weight{font-size:10.5px;}
+  }
+
   .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:100;padding:20px;}
   .modal-bg[hidden]{display:none !important;}
   .modal-bg img{max-width:100%;max-height:90vh;border-radius:12px;}
@@ -150,6 +172,7 @@
       <button id="btnForceRefresh" class="refresh-btn" title="Forçar atualização (ignora cache)">↻</button>
       <div class="tabs">
         <button class="tab-btn active" data-tab="dashboard">Dashboard</button>
+        <button class="tab-btn" data-tab="calendar">Calendário</button>
         <button class="tab-btn" data-tab="canetas">Canetas</button>
         <button class="tab-btn" data-tab="settings">Meta</button>
       </div>
@@ -210,6 +233,25 @@
       <div id="historyList"></div>
     </div>
 
+  </section>
+
+  <!-- CALENDAR -->
+  <section id="calendar-tab" hidden>
+    <div class="panel">
+      <div class="cal-nav">
+        <button class="btn secondary" id="calPrev">‹</button>
+        <h2 id="calLabel" style="margin:0;">—</h2>
+        <button class="btn secondary" id="calNext">›</button>
+      </div>
+      <div class="cal-weekdays">
+        <span>Dom</span><span>Seg</span><span>Ter</span><span>Qua</span><span>Qui</span><span>Sex</span><span>Sáb</span>
+      </div>
+      <div class="cal-grid" id="calGrid"></div>
+      <div class="cal-legend">
+        <span><i class="dot-lcd"></i> perdeu vs. registro anterior</span>
+        <span><i class="dot-warn"></i> ganhou vs. registro anterior</span>
+      </div>
+    </div>
   </section>
 
   <!-- CANETAS -->
@@ -367,9 +409,10 @@ document.querySelectorAll('.tab-btn').forEach(b=>{
   b.addEventListener('click', ()=>{
     document.querySelectorAll('.tab-btn').forEach(x=>x.classList.remove('active'));
     b.classList.add('active');
-    ['dashboard','canetas','settings'].forEach(t=>{
+    ['dashboard','calendar','canetas','settings'].forEach(t=>{
       document.getElementById(t+'-tab').hidden = (t !== b.dataset.tab);
     });
+    if(b.dataset.tab === 'calendar') renderCalendar();
   });
 });
 
@@ -790,6 +833,47 @@ document.getElementById('btnSaveEditCaneta').addEventListener('click', async ()=
   closeEditCaneta();
   render();
 });
+
+/* ====== CALENDAR ====== */
+let calViewDate = new Date();
+document.getElementById('calPrev').addEventListener('click', ()=>{ calViewDate.setMonth(calViewDate.getMonth()-1); renderCalendar(); });
+document.getElementById('calNext').addEventListener('click', ()=>{ calViewDate.setMonth(calViewDate.getMonth()+1); renderCalendar(); });
+
+function renderCalendar(){
+  const list = sortedEntries();
+  const byDate = {};
+  list.forEach((e,i)=>{ byDate[e.date] = {weight:e.weight, prev: i>0 ? list[i-1].weight : null}; });
+
+  const year = calViewDate.getFullYear();
+  const month = calViewDate.getMonth();
+  const monthNames = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  document.getElementById('calLabel').textContent = `${monthNames[month]} ${year}`;
+
+  const firstDay = new Date(year, month, 1);
+  const startWeekday = firstDay.getDay();
+  const daysInMonth = new Date(year, month+1, 0).getDate();
+  const todayStr = new Date().toISOString().slice(0,10);
+
+  const grid = document.getElementById('calGrid');
+  let html = '';
+  for(let i=0;i<startWeekday;i++){ html += '<div class="cal-cell empty-cell"></div>'; }
+  for(let d=1; d<=daysInMonth; d++){
+    const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const entry = byDate[dateStr];
+    const isToday = dateStr === todayStr;
+    let weightHtml = '';
+    if(entry){
+      let cls = 'flat';
+      if(entry.prev != null){
+        if(entry.weight < entry.prev - 0.05) cls = 'down';
+        else if(entry.weight > entry.prev + 0.05) cls = 'up';
+      }
+      weightHtml = `<div class="cal-weight ${cls}">${entry.weight.toFixed(1)}</div>`;
+    }
+    html += `<div class="cal-cell ${isToday?'today':''}"><div class="cal-day">${d}</div>${weightHtml}</div>`;
+  }
+  grid.innerHTML = html;
+}
 
 loadAll();
 </script>
