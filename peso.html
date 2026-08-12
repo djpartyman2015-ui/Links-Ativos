@@ -126,6 +126,11 @@
 
   .empty{color:var(--muted-2);font-size:13px;padding:20px 4px;text-align:center;}
 
+  .goal-row{display:flex;align-items:center;justify-content:space-between;padding:10px 4px;border-bottom:1px solid var(--line);}
+  .goal-row:last-child{border-bottom:none;}
+  .goal-row .gname{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:700;}
+  .goal-row .gval{font-family:'Share Tech Mono',monospace;font-size:18px;color:var(--lcd);margin-left:10px;}
+
   .cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
   .cal-weekdays{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:6px;}
   .cal-weekdays span{text-align:center;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:700;}
@@ -303,12 +308,19 @@
   <!-- SETTINGS -->
   <section id="settings-tab" hidden>
     <div class="panel">
-      <h2>Meta de peso</h2>
+      <h2>Metas de peso</h2>
+      <div id="goalsList" style="margin-bottom:14px;"></div>
       <div class="form-row">
-        <div class="field"><label>Peso alvo (kg)</label><input type="number" step="0.1" id="sGoal" placeholder="75.0"></div>
+        <div class="field"><label>Nova meta — peso (kg)</label><input type="number" step="0.1" id="sNewGoal" placeholder="75.0"></div>
+      </div>
+      <div style="margin-top:12px;"><button class="btn" id="btnAddGoal">Adicionar meta</button></div>
+    </div>
+    <div class="panel">
+      <h2>Altura</h2>
+      <div class="form-row">
         <div class="field"><label>Altura (cm, opcional — habilita IMC)</label><input type="number" id="sHeight" placeholder="175"></div>
       </div>
-      <div style="margin-top:12px;"><button class="btn" id="btnSaveSettings">Salvar meta</button></div>
+      <div style="margin-top:12px;"><button class="btn secondary" id="btnSaveHeight">Salvar altura</button></div>
     </div>
   </section>
 
@@ -420,14 +432,26 @@ document.querySelectorAll('.tab-btn').forEach(b=>{
 document.getElementById('inDate').valueAsDate = new Date();
 document.getElementById('cStart').valueAsDate = new Date();
 
+let goals = {}; // id -> {weight}
+
 async function loadAll(){
-  const [e, c, s] = await Promise.all([fbGet('entries'), fbGet('canetas'), fbGet('settings')]);
+  const [e, c, s, g] = await Promise.all([fbGet('entries'), fbGet('canetas'), fbGet('settings'), fbGet('goals')]);
   entries = e || {};
   canetas = c || {};
   settings = s || {};
-  document.getElementById('sGoal').value = settings.goal || '';
+  goals = g || {};
   document.getElementById('sHeight').value = settings.height || '';
+
+  // migrate legacy single "settings.goal" into the new goals list, once
+  if(settings.goal && Object.keys(goals).length === 0){
+    const res = await fbPush('goals', {weight: settings.goal});
+    goals[res.name] = {weight: settings.goal};
+  }
   render();
+}
+
+function sortedGoals(){
+  return Object.entries(goals).map(([id,v])=>({id,...v}));
 }
 
 function sortedEntries(){
@@ -446,6 +470,7 @@ function render(){
   renderInsights(list);
   renderHistory(list);
   renderCanetas();
+  renderGoalsList();
 }
 
 function daysBetween(a,b){ return Math.round((new Date(b) - new Date(a)) / 86400000); }
@@ -481,31 +506,39 @@ function renderHero(list){
   }
   document.getElementById('streakNum').textContent = streak;
 
-  // goal bar
+  // goal bar — uses the nearest goal not yet reached
   const goalWrap = document.getElementById('goalWrap');
-  if(settings.goal){
+  const gList = sortedGoals();
+  const cur = last.weight;
+  let primary = null;
+  if(gList.length){
+    const unmet = gList.filter(g => Math.abs(cur - g.weight) >= 0.05);
+    const pool = unmet.length ? unmet : gList;
+    primary = pool.reduce((best,g) => Math.abs(cur-g.weight) < Math.abs(cur-best.weight) ? g : best, pool[0]);
+    primary.label = 'Meta ' + (gList.findIndex(g=>g.id===primary.id) + 1);
+  }
+  if(primary){
     goalWrap.hidden = false;
     const start = list[0].weight;
-    const cur = last.weight;
-    const target = settings.goal;
+    const target = primary.weight;
     let pct = 0;
     if(start !== target){ pct = Math.min(100, Math.max(0, ((start - cur) / (start - target)) * 100)); }
     document.getElementById('goalFill').style.width = pct.toFixed(0)+'%';
     document.getElementById('goalCur').textContent = cur.toFixed(1)+'kg';
-    document.getElementById('goalTarget').textContent = 'meta '+target.toFixed(1)+'kg';
+    document.getElementById('goalTarget').textContent = primary.label+' · '+target.toFixed(1)+'kg';
 
     const toGoalCard = document.getElementById('toGoalCard');
     toGoalCard.hidden = false;
     const remaining = cur - target;
     if(Math.abs(remaining) < 0.05){
       document.getElementById('toGoalValue').textContent = '🎯';
-      document.getElementById('toGoalSub').textContent = 'meta batida!';
+      document.getElementById('toGoalSub').textContent = primary.label+' batida!';
     } else if(remaining > 0){
       document.getElementById('toGoalValue').textContent = remaining.toFixed(1);
-      document.getElementById('toGoalSub').textContent = 'kg pra perder';
+      document.getElementById('toGoalSub').textContent = 'kg pra '+primary.label;
     } else {
       document.getElementById('toGoalValue').textContent = Math.abs(remaining).toFixed(1);
-      document.getElementById('toGoalSub').textContent = 'kg abaixo da meta';
+      document.getElementById('toGoalSub').textContent = 'kg abaixo de '+primary.label;
     }
   } else { goalWrap.hidden = true; document.getElementById('toGoalCard').hidden = true; }
 }
@@ -533,9 +566,9 @@ function renderChart(list){
   const data = list.map(e=>e.weight);
 
   const annotations = {};
-  if(settings.goal){
-    annotations.goalLine = {type:'line', yMin:settings.goal, yMax:settings.goal, borderColor:'#6FFFB0', borderWidth:1.5, borderDash:[6,4], label:{content:'meta', display:true, position:'end', color:'#6FFFB0', font:{size:10}, backgroundColor:'transparent'}};
-  }
+  sortedGoals().forEach((g,i)=>{
+    annotations['goal'+i] = {type:'line', yMin:g.weight, yMax:g.weight, borderColor:'#6FFFB0', borderWidth:1.5, borderDash:[6,4], label:{content:`Meta ${i+1}: ${g.weight.toFixed(1)}kg`, display:true, position:'end', color:'#6FFFB0', font:{size:10}, backgroundColor:'rgba(11,15,14,0.85)', padding:4}};
+  });
   sortedCanetas().forEach((c,i)=>{
     if(!c.start) return;
     const end = c.end || (new Date().toISOString().slice(0,10));
@@ -591,18 +624,23 @@ function renderInsights(list){
     items.push({warn:false, html:`Peso <b>estável</b> nas últimas semanas (variação inferior a 0.05kg/semana).`});
   }
 
-  // goal projection
-  if(settings.goal){
+  // goal projection — nearest unmet goal
+  const gListInsight = sortedGoals();
+  if(gListInsight.length){
     const cur = list[list.length-1].weight;
-    const remaining = cur - settings.goal;
+    const unmet = gListInsight.filter(g => Math.abs(cur - g.weight) >= 0.1);
+    const pool = unmet.length ? unmet : gListInsight;
+    const g = pool.reduce((best,x) => Math.abs(cur-x.weight) < Math.abs(cur-best.weight) ? x : best, pool[0]);
+    const label = 'Meta ' + (gListInsight.findIndex(x=>x.id===g.id) + 1);
+    const remaining = cur - g.weight;
     if(Math.abs(remaining) < 0.1){
-      items.push({warn:false, html:`Você está <b>na meta</b> (${settings.goal.toFixed(1)}kg) 🎯`});
+      items.push({warn:false, html:`Você está na <b>${label}</b> (${g.weight.toFixed(1)}kg) 🎯`});
     } else if(weeklyRate < -0.02 && remaining > 0){
       const weeks = Math.ceil(remaining / Math.abs(weeklyRate));
       const eta = new Date(lastDate); eta.setDate(eta.getDate() + weeks*7);
-      items.push({warn:false, html:`No ritmo atual, a meta de <b>${settings.goal.toFixed(1)}kg</b> pode ser atingida em <b>~${weeks} semanas</b> (por volta de ${eta.toLocaleDateString('pt-BR')}).`});
+      items.push({warn:false, html:`No ritmo atual, a <b>${label}</b> (${g.weight.toFixed(1)}kg) pode ser atingida em <b>~${weeks} semanas</b> (por volta de ${eta.toLocaleDateString('pt-BR')}).`});
     } else if(remaining > 0){
-      items.push({warn:true, html:`Faltam <b>${remaining.toFixed(1)}kg</b> para a meta, mas a tendência atual não indica progresso nessa direção.`});
+      items.push({warn:true, html:`Faltam <b>${remaining.toFixed(1)}kg</b> para a <b>${label}</b>, mas a tendência atual não indica progresso nessa direção.`});
     }
   }
 
@@ -756,13 +794,38 @@ async function deleteCaneta(id){
 }
 
 /* ====== SETTINGS ====== */
-document.getElementById('btnSaveSettings').addEventListener('click', async ()=>{
-  const goal = parseFloat(document.getElementById('sGoal').value) || null;
-  const height = parseFloat(document.getElementById('sHeight').value) || null;
-  settings = {goal, height};
-  await fbSet('settings', settings);
+function renderGoalsList(){
+  const el = document.getElementById('goalsList');
+  const list = sortedGoals();
+  if(!list.length){ el.innerHTML = '<div class="empty">Nenhuma meta cadastrada ainda.</div>'; return; }
+  el.innerHTML = list.map((g,i)=>`
+    <div class="goal-row">
+      <div><span class="gname">Meta ${i+1}</span><span class="gval">${g.weight.toFixed(1)}kg</span></div>
+      <button class="icon-btn" onclick="deleteGoal('${g.id}')" title="excluir">✕</button>
+    </div>`).join('');
+}
+
+document.getElementById('btnAddGoal').addEventListener('click', async ()=>{
+  const weight = parseFloat(document.getElementById('sNewGoal').value);
+  if(!weight){ alert('Informe o peso da meta.'); return; }
+  const res = await fbPush('goals', {weight});
+  goals[res.name] = {weight};
+  document.getElementById('sNewGoal').value = '';
   render();
-  alert('Meta salva.');
+});
+
+async function deleteGoal(id){
+  if(!confirm('Excluir esta meta?')) return;
+  await fbDelete('goals/'+id);
+  delete goals[id];
+  render();
+}
+
+document.getElementById('btnSaveHeight').addEventListener('click', async ()=>{
+  const height = parseFloat(document.getElementById('sHeight').value) || null;
+  settings = {...settings, height};
+  await fbSet('settings', settings);
+  alert('Altura salva.');
 });
 
 /* ====== EDIT ENTRY ====== */
