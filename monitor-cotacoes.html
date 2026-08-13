@@ -509,11 +509,27 @@ async function loadBTC() {
   };
 }
 
+async function loadDOP() {
+  // AwesomeAPI suporta CORS e tem USD-DOP
+  const [r1, r2] = await Promise.all([
+    fetch('https://economia.awesomeapi.com.br/json/last/USD-DOP'),
+    fetch('https://economia.awesomeapi.com.br/json/last/BRL-DOP')
+  ]);
+  const d1 = await r1.json();
+  const d2 = await r2.json();
+
+  rates.udop = parseFloat(d1.USDDOP.bid);
+  rates.bdop = parseFloat(d2.BRLDOP.bid);
+
+  document.getElementById('udop-rate').textContent = '1 USD = ' + fmtDOP(rates.udop);
+  document.getElementById('bdop-rate').textContent = '1 BRL = ' + fmtDOP(rates.bdop);
+}
+
 async function loadAll() {
   document.getElementById('dot').className = 'dot loading';
   document.getElementById('update-text').textContent = 'Atualizando...';
   try {
-    await Promise.all([loadFX(), loadBTC()]);
+    await Promise.all([loadFX(), loadBTC(), loadDOP()]);
     renderChart(currentTab);
     updateTimestamp();
   } catch (e) {
