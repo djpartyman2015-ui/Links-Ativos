@@ -9,7 +9,7 @@
 <meta name="theme-color" content="#1F3D3B">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
 :root{
   --bg:#F4F7F5; --paper:#FFFFFF; --ink:#182420; --ink-soft:#5B6B65;
@@ -155,8 +155,13 @@ async function carregar(){
     document.getElementById('tableWrap').innerHTML = `<div class="empty">Não foi possível carregar: ${escapeHtml(e.message)}</div>`;
     return;
   }
-  popularFiltros();
-  render(usos);
+  try{
+    popularFiltros();
+    render(usos);
+  }catch(e){
+    console.error('Erro ao renderizar relatório:', e);
+    document.getElementById('tableWrap').innerHTML = `<div class="empty">Erro ao montar o relatório: ${escapeHtml(e.message)}<br><small>Os dados foram carregados normalmente; o problema é só na exibição.</small></div>`;
+  }
 }
 
 function popularFiltros(){
@@ -209,6 +214,10 @@ function renderSummary(lista){
 }
 
 function renderChartDia(lista){
+  if(typeof Chart === 'undefined'){
+    document.getElementById('chartDia').parentElement.innerHTML = '<div class="empty">Gráfico indisponível (biblioteca não carregou). A tabela abaixo continua funcionando.</div>';
+    return;
+  }
   const porDia = {};
   lista.forEach(u=>{
     const d = u.data || '—';
@@ -233,6 +242,10 @@ function renderChartDia(lista){
 }
 
 function renderChartPessoa(lista){
+  if(typeof Chart === 'undefined'){
+    document.getElementById('chartPessoa').parentElement.innerHTML = '<div class="empty">Gráfico indisponível (biblioteca não carregou).</div>';
+    return;
+  }
   const porPessoa = {};
   lista.forEach(u=>{
     const p = u.pessoa || 'Não informado';
