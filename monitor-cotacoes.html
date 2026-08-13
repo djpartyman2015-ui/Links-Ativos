@@ -510,16 +510,13 @@ async function loadBTC() {
 }
 
 async function loadDOP() {
-  // AwesomeAPI suporta CORS e tem USD-DOP
-  const [r1, r2] = await Promise.all([
-    fetch('https://economia.awesomeapi.com.br/json/last/USD-DOP'),
-    fetch('https://economia.awesomeapi.com.br/json/last/BRL-DOP')
-  ]);
-  const d1 = await r1.json();
-  const d2 = await r2.json();
-
-  rates.udop = parseFloat(d1.USDDOP.bid);
-  rates.bdop = parseFloat(d2.BRLDOP.bid);
+  // frankfurter.app — 100% CORS-free, sem chave
+  const r = await fetch('https://api.frankfurter.app/latest?from=USD&to=DOP,BRL');
+  const data = await r.json();
+  const usdToDop = data.rates['DOP'];
+  const usdToBrl = data.rates['BRL'];
+  rates.udop = usdToDop;
+  rates.bdop = usdToDop / usdToBrl; // 1 BRL = X DOP
 
   document.getElementById('udop-rate').textContent = '1 USD = ' + fmtDOP(rates.udop);
   document.getElementById('bdop-rate').textContent = '1 BRL = ' + fmtDOP(rates.bdop);
