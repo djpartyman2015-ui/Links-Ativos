@@ -298,11 +298,13 @@ const BASE_URL = "https://medicos-andrey-default-rtdb.firebaseio.com/manutencao1
 const DB_URL = BASE_URL + ".json";
 let items = {};
 let editingId = null;
+let ver = 0; // incrementado a cada mudança local, evita que um GET atrasado sobrescreva uma gravação recente
 
 const BASE_URL_REC = "https://medicos-andrey-default-rtdb.firebaseio.com/manutencao133_recorrentes";
 const DB_URL_REC = BASE_URL_REC + ".json";
 let recItems = {};
 let editingRecId = null;
+let recVer = 0; // incrementado a cada mudança local, evita que um GET atrasado sobrescreva uma gravação recente
 
 document.getElementById('tabPunch').onclick = ()=>switchTab('punch');
 document.getElementById('tabRec').onclick = ()=>switchTab('rec');
@@ -345,20 +347,26 @@ function setSync(state, text){
 
 async function load(initial=false){
   setSync('busy','sincronizando...');
+  const myVer = ver;
   try{
     const res = await fetch(DB_URL);
+    if(!res.ok) throw new Error('HTTP '+res.status);
     const data = await res.json();
-    if(!data){
+    if(!data && myVer===0 && Object.keys(items).length===0){
       const obj = {};
       seed.forEach((s,i)=>{ obj['s'+i+'_'+Date.now()] = s; });
-      await fetch(DB_URL, {method:'PUT', body: JSON.stringify(obj)});
+      const putRes = await fetch(DB_URL, {method:'PUT', body: JSON.stringify(obj)});
+      if(!putRes.ok) throw new Error('HTTP '+putRes.status);
       items = obj;
-    } else {
-      items = data;
+      render();
+    } else if(ver===myVer){
+      // só aplica se nenhuma edição local aconteceu enquanto buscávamos (evita apagar item recém-salvo)
+      items = data || items;
+      render();
     }
     setSync('ok','sincronizado agora');
-    render();
   }catch(e){
+    console.error('load() falhou:', e);
     setSync('busy','erro de conexão — tentando de novo');
   }
 }
@@ -367,21 +375,27 @@ async function load(initial=false){
 // para dois editores não sobrescreverem um ao outro.
 async function saveItem(id, obj){
   setSync('busy','salvando...');
+  ver++;
   try{
-    await fetch(BASE_URL + "/" + id + ".json", {method:'PUT', body: JSON.stringify(obj)});
+    const res = await fetch(BASE_URL + "/" + id + ".json", {method:'PUT', body: JSON.stringify(obj)});
+    if(!res.ok) throw new Error('HTTP '+res.status);
     setSync('ok','salvo');
   }catch(e){
-    setSync('busy','erro ao salvar — verifique a internet');
+    console.error('saveItem() falhou:', e);
+    setSync('busy','⚠️ falha ao salvar — tente de novo');
   }
 }
 
 async function deleteItem(id){
   setSync('busy','excluindo...');
+  ver++;
   try{
-    await fetch(BASE_URL + "/" + id + ".json", {method:'DELETE'});
+    const res = await fetch(BASE_URL + "/" + id + ".json", {method:'DELETE'});
+    if(!res.ok) throw new Error('HTTP '+res.status);
     setSync('ok','salvo');
   }catch(e){
-    setSync('busy','erro ao excluir — verifique a internet');
+    console.error('deleteItem() falhou:', e);
+    setSync('busy','⚠️ falha ao excluir — tente de novo');
   }
 }
 
@@ -584,34 +598,46 @@ function setSyncRec(state, text){
 
 async function loadRec(){
   setSyncRec('busy','sincronizando...');
+  const myVer = recVer;
   try{
     const res = await fetch(DB_URL_REC);
+    if(!res.ok) throw new Error('HTTP '+res.status);
     const data = await res.json();
-    recItems = data || {};
+    if(recVer===myVer){
+      // só aplica se nenhuma edição local aconteceu enquanto buscávamos (evita apagar item recém-salvo)
+      recItems = data || {};
+      renderRec();
+    }
     setSyncRec('ok','sincronizado agora');
-    renderRec();
   }catch(e){
+    console.error('loadRec() falhou:', e);
     setSyncRec('busy','erro de conexão — tentando de novo');
   }
 }
 
 async function saveRecItem(id, obj){
   setSyncRec('busy','salvando...');
+  recVer++;
   try{
-    await fetch(BASE_URL_REC + "/" + id + ".json", {method:'PUT', body: JSON.stringify(obj)});
+    const res = await fetch(BASE_URL_REC + "/" + id + ".json", {method:'PUT', body: JSON.stringify(obj)});
+    if(!res.ok) throw new Error('HTTP '+res.status);
     setSyncRec('ok','salvo');
   }catch(e){
-    setSyncRec('busy','erro ao salvar — verifique a internet');
+    console.error('saveRecItem() falhou:', e);
+    setSyncRec('busy','⚠️ falha ao salvar — tente de novo');
   }
 }
 
 async function deleteRecItem(id){
   setSyncRec('busy','excluindo...');
+  recVer++;
   try{
-    await fetch(BASE_URL_REC + "/" + id + ".json", {method:'DELETE'});
+    const res = await fetch(BASE_URL_REC + "/" + id + ".json", {method:'DELETE'});
+    if(!res.ok) throw new Error('HTTP '+res.status);
     setSyncRec('ok','salvo');
   }catch(e){
-    setSyncRec('busy','erro ao excluir — verifique a internet');
+    console.error('deleteRecItem() falhou:', e);
+    setSyncRec('busy','⚠️ falha ao excluir — tente de novo');
   }
 }
 
