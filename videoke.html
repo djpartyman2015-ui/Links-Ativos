@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>Videokê Score — Palco Aberto</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:wght@400;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --void:#0B0714;
+    --velvet:#1B0E36;
+    --velvet-light:#2A1652;
+    --magenta:#FF2E9A;
+    --gold:#FFC857;
+    --cyan:#3EF2C6;
+    --lilac:#E8DEFF;
+    --lilac-dim:#9C8CC4;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; height:100%;}
+  body{
+    background:
+      radial-gradient(ellipse at 20% -10%, rgba(255,46,154,.18), transparent 55%),
+      radial-gradient(ellipse at 90% 10%, rgba(62,242,198,.12), transparent 50%),
+      var(--void);
+    color:var(--lilac);
+    font-family:'Inter',sans-serif;
+    min-height:100%;
+    padding-bottom:60px;
+  }
+  .marquee{
+    overflow:hidden; white-space:nowrap; padding:10px 0;
+    background:linear-gradient(180deg,var(--velvet),rgba(27,14,54,0));
+    border-bottom:1px solid rgba(255,255,255,.06);
+    display:flex; justify-content:center; gap:6px;
+  }
+  .bulb{width:7px;height:7px;border-radius:50%;background:var(--gold);
+    box-shadow:0 0 6px var(--gold); opacity:.25; animation:chase 1.6s infinite;}
+  .bulb:nth-child(3n){background:var(--magenta); box-shadow:0 0 6px var(--magenta);}
+  .bulb:nth-child(3n+1){background:var(--cyan); box-shadow:0 0 6px var(--cyan);}
+  @keyframes chase{0%,100%{opacity:.2}50%{opacity:1}}
+  .wrap{max-width:480px; margin:0 auto; padding:20px 18px;}
+  h1.title{
+    font-family:'Bebas Neue',sans-serif; letter-spacing:2px; font-size:44px;
+    text-align:center; margin:10px 0 2px; color:var(--lilac);
+    text-shadow:0 0 18px rgba(255,46,154,.5);
+  }
+  .subtitle{text-align:center; color:var(--lilac-dim); font-size:13px; margin-bottom:24px;}
+  .card{
+    background:linear-gradient(155deg,var(--velvet-light),var(--velvet));
+    border:1px solid rgba(255,255,255,.08); border-radius:18px;
+    padding:20px; margin-bottom:16px;
+    box-shadow:0 10px 30px rgba(0,0,0,.35);
+  }
+  .btn{
+    display:block; width:100%; text-align:center; padding:15px;
+    border-radius:12px; border:none; font-family:'Inter'; font-weight:700;
+    font-size:15px; cursor:pointer; margin-top:10px; letter-spacing:.3px;
+  }
+  .btn-primary{background:var(--magenta); color:#fff; box-shadow:0 6px 18px rgba(255,46,154,.35);}
+  .btn-gold{background:var(--gold); color:#1B0E36; box-shadow:0 6px 18px rgba(255,200,87,.3);}
+  .btn-ghost{background:transparent; color:var(--lilac); border:1px solid rgba(255,255,255,.18);}
+  .btn-cyan{background:var(--cyan); color:#1B0E36;}
+  .btn:active{transform:scale(.98);}
+  input, select{
+    width:100%; padding:13px 14px; border-radius:10px; border:1px solid rgba(255,255,255,.14);
+    background:rgba(0,0,0,.25); color:var(--lilac); font-family:'Inter'; font-size:15px; margin-top:8px;
+  }
+  input::placeholder{color:var(--lilac-dim);}
+  label{font-size:12px; color:var(--lilac-dim); text-transform:uppercase; letter-spacing:.5px;}
+  .row{display:flex; gap:10px;}
+  .row>*{flex:1;}
+  .code-badge{
+    font-family:'Space Mono',monospace; font-size:22px; letter-spacing:4px;
+    text-align:center; background:rgba(0,0,0,.3); border-radius:10px; padding:10px;
+    color:var(--gold); border:1px dashed rgba(255,200,87,.4); margin-top:8px;
+  }
+  .singer-row{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:10px 12px; border-radius:10px; background:rgba(0,0,0,.2); margin-top:8px; font-size:14px;
+  }
+  .singer-row .tag{font-size:10px; padding:3px 8px; border-radius:20px; text-transform:uppercase; letter-spacing:.5px;}
+  .tag-pending{background:rgba(255,255,255,.08); color:var(--lilac-dim);}
+  .tag-current{background:var(--magenta); color:#fff;}
+  .tag-done{background:rgba(62,242,198,.15); color:var(--cyan);}
+  .del{color:var(--magenta); cursor:pointer; font-size:16px; padding:0 4px;}
+  .now-singing{
+    font-family:'Bebas Neue'; font-size:34px; text-align:center; margin:4px 0 0; letter-spacing:1px;
+  }
+  .now-song{text-align:center; color:var(--lilac-dim); font-size:14px; margin-bottom:14px;}
+  .pulse{
+    width:70px;height:70px;border-radius:50%;margin:0 auto 14px;
+    background:radial-gradient(circle,var(--magenta),rgba(255,46,154,0) 70%);
+    animation:pulse 1.4s infinite; display:flex;align-items:center;justify-content:center;font-size:28px;
+  }
+  @keyframes pulse{0%,100%{transform:scale(1);opacity:.8}50%{transform:scale(1.12);opacity:1}}
+  .score-readout{
+    font-family:'Space Mono',monospace; font-size:60px; text-align:center; color:var(--gold);
+    text-shadow:0 0 24px rgba(255,200,87,.5); margin:6px 0;
+  }
+  input[type=range]{
+    -webkit-appearance:none; height:8px; border-radius:6px; margin-top:14px;
+    background:linear-gradient(90deg,var(--cyan),var(--gold),var(--magenta));
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none; width:26px;height:26px;border-radius:50%;
+    background:#fff; border:4px solid var(--velvet); box-shadow:0 0 10px rgba(0,0,0,.5); cursor:pointer;
+  }
+  .judges-list{display:flex; flex-wrap:wrap; gap:6px; margin-top:10px;}
+  .judge-chip{
+    font-size:12px; padding:6px 10px; border-radius:20px; background:rgba(0,0,0,.25);
+    border:1px solid rgba(255,255,255,.08);
+  }
+  .judge-chip.voted{border-color:var(--cyan); color:var(--cyan);}
+  .avg-box{text-align:center; margin-top:10px;}
+  .avg-box .num{font-family:'Space Mono'; font-size:30px; color:var(--cyan);}
+  .podium{display:flex; align-items:flex-end; gap:8px; justify-content:center; margin:20px 0;}
+  .pod{flex:1; border-radius:10px 10px 0 0; text-align:center; padding-top:8px; font-family:'Inter'; font-weight:700;}
+  .pod .name{font-size:12px; padding:4px;}
+  .pod .sc{font-family:'Space Mono'; font-size:18px;}
+  .pod-1{background:linear-gradient(180deg,var(--gold),rgba(255,200,87,.15)); height:150px; color:#1B0E36; order:2;}
+  .pod-2{background:linear-gradient(180deg,#C9C9D6,rgba(201,201,214,.15)); height:110px; color:#1B0E36; order:1;}
+  .pod-3{background:linear-gradient(180deg,#CD8B5E,rgba(205,139,94,.15)); height:80px; color:#1B0E36; order:3;}
+  .rank-row{display:flex; justify-content:space-between; padding:9px 12px; border-radius:8px; background:rgba(0,0,0,.2); margin-top:6px; font-size:14px;}
+  .empty{text-align:center; color:var(--lilac-dim); font-size:13px; padding:14px;}
+  .link{color:var(--cyan); text-align:center; display:block; margin-top:14px; font-size:13px; cursor:pointer; text-decoration:underline;}
+  .toast{
+    position:fixed; bottom:20px; left:50%; transform:translateX(-50%);
+    background:var(--velvet-light); border:1px solid var(--cyan); color:var(--cyan);
+    padding:10px 18px; border-radius:30px; font-size:13px; opacity:0; transition:opacity .3s; z-index:99;
+  }
+  .toast.show{opacity:1;}
+  .hidden{display:none !important;}
+  .hist-item{display:flex; justify-content:space-between; align-items:center; padding:10px 12px; background:rgba(0,0,0,.2); border-radius:10px; margin-top:8px; cursor:pointer; font-size:13px;}
+  .hist-item .win{color:var(--gold); font-size:12px;}
+</style>
+</head>
+<body>
+
+<div class="marquee" id="marquee"></div>
+<div class="wrap">
+  <h1 class="title">VIDEOKÊ SCORE</h1>
+  <p class="subtitle">Palco aberto · notas em tempo real</p>
+
+  <!-- SETUP FIREBASE (primeira vez) -->
+  <div id="view-setup" class="hidden">
+    <div class="card">
+      <label>URL do Firebase Realtime Database</label>
+      <input id="db-url" placeholder="https://videoke-andrey-default-rtdb.firebaseio.com">
+      <button class="btn btn-primary" onclick="saveDbUrl()">Salvar e continuar</button>
+      <p style="font-size:11px;color:var(--lilac-dim);margin-top:10px">Crie um projeto Firebase (Realtime Database, modo teste/regras públicas) e cole a URL aqui. Fica salvo neste navegador.</p>
+    </div>
+  </div>
+
+  <!-- HOME -->
+  <div id="view-home" class="hidden">
+    <div class="card">
+      <button class="btn btn-primary" onclick="showView('admin-setup')">🎤 Criar edição (admin)</button>
+      <button class="btn btn-cyan" onclick="showView('judge-join')">⭐ Entrar como jurado</button>
+    </div>
+    <div class="card">
+      <label>Edições anteriores</label>
+      <div id="history-list"></div>
+    </div>
+  </div>
+
+  <!-- ADMIN SETUP -->
+  <div id="view-admin-setup" class="hidden">
+    <div class="card">
+      <label>Nome da edição</label>
+      <input id="ed-name" placeholder="Ex: Videokê Casa 133 — Ago/26">
+      <button class="btn btn-gold" onclick="createEdition()">Gerar edição</button>
+      <span class="link" onclick="showView('home')">‹ voltar</span>
+    </div>
+  </div>
+
+  <!-- ADMIN QUEUE (antes de iniciar) -->
+  <div id="view-admin-queue" class="hidden">
+    <div class="card">
+      <label>Código da edição (compartilhe com os jurados)</label>
+      <div class="code-badge" id="ed-code-display"></div>
+    </div>
+    <div class="card">
+      <label>Adicionar cantor(a)</label>
+      <div class="row">
+        <input id="sg-name" placeholder="Nome">
+        <input id="sg-song" placeholder="Música">
+      </div>
+      <button class="btn btn-cyan" onclick="addSinger()">+ Adicionar à fila</button>
+      <div id="queue-list"></div>
+      <button class="btn btn-primary" onclick="startEdition()">🎬 Iniciar apresentações</button>
+    </div>
+  </div>
+
+  <!-- ADMIN LIVE -->
+  <div id="view-admin-live" class="hidden">
+    <div class="card">
+      <div class="pulse">🎤</div>
+      <div class="now-singing" id="live-singer">—</div>
+      <div class="now-song" id="live-song">—</div>
+      <div class="avg-box">
+        <div class="num" id="live-avg">0.0</div>
+        <div style="font-size:11px;color:var(--lilac-dim)">MÉDIA DOS JURADOS</div>
+      </div>
+      <div class="judges-list" id="live-judges"></div>
+      <button class="btn btn-primary" onclick="nextSinger()">Próximo(a) ⏭</button>
+      <button class="btn btn-ghost" onclick="finishEdition()">🏆 Encerrar e revelar ranking</button>
+    </div>
+    <div class="card">
+      <label>Fila</label>
+      <div id="live-queue"></div>
+    </div>
+  </div>
+
+  <!-- JUDGE JOIN -->
+  <div id="view-judge-join" class="hidden">
+    <div class="card">
+      <label>Código da edição</label>
+      <input id="jj-code" placeholder="Ex: AB12" style="text-transform:uppercase">
+      <label>Seu nome</label>
+      <input id="jj-name" placeholder="Como o palco vai te chamar">
+      <button class="btn btn-cyan" onclick="joinAsJudge()">Entrar</button>
+      <span class="link" onclick="showView('home')">‹ voltar</span>
+    </div>
+  </div>
+
+  <!-- JUDGE VOTE -->
+  <div id="view-judge-vote" class="hidden">
+    <div class="card">
+      <div class="now-singing" id="jv-singer">—</div>
+      <div class="now-song" id="jv-song">—</div>
+      <div class="score-readout" id="jv-score">5.0</div>
+      <input type="range" id="jv-slider" min="0" max="10" step="0.1" value="5" oninput="updateScoreReadout()">
+      <button class="btn btn-gold" id="jv-submit" onclick="submitScore()">Dar nota 🌟</button>
+      <div id="jv-status" style="text-align:center;font-size:12px;color:var(--cyan);margin-top:10px"></div>
+    </div>
+  </div>
+
+  <!-- RANKING -->
+  <div id="view-ranking" class="hidden">
+    <div class="card">
+      <h2 style="font-family:'Bebas Neue';text-align:center;font-size:28px;letter-spacing:1px;margin:0 0 6px">RESULTADO FINAL</h2>
+      <div class="podium" id="podium"></div>
+      <div id="rank-rest"></div>
+      <span class="link" onclick="showView('home')">‹ voltar ao início</span>
+    </div>
+  </div>
+
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ---------- Firebase REST helpers ----------
+let DB_URL = localStorage.getItem('videoke_db_url') || 'https://videoke-andrey-default-rtdb.firebaseio.com';
+function fb(path){ return `${DB_URL}/${path}.json`; }
+async function fbGet(path){ const r = await fetch(fb(path)); return r.status===200 ? r.json() : null; }
+async function fbSet(path, data){ return fetch(fb(path), {method:'PUT', body:JSON.stringify(data)}); }
+async function fbUpdate(path, data){ return fetch(fb(path), {method:'PATCH', body:JSON.stringify(data)}); }
+async function fbPush(path, data){ const r = await fetch(fb(path), {method:'POST', body:JSON.stringify(data)}); return (await r.json()).name; }
+
+function saveDbUrl(){
+  const v = document.getElementById('db-url').value.trim().replace(/\/$/,'');
+  if(!v){ toast('Cole a URL do Firebase'); return; }
+  localStorage.setItem('videoke_db_url', v);
+  DB_URL = v;
+  init();
+}
+
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+// ---------- Marquee lights ----------
+(function(){
+  const m = document.getElementById('marquee');
+  for(let i=0;i<24;i++){
+    const b=document.createElement('div'); b.className='bulb';
+    b.style.animationDelay=(i*0.07)+'s'; m.appendChild(b);
+  }
+})();
+
+// ---------- Views ----------
+const VIEWS=['setup','home','admin-setup','admin-queue','admin-live','judge-join','judge-vote','ranking'];
+function showView(v){
+  VIEWS.forEach(x=>document.getElementById('view-'+x).classList.add('hidden'));
+  document.getElementById('view-'+v).classList.remove('hidden');
+  currentView=v;
+}
+let currentView='home';
+
+// ---------- State ----------
+let editionId = localStorage.getItem('videoke_admin_edition') || null;
+let judgeSession = JSON.parse(localStorage.getItem('videoke_judge_session') || 'null'); // {editionId, code, name}
+let pollTimer = null;
+let lastVotedSingerId = null;
+
+function genCode(){
+  const c='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+  let s=''; for(let i=0;i<4;i++) s+=c[Math.floor(Math.random()*c.length)];
+  return s;
+}
+
+// ---------- Init ----------
+function init(){
+  if(!DB_URL){ showView('setup'); return; }
+  clearInterval(pollTimer);
+  if(judgeSession){
+    resumeJudge();
+  } else if(editionId){
+    resumeAdmin();
+  } else {
+    showView('home'); loadHistory();
+  }
+}
+
+// ---------- ADMIN: create edition ----------
+async function createEdition(){
+  const name = document.getElementById('ed-name').value.trim();
+  if(!name){ toast('Dê um nome à edição'); return; }
+  const code = genCode();
+  const id = await fbPush('videoke/editions', {name, code, status:'setup', createdAt:Date.now(), currentSingerId:null});
+  await fbSet('videoke/codes/'+code, id);
+  editionId = id;
+  localStorage.setItem('videoke_admin_edition', id);
+  document.getElementById('ed-code-display').textContent = code;
+  showView('admin-queue');
+  loadQueue();
+}
+
+async function resumeAdmin(){
+  const ed = await fbGet('videoke/editions/'+editionId);
+  if(!ed){ editionId=null; localStorage.removeItem('videoke_admin_edition'); showView('home'); loadHistory(); return; }
+  if(ed.status==='setup'){
+    document.getElementById('ed-code-display').textContent = ed.code;
+    showView('admin-queue'); loadQueue();
+  } else if(ed.status==='live'){
+    showView('admin-live'); pollAdminLive();
+    pollTimer = setInterval(pollAdminLive, 2500);
+  } else {
+    showView('ranking'); loadRanking(editionId);
+  }
+}
+
+async function addSinger(){
+  const name=document.getElementById('sg-name').value.trim();
+  const song=document.getElementById('sg-song').value.trim();
+  if(!name||!song){ toast('Preencha nome e música'); return; }
+  const order = Date.now();
+  await fbPush(`videoke/editions/${editionId}/singers`, {name, song, order, status:'pending'});
+  document.getElementById('sg-name').value=''; document.getElementById('sg-song').value='';
+  loadQueue();
+}
+
+async function loadQueue(){
+  const singers = await fbGet(`videoke/editions/${editionId}/singers`) || {};
+  const list = Object.entries(singers).sort((a,b)=>a[1].order-b[1].order);
+  const el = document.getElementById('queue-list');
+  el.innerHTML = list.length? '' : '<p class="empty">Ninguém na fila ainda</p>';
+  list.forEach(([id,s])=>{
+    const row=document.createElement('div'); row.className='singer-row';
+    row.innerHTML = `<span>${s.name} — ${s.song}</span><span class="del" onclick="delSinger('${id}')">✕</span>`;
+    el.appendChild(row);
+  });
+}
+async function delSinger(id){
+  await fetch(fb(`videoke/editions/${editionId}/singers/${id}`), {method:'DELETE'});
+  loadQueue();
+}
+
+async function startEdition(){
+  const singers = await fbGet(`videoke/editions/${editionId}/singers`) || {};
+  const list = Object.entries(singers).sort((a,b)=>a[1].order-b[1].order);
+  if(!list.length){ toast('Adicione ao menos um cantor'); return; }
+  const firstId = list[0][0];
+  await fbUpdate(`videoke/editions/${editionId}/singers/${firstId}`, {status:'current'});
+  await fbUpdate(`videoke/editions/${editionId}`, {status:'live', currentSingerId:firstId});
+  showView('admin-live'); pollAdminLive();
+  pollTimer = setInterval(pollAdminLive, 2500);
+}
+
+async function pollAdminLive(){
+  const ed = await fbGet('videoke/editions/'+editionId);
+  if(!ed) return;
+  const singers = await fbGet(`videoke/editions/${editionId}/singers`) || {};
+  const cur = singers[ed.currentSingerId];
+  document.getElementById('live-singer').textContent = cur ? cur.name : '—';
+  document.getElementById('live-song').textContent = cur ? cur.song : '—';
+
+  const scores = await fbGet(`videoke/editions/${editionId}/scores/${ed.currentSingerId}`) || {};
+  const judges = await fbGet(`videoke/editions/${editionId}/judges`) || {};
+  const vals = Object.values(scores).map(s=>s.value);
+  const avg = vals.length ? (vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(1) : '0.0';
+  document.getElementById('live-avg').textContent = avg;
+
+  const jEl = document.getElementById('live-judges');
+  jEl.innerHTML='';
+  Object.keys(judges).forEach(jk=>{
+    const chip=document.createElement('span');
+    const voted = scores[jk]!==undefined;
+    chip.className='judge-chip'+(voted?' voted':'');
+    chip.textContent = judges[jk].name + (voted?' ✓':' …');
+    jEl.appendChild(chip);
+  });
+
+  const list = Object.entries(singers).sort((a,b)=>a[1].order-b[1].order);
+  const qEl = document.getElementById('live-queue');
+  qEl.innerHTML='';
+  list.forEach(([id,s])=>{
+    const row=document.createElement('div'); row.className='singer-row';
+    const tag = s.status==='current'?'<span class="tag tag-current">cantando</span>':s.status==='done'?'<span class="tag tag-done">✓ feito</span>':'<span class="tag tag-pending">na fila</span>';
+    row.innerHTML=`<span>${s.name} — ${s.song}</span>${tag}`;
+    qEl.appendChild(row);
+  });
+}
+
+async function nextSinger(){
+  const ed = await fbGet('videoke/editions/'+editionId);
+  const singers = await fbGet(`videoke/editions/${editionId}/singers`) || {};
+  if(ed.currentSingerId) await fbUpdate(`videoke/editions/${editionId}/singers/${ed.currentSingerId}`, {status:'done'});
+  const list = Object.entries(singers).filter(([id,s])=>s.status==='pending').sort((a,b)=>a[1].order-b[1].order);
+  if(!list.length){ toast('Fila acabou — pode encerrar 🏁'); return; }
+  const [nextId] = list[0];
+  await fbUpdate(`videoke/editions/${editionId}/singers/${nextId}`, {status:'current'});
+  await fbUpdate(`videoke/editions/${editionId}`, {currentSingerId:nextId});
+  pollAdminLive();
+}
+
+async function finishEdition(){
+  const ed = await fbGet('videoke/editions/'+editionId);
+  if(ed.currentSingerId) await fbUpdate(`videoke/editions/${editionId}/singers/${ed.currentSingerId}`, {status:'done'});
+  await fbUpdate(`videoke/editions/${editionId}`, {status:'closed'});
+  clearInterval(pollTimer);
+  editionId_forRanking_and_clear();
+}
+function editionId_forRanking_and_clear(){
+  const id = editionId;
+  localStorage.removeItem('videoke_admin_edition');
+  editionId = null;
+  showView('ranking'); loadRanking(id);
+}
+
+// ---------- RANKING ----------
+async function loadRanking(id){
+  const ed = await fbGet('videoke/editions/'+id);
+  const singers = await fbGet(`videoke/editions/${id}/singers`) || {};
+  const scores = await fbGet(`videoke/editions/${id}/scores`) || {};
+  const results = Object.entries(singers).map(([sid,s])=>{
+    const vals = Object.values(scores[sid]||{}).map(v=>v.value);
+    const avg = vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : 0;
+    return {name:s.name, song:s.song, avg};
+  }).sort((a,b)=>b.avg-a.avg);
+
+  const pod = document.getElementById('podium');
+  pod.innerHTML='';
+  const medals=['pod-1','pod-2','pod-3'];
+  results.slice(0,3).forEach((r,i)=>{
+    const d=document.createElement('div'); d.className='pod '+medals[i];
+    d.innerHTML=`<div class="name">${r.name}</div><div class="sc">${r.avg.toFixed(1)}</div>`;
+    pod.appendChild(d);
+  });
+  const rest = document.getElementById('rank-rest');
+  rest.innerHTML='';
+  results.slice(3).forEach((r,i)=>{
+    const row=document.createElement('div'); row.className='rank-row';
+    row.innerHTML=`<span>${i+4}º ${r.name} — ${r.song}</span><span>${r.avg.toFixed(1)}</span>`;
+    rest.appendChild(row);
+  });
+  if(!results.length) rest.innerHTML='<p class="empty">Sem apresentações registradas</p>';
+}
+
+async function loadHistory(){
+  const eds = await fbGet('videoke/editions') || {};
+  const closed = Object.entries(eds).filter(([id,e])=>e.status==='closed').sort((a,b)=>b[1].createdAt-a[1].createdAt);
+  const el = document.getElementById('history-list');
+  el.innerHTML = closed.length? '' : '<p class="empty">Nenhuma edição encerrada ainda</p>';
+  for(const [id,e] of closed){
+    const scores = await fbGet(`videoke/editions/${id}/scores`) || {};
+    const singers = await fbGet(`videoke/editions/${id}/singers`) || {};
+    let winner='—', best=-1;
+    Object.entries(singers).forEach(([sid,s])=>{
+      const vals=Object.values(scores[sid]||{}).map(v=>v.value);
+      const avg=vals.length? vals.reduce((a,b)=>a+b,0)/vals.length : 0;
+      if(avg>best){best=avg; winner=s.name;}
+    });
+    const row=document.createElement('div'); row.className='hist-item';
+    row.onclick=()=>{ showView('ranking'); loadRanking(id); };
+    row.innerHTML=`<span>${e.name}</span><span class="win">🏆 ${winner}</span>`;
+    el.appendChild(row);
+  }
+}
+
+// ---------- JUDGE ----------
+async function joinAsJudge(){
+  const code = document.getElementById('jj-code').value.trim().toUpperCase();
+  const name = document.getElementById('jj-name').value.trim();
+  if(!code||!name){ toast('Preencha código e nome'); return; }
+  const id = await fbGet('videoke/codes/'+code);
+  if(!id){ toast('Código não encontrado'); return; }
+  const jKey = name.toLowerCase().replace(/[^a-z0-9]/g,'_')+'_'+Math.floor(Math.random()*1000);
+  await fbSet(`videoke/editions/${id}/judges/${jKey}`, {name, joinedAt:Date.now()});
+  judgeSession = {editionId:id, name, jKey};
+  localStorage.setItem('videoke_judge_session', JSON.stringify(judgeSession));
+  showView('judge-vote');
+  pollJudgeVote();
+  pollTimer = setInterval(pollJudgeVote, 2000);
+}
+
+async function resumeJudge(){
+  const ed = await fbGet('videoke/editions/'+judgeSession.editionId);
+  if(!ed || ed.status==='closed'){
+    localStorage.removeItem('videoke_judge_session'); judgeSession=null;
+    showView('home'); loadHistory(); return;
+  }
+  showView('judge-vote');
+  pollJudgeVote();
+  pollTimer = setInterval(pollJudgeVote, 2000);
+}
+
+async function pollJudgeVote(){
+  const ed = await fbGet('videoke/editions/'+judgeSession.editionId);
+  if(!ed) return;
+  if(ed.status==='closed'){
+    clearInterval(pollTimer);
+    localStorage.removeItem('videoke_judge_session'); judgeSession=null;
+    showView('ranking'); loadRanking(judgeSession ? judgeSession.editionId : ed);
+    return;
+  }
+  const singers = await fbGet(`videoke/editions/${judgeSession.editionId}/singers`) || {};
+  const cur = singers[ed.currentSingerId];
+  document.getElementById('jv-singer').textContent = cur? cur.name : 'Aguardando o palco…';
+  document.getElementById('jv-song').textContent = cur? cur.song : '';
+
+  const btn = document.getElementById('jv-submit');
+  const statusEl = document.getElementById('jv-status');
+  if(ed.currentSingerId !== lastVotedSingerId){
+    // check if already voted for this singer
+    const myScore = await fbGet(`videoke/editions/${judgeSession.editionId}/scores/${ed.currentSingerId}/${judgeSession.jKey}`);
+    if(myScore){
+      btn.disabled=true; btn.textContent='Nota enviada ✓'; statusEl.textContent='Aguarde a próxima apresentação';
+    } else {
+      btn.disabled=false; btn.textContent='Dar nota 🌟'; statusEl.textContent='';
+      document.getElementById('jv-slider').value=5; updateScoreReadout();
+    }
+  }
+}
+
+function updateScoreReadout(){
+  document.getElementById('jv-score').textContent = parseFloat(document.getElementById('jv-slider').value).toFixed(1);
+}
+
+async function submitScore(){
+  const ed = await fbGet('videoke/editions/'+judgeSession.editionId);
+  if(!ed.currentSingerId){ toast('Ninguém cantando agora'); return; }
+  const value = parseFloat(document.getElementById('jv-slider').value);
+  await fbSet(`videoke/editions/${judgeSession.editionId}/scores/${ed.currentSingerId}/${judgeSession.jKey}`, {value, ts:Date.now()});
+  lastVotedSingerId = ed.currentSingerId;
+  document.getElementById('jv-submit').disabled=true;
+  document.getElementById('jv-submit').textContent='Nota enviada ✓';
+  document.getElementById('jv-status').textContent='Aguarde a próxima apresentação';
+  toast('Nota registrada!');
+}
+
+init();
+</script>
+</body>
+</html>
