@@ -76,6 +76,13 @@
   .del:hover{color:var(--error);}
   .empty{text-align:center;padding:60px 20px;color:#8A8065;font-family:'Fraunces',serif;font-size:17px;}
   .hidden{display:none !important;}
+  .refresh{
+    position:fixed;bottom:10px;right:12px;
+    font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#C9BFA5;
+    background:none;border:none;cursor:pointer;letter-spacing:.04em;
+    opacity:.6;
+  }
+  .refresh:hover{opacity:1;color:var(--sage);}
 </style>
 </head>
 <body>
@@ -104,6 +111,7 @@
     <div id="list"></div>
   </div>
 </div>
+<button class="refresh" id="refreshBtn" title="Forçar atualização (limpa cache)">↻ atualizar</button>
 
 <script>
 const firebaseConfig = {
@@ -176,10 +184,14 @@ async function loadWords(){
   try{
     const r = await fetch(`${DB}/${NODE}.json?auth=${idToken}`);
     const data = await r.json();
+    if(!r.ok || (data && data.error)){
+      throw new Error((data && data.error) || ('HTTP ' + r.status));
+    }
     words = data ? Object.entries(data).map(([key, v]) => ({key, ...v})) : [];
     words.sort((a,b) => (b.date||'').localeCompare(a.date||''));
   }catch(e){
-    setStatus('Não consegui carregar seu caderno.', true);
+    console.error('loadWords failed:', e);
+    setStatus('Não consegui carregar seu caderno (' + e.message + ').', true);
     words = [];
   }
   render();
@@ -203,8 +215,13 @@ async function translate(text){
 }
 
 async function fetchWord(word){
-  const r = await fetch('https://api.dictionaryapi.dev/api/v2/entries/en/' + encodeURIComponent(word));
-  if(!r.ok) throw new Error('not found');
+  let r;
+  try{
+    r = await fetch('https://api.dictionaryapi.dev/api/v2/entries/en/' + encodeURIComponent(word));
+  }catch(netErr){
+    throw new Error('DICT_NETWORK');
+  }
+  if(!r.ok) throw new Error('DICT_NOT_FOUND');
   const data = await r.json();
   const entry = data[0];
   const phonetic = entry.phonetic || (entry.phonetics || []).map(p=>p.text).find(Boolean) || '';
@@ -232,32 +249,51 @@ form.addEventListener('submit', async (e) => {
   }
   addBtn.disabled = true;
   setStatus('Buscando significado…');
+  let info;
   try{
-    const info = await fetchWord(word);
-    setStatus('Traduzindo…');
-    const [ptWord, ptExample] = await Promise.all([translate(info.word), translate(info.example)]);
-    const entry = {
-      word: info.word,
-      phonetic: info.phonetic,
-      definition: info.definition,
-      example: info.example,
-      examplePt: ptExample,
-      translation: ptWord,
-      date: new Date().toISOString()
-    };
+    info = await fetchWord(word);
+  }catch(err){
+    console.error('fetchWord failed:', err);
+    if(err.message === 'DICT_NOT_FOUND'){
+      setStatus('Não encontrei essa palavra no dicionário. Confira a grafia.', true);
+    }else{
+      setStatus('Sem conexão com o dicionário. Tente de novo.', true);
+    }
+    addBtn.disabled = false;
+    return;
+  }
+
+  setStatus('Traduzindo…');
+  const [ptWord, ptExample] = await Promise.all([translate(info.word), translate(info.example)]);
+  const entry = {
+    word: info.word,
+    phonetic: info.phonetic,
+    definition: info.definition,
+    example: info.example,
+    examplePt: ptExample,
+    translation: ptWord,
+    date: new Date().toISOString()
+  };
+
+  setStatus('Salvando…');
+  try{
     await freshToken();
     const r = await fetch(`${DB}/${NODE}.json?auth=${idToken}`, {
       method: 'POST',
       body: JSON.stringify(entry)
     });
     const res = await r.json();
+    if(!r.ok || res.error){
+      throw new Error(res.error || ('HTTP ' + r.status));
+    }
     words.unshift({key: res.name, ...entry});
     render();
     input.value = '';
     setStatus('Adicionado ✓');
     setTimeout(() => setStatus(''), 2000);
   }catch(err){
-    setStatus('Não encontrei essa palavra no dicionário. Confira a grafia.', true);
+    console.error('Firebase save failed:', err);
+    setStatus('Não consegui salvar no seu caderno (' + err.message + '). Toque em ↻ atualizar e tente de novo.', true);
   }finally{
     addBtn.disabled = false;
   }
@@ -266,13 +302,21 @@ form.addEventListener('submit', async (e) => {
 async function removeWord(key){
   try{
     await freshToken();
-    await fetch(`${DB}/${NODE}/${key}.json?auth=${idToken}`, { method: 'DELETE' });
+    const r = await fetch(`${DB}/${NODE}/${key}.json?auth=${idToken}`, { method: 'DELETE' });
+    if(!r.ok) throw new Error('HTTP ' + r.status);
     words = words.filter(w => w.key !== key);
     render();
   }catch(e){
-    setStatus('Não consegui remover. Tente de novo.', true);
+    console.error('removeWord failed:', e);
+    setStatus('Não consegui remover (' + e.message + ').', true);
   }
 }
+
+document.getElementById('refreshBtn').addEventListener('click', () => {
+  const url = new URL(window.location.href);
+  url.searchParams.set('_r', Date.now());
+  window.location.href = url.toString();
+});
 
 function render(){
   countEl.textContent = words.length + (words.length === 1 ? ' palavra aprendida' : ' palavras aprendidas');
