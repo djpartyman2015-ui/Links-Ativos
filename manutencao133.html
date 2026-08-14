@@ -603,14 +603,14 @@ async function loadRec(){
     const res = await fetch(DB_URL_REC);
     if(!res.ok) throw new Error('HTTP '+res.status);
     const data = await res.json();
+    setSyncRec('ok','sincronizado agora');
     if(recVer===myVer){
       // só aplica se nenhuma edição local aconteceu enquanto buscávamos (evita apagar item recém-salvo)
       recItems = data || {};
-      renderRec();
+      try{ renderRec(); }catch(e2){ console.error('renderRec() falhou:', e2); setSyncRec('busy','erro ao exibir a lista'); }
     }
-    setSyncRec('ok','sincronizado agora');
   }catch(e){
-    console.error('loadRec() falhou:', e);
+    console.error('loadRec() (busca no Firebase) falhou:', e);
     setSyncRec('busy','erro de conexão — tentando de novo');
   }
 }
