@@ -211,12 +211,19 @@ function speak(text){
   }
   const synth = window.speechSynthesis;
   const fire = () => {
+    synth.resume();
     const u = new SpeechSynthesisUtterance(text);
     u.lang = 'en-US';
     u.rate = 0.9;
     const enVoice = voices.find(v => v.lang === 'en-US') || voices.find(v => v.lang && v.lang.startsWith('en'));
     if(enVoice) u.voice = enVoice;
-    u.onerror = (e) => { if(e.error !== 'interrupted') console.error('speech error:', e.error); };
+    u.onstart = () => setStatus('🔊 ' + text);
+    u.onend = () => setStatus('');
+    u.onerror = (e) => {
+      if(e.error === 'interrupted') return;
+      console.error('speech error:', e.error);
+      setStatus('Não consegui tocar o áudio (' + e.error + '). Confira se o som do navegador está ligado.', true);
+    };
     synth.speak(u);
   };
   if(synth.speaking || synth.pending){
