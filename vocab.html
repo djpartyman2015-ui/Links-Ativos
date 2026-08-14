@@ -197,19 +197,34 @@ async function loadWords(){
   render();
 }
 
+let voices = [];
+function loadVoices(){ voices = window.speechSynthesis ? window.speechSynthesis.getVoices() : []; }
+if('speechSynthesis' in window){
+  loadVoices();
+  window.speechSynthesis.onvoiceschanged = loadVoices;
+}
+
 function speak(text){
   if(!('speechSynthesis' in window)){
     setStatus('Seu navegador não suporta leitura de voz.', true);
     return;
   }
-  window.speechSynthesis.cancel();
-  setTimeout(() => {
+  const synth = window.speechSynthesis;
+  const fire = () => {
     const u = new SpeechSynthesisUtterance(text);
     u.lang = 'en-US';
     u.rate = 0.9;
-    u.onerror = (e) => console.error('speech error:', e);
-    window.speechSynthesis.speak(u);
-  }, 60);
+    const enVoice = voices.find(v => v.lang === 'en-US') || voices.find(v => v.lang && v.lang.startsWith('en'));
+    if(enVoice) u.voice = enVoice;
+    u.onerror = (e) => { if(e.error !== 'interrupted') console.error('speech error:', e.error); };
+    synth.speak(u);
+  };
+  if(synth.speaking || synth.pending){
+    synth.cancel();
+    setTimeout(fire, 80);
+  }else{
+    fire();
+  }
 }
 
 async function translate(text){
