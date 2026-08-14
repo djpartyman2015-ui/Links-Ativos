@@ -156,6 +156,24 @@
   .check input{width:16px; height:16px;}
   .modal-actions{display:flex; justify-content:space-between; margin-top:20px; gap:10px;}
 
+  .tabs{display:flex; gap:26px; border-bottom:1px solid var(--border); margin-bottom:22px;}
+  .tab{
+    background:none; border:none; color:var(--muted); font-family:'Space Grotesk',sans-serif; font-weight:600;
+    font-size:15px; padding:4px 0 12px; cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-1px;
+  }
+  .tab.active{color:var(--text); border-bottom-color:var(--flag);}
+
+  .pill.late{color:var(--danger); border-color:#4A2A26;}
+  .pill.soon{color:var(--flag); border-color:var(--flag-dim);}
+  .flagtag.late{background:#4A2A26; color:var(--danger);}
+  .flagtag.okstate{background:var(--ok-dim); color:var(--ok);}
+  .btn-icsline{
+    display:inline-flex; align-items:center; gap:6px; font-size:12px; color:var(--muted);
+    background:transparent; border:1px solid var(--border); border-radius:7px; padding:5px 10px; cursor:pointer;
+    font-family:'IBM Plex Mono',monospace;
+  }
+  .btn-icsline:hover{color:var(--text); border-color:#3A4552;}
+
   @media(max-width:560px){
     header{padding:32px 18px 26px;} main{padding:20px 16px 60px;}
     .flagtag{width:42px; font-size:13px;}
@@ -181,26 +199,48 @@
 </header>
 
 <main>
-  <div class="toolbar">
-    <input type="search" id="search" placeholder="Buscar serviço...">
-    <select id="filterStatus">
-      <option value="todos">Todos os status</option>
-      <option value="pendente">Só pendentes</option>
-      <option value="concluido">Só concluídos</option>
-    </select>
-    <select id="sortBy">
-      <option value="prioridade">Ordenar: prioridade</option>
-      <option value="preco">Ordenar: preço</option>
-      <option value="nome">Ordenar: nome (A-Z)</option>
-      <option value="data">Ordenar: mais recente</option>
-    </select>
-    <button class="btn btn-primary" id="btnAdd">+ Novo serviço</button>
+  <div class="tabs">
+    <button class="tab active" id="tabPunch" data-tab="punch">Lista de Reparos</button>
+    <button class="tab" id="tabRec" data-tab="rec">Recorrentes</button>
   </div>
 
-  <div class="sync"><span class="dot" id="syncDot"></span><span id="syncText">conectando...</span></div>
-  <br>
+  <div id="viewPunch">
+    <div class="toolbar">
+      <input type="search" id="search" placeholder="Buscar serviço...">
+      <select id="filterStatus">
+        <option value="todos">Todos os status</option>
+        <option value="pendente">Só pendentes</option>
+        <option value="concluido">Só concluídos</option>
+      </select>
+      <select id="sortBy">
+        <option value="prioridade">Ordenar: prioridade</option>
+        <option value="preco">Ordenar: preço</option>
+        <option value="nome">Ordenar: nome (A-Z)</option>
+        <option value="data">Ordenar: mais recente</option>
+      </select>
+      <button class="btn btn-primary" id="btnAdd">+ Novo serviço</button>
+    </div>
 
-  <div id="list"></div>
+    <div class="sync"><span class="dot" id="syncDot"></span><span id="syncText">conectando...</span></div>
+    <br>
+
+    <div id="list"></div>
+  </div>
+
+  <div id="viewRec" style="display:none">
+    <div class="stats" style="margin-bottom:20px;">
+      <div class="stat"><div class="n" id="recLate" style="color:var(--danger);">–</div><div class="l">Atrasados</div></div>
+      <div class="stat flag"><div class="n" id="recSoon">–</div><div class="l">Próx. 30 dias</div></div>
+      <div class="stat ok"><div class="n" id="recOk">–</div><div class="l">Em dia</div></div>
+    </div>
+    <div class="toolbar">
+      <input type="search" id="recSearch" placeholder="Buscar item...">
+      <button class="btn btn-primary" id="btnAddRec">+ Novo item recorrente</button>
+    </div>
+    <div class="sync"><span class="dot" id="syncDotRec"></span><span id="syncTextRec">conectando...</span></div>
+    <br>
+    <div id="listRec"></div>
+  </div>
 </main>
 
 <div class="overlay" id="overlay">
@@ -224,11 +264,55 @@
   </div>
 </div>
 
+<div class="overlay" id="overlayRec">
+  <div class="modal">
+    <h2 id="modalTitleRec">Novo item recorrente</h2>
+    <div class="field">
+      <label>Item</label>
+      <input id="rItem" type="text" list="rCategorias" placeholder="Ex: Pilha da fechadura eletrônica">
+      <datalist id="rCategorias">
+        <option value="Pilha da fechadura eletrônica">
+        <option value="Filtro do bebedouro">
+        <option value="Filtro da geladeira">
+        <option value="Ar-condicionado — Sala">
+        <option value="Ar-condicionado — Escritório">
+        <option value="Ar-condicionado — Suíte">
+      </datalist>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Última realizada</label><input id="rUltima" type="date"></div>
+      <div class="field"><label>A cada quantos meses</label><input id="rFreq" type="number" min="1" placeholder="Ex: 6"></div>
+    </div>
+    <div class="field"><label>Observações</label><textarea id="rNotas" placeholder="Marca do filtro, fornecedor, etc."></textarea></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="btnDeleteRec" style="display:none; color:var(--danger); border-color:#4A2A26;">Excluir</button>
+      <div style="flex:1"></div>
+      <button class="btn btn-ghost" id="btnCancelRec">Cancelar</button>
+      <button class="btn btn-primary" id="btnSaveRec">Salvar</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const BASE_URL = "https://medicos-andrey-default-rtdb.firebaseio.com/manutencao133";
 const DB_URL = BASE_URL + ".json";
 let items = {};
 let editingId = null;
+
+const BASE_URL_REC = "https://medicos-andrey-default-rtdb.firebaseio.com/manutencao133_recorrentes";
+const DB_URL_REC = BASE_URL_REC + ".json";
+let recItems = {};
+let editingRecId = null;
+
+document.getElementById('tabPunch').onclick = ()=>switchTab('punch');
+document.getElementById('tabRec').onclick = ()=>switchTab('rec');
+function switchTab(tab){
+  const isPunch = tab==='punch';
+  document.getElementById('viewPunch').style.display = isPunch ? '' : 'none';
+  document.getElementById('viewRec').style.display = isPunch ? 'none' : '';
+  document.getElementById('tabPunch').classList.toggle('active', isPunch);
+  document.getElementById('tabRec').classList.toggle('active', !isPunch);
+}
 
 const seed = [
  {servico:"Pintura Fundo da casa", prioridade:null, preco:800, realizadoEm:"", historico:"", concluido:false},
@@ -491,8 +575,215 @@ document.getElementById('search').oninput = render;
 document.getElementById('filterStatus').onchange = render;
 document.getElementById('sortBy').onchange = render;
 
+/* ===== RECORRENTES ===== */
+
+function setSyncRec(state, text){
+  document.getElementById('syncDotRec').className = 'dot' + (state==='busy' ? ' busy' : '');
+  document.getElementById('syncTextRec').textContent = text;
+}
+
+async function loadRec(){
+  setSyncRec('busy','sincronizando...');
+  try{
+    const res = await fetch(DB_URL_REC);
+    const data = await res.json();
+    recItems = data || {};
+    setSyncRec('ok','sincronizado agora');
+    renderRec();
+  }catch(e){
+    setSyncRec('busy','erro de conexão — tentando de novo');
+  }
+}
+
+async function saveRecItem(id, obj){
+  setSyncRec('busy','salvando...');
+  try{
+    await fetch(BASE_URL_REC + "/" + id + ".json", {method:'PUT', body: JSON.stringify(obj)});
+    setSyncRec('ok','salvo');
+  }catch(e){
+    setSyncRec('busy','erro ao salvar — verifique a internet');
+  }
+}
+
+async function deleteRecItem(id){
+  setSyncRec('busy','excluindo...');
+  try{
+    await fetch(BASE_URL_REC + "/" + id + ".json", {method:'DELETE'});
+    setSyncRec('ok','salvo');
+  }catch(e){
+    setSyncRec('busy','erro ao excluir — verifique a internet');
+  }
+}
+
+// soma meses a uma data yyyy-mm-dd
+function addMonths(dateStr, months){
+  const d = new Date(dateStr + "T00:00:00");
+  d.setMonth(d.getMonth() + Number(months));
+  return d;
+}
+
+function fmtDateBR(d){
+  return d.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit', year:'numeric'});
+}
+
+function recStatus(it){
+  if(!it.ultima || !it.freq) return {label:'sem dados', cls:'', diffDays:null, proxima:null};
+  const proxima = addMonths(it.ultima, it.freq);
+  const hoje = new Date(); hoje.setHours(0,0,0,0);
+  const diffDays = Math.round((proxima - hoje) / 86400000);
+  if(diffDays < 0) return {label:`atrasado há ${Math.abs(diffDays)}d`, cls:'late', diffDays, proxima};
+  if(diffDays <= 30) return {label:`em ${diffDays}d`, cls:'soon', diffDays, proxima};
+  return {label:'em dia', cls:'ok', diffDays, proxima};
+}
+
+function renderRec(){
+  const listEl = document.getElementById('listRec');
+  const q = document.getElementById('recSearch').value.toLowerCase().trim();
+  let arr = Object.entries(recItems).map(([id,v])=>({id,...v}));
+
+  let late=0, soon=0, ok=0;
+  arr.forEach(it=>{
+    const st = recStatus(it);
+    if(st.cls==='late') late++; else if(st.cls==='soon') soon++; else if(st.cls==='ok') ok++;
+  });
+  document.getElementById('recLate').textContent = late;
+  document.getElementById('recSoon').textContent = soon;
+  document.getElementById('recOk').textContent = ok;
+
+  if(q) arr = arr.filter(it => (it.item||'').toLowerCase().includes(q));
+
+  arr.sort((a,b)=>{
+    const sa = recStatus(a).diffDays; const sb = recStatus(b).diffDays;
+    const va = sa==null ? Infinity : sa;
+    const vb = sb==null ? Infinity : sb;
+    return va - vb;
+  });
+
+  if(arr.length===0){
+    listEl.innerHTML = `<div class="empty">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="9"/><path d="M12 7v6l4 2"/></svg>
+      <div>Nada cadastrado ainda. Ex: pilha da fechadura, filtro do bebedouro, filtro da geladeira, manutenção do ar-condicionado...</div>
+    </div>`;
+    return;
+  }
+
+  listEl.innerHTML = arr.map(it=>{
+    const st = recStatus(it);
+    const flagCls = st.cls==='late' ? 'late' : (st.cls==='ok' ? 'okstate' : '');
+    const pillCls = st.cls==='late' ? 'late' : (st.cls==='soon' ? 'soon' : 'done');
+    return `
+    <div class="row">
+      <div class="flagtag ${flagCls}">${it.freq ? it.freq+'m' : '—'}</div>
+      <div class="rowbody">
+        <div class="rowtop">
+          <div>
+            <div class="servico">${escapeHtml(it.item||'(sem nome)')}</div>
+            <div class="meta">
+              ${it.ultima ? `<span>última: ${fmtDateBR(new Date(it.ultima+"T00:00:00"))}</span>` : ''}
+              ${st.proxima ? `<span>· próxima: ${fmtDateBR(st.proxima)}</span>` : ''}
+              <span class="pill ${pillCls}">${st.label}</span>
+            </div>
+          </div>
+          <div class="actions">
+            ${st.proxima ? `<button class="btn-icon" onclick="exportICS('${it.id}')" title="Exportar para o Calendário"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg></button>` : ''}
+            <button class="btn-icon" onclick="openEditRec('${it.id}')" title="Editar"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
+          </div>
+        </div>
+        ${it.notas ? `<div class="historico open">${escapeHtml(it.notas)}</div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function exportICS(id){
+  const it = recItems[id];
+  const st = recStatus(it);
+  if(!st.proxima) return;
+  const d = st.proxima;
+  const dateStr = d.getFullYear() + String(d.getMonth()+1).padStart(2,'0') + String(d.getDate()).padStart(2,'0');
+  const ics = [
+    'BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Casa133//Manutencao//PT',
+    'BEGIN:VEVENT',
+    'UID:' + id + '@casa133',
+    'DTSTART;VALUE=DATE:' + dateStr,
+    'SUMMARY:Manutenção 133 — ' + (it.item||''),
+    'DESCRIPTION:' + (it.notas || 'Lembrete de manutenção recorrente da Casa 133').replace(/\n/g,'\\n'),
+    'END:VEVENT','END:VCALENDAR'
+  ].join('\r\n');
+  const blob = new Blob([ics], {type:'text/calendar'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = (it.item||'lembrete').replace(/[^\w\- ]/g,'') + '.ics';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+}
+
+function openAddRec(){
+  editingRecId = null;
+  document.getElementById('modalTitleRec').textContent = 'Novo item recorrente';
+  document.getElementById('rItem').value='';
+  document.getElementById('rUltima').value='';
+  document.getElementById('rFreq').value='';
+  document.getElementById('rNotas').value='';
+  document.getElementById('btnDeleteRec').style.display='none';
+  document.getElementById('overlayRec').classList.add('open');
+}
+
+function openEditRec(id){
+  editingRecId = id;
+  const it = recItems[id];
+  document.getElementById('modalTitleRec').textContent = 'Editar item recorrente';
+  document.getElementById('rItem').value = it.item||'';
+  document.getElementById('rUltima').value = it.ultima||'';
+  document.getElementById('rFreq').value = it.freq||'';
+  document.getElementById('rNotas').value = it.notas||'';
+  document.getElementById('btnDeleteRec').style.display='inline-block';
+  document.getElementById('overlayRec').classList.add('open');
+}
+
+function closeModalRec(){
+  document.getElementById('overlayRec').classList.remove('open');
+}
+
+async function saveRec(){
+  const item = document.getElementById('rItem').value.trim();
+  if(!item){ alert('Digite o nome do item.'); return; }
+  const freq = document.getElementById('rFreq').value;
+
+  const obj = {
+    item,
+    ultima: document.getElementById('rUltima').value,
+    freq: freq==='' ? null : Number(freq),
+    notas: document.getElementById('rNotas').value.trim(),
+    updatedAt: Date.now()
+  };
+
+  const id = editingRecId || ('r_' + Date.now());
+  recItems[id] = obj;
+  closeModalRec();
+  renderRec();
+  await saveRecItem(id, obj);
+}
+
+async function delRec(){
+  if(!editingRecId) return;
+  if(!confirm('Excluir este item recorrente?')) return;
+  const id = editingRecId;
+  delete recItems[id];
+  closeModalRec();
+  renderRec();
+  await deleteRecItem(id);
+}
+
+document.getElementById('btnAddRec').onclick = openAddRec;
+document.getElementById('btnCancelRec').onclick = closeModalRec;
+document.getElementById('btnSaveRec').onclick = saveRec;
+document.getElementById('btnDeleteRec').onclick = delRec;
+document.getElementById('overlayRec').onclick = (e)=>{ if(e.target.id==='overlayRec') closeModalRec(); };
+document.getElementById('recSearch').oninput = renderRec;
+
 load(true);
-setInterval(()=>load(false), 20000);
+loadRec();
+setInterval(()=>{ load(false); loadRec(); }, 20000);
 </script>
 </body>
 </html>
