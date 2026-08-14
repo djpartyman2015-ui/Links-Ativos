@@ -197,13 +197,19 @@ async function loadWords(){
   render();
 }
 
-async function speak(text){
-  if(!('speechSynthesis' in window)) return;
-  const u = new SpeechSynthesisUtterance(text);
-  u.lang = 'en-US';
-  u.rate = 0.9;
+function speak(text){
+  if(!('speechSynthesis' in window)){
+    setStatus('Seu navegador não suporta leitura de voz.', true);
+    return;
+  }
   window.speechSynthesis.cancel();
-  window.speechSynthesis.speak(u);
+  setTimeout(() => {
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'en-US';
+    u.rate = 0.9;
+    u.onerror = (e) => console.error('speech error:', e);
+    window.speechSynthesis.speak(u);
+  }, 60);
 }
 
 async function translate(text){
