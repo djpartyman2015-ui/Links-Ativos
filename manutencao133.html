@@ -300,7 +300,7 @@ let items = {};
 let editingId = null;
 let ver = 0; // incrementado a cada mudança local, evita que um GET atrasado sobrescreva uma gravação recente
 
-const BASE_URL_REC = "https://medicos-andrey-default-rtdb.firebaseio.com/manutencao133_recorrentes";
+const BASE_URL_REC = BASE_URL + "/_recorrentes"; // dentro do mesmo caminho já autorizado (evita 401 em nó novo)
 const DB_URL_REC = BASE_URL_REC + ".json";
 let recItems = {};
 let editingRecId = null;
@@ -361,7 +361,8 @@ async function load(initial=false){
       render();
     } else if(ver===myVer){
       // só aplica se nenhuma edição local aconteceu enquanto buscávamos (evita apagar item recém-salvo)
-      items = data || items;
+      items = data ? {...data} : items;
+      delete items._recorrentes; // subnó usado pela aba Recorrentes, não é um serviço da lista
       render();
     }
     setSync('ok','sincronizado agora');
