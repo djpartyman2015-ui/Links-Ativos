@@ -178,10 +178,6 @@
   <!-- ADMIN QUEUE (antes de iniciar) -->
   <div id="view-admin-queue" class="hidden">
     <div class="card">
-      <label>Código da edição (compartilhe com os jurados)</label>
-      <div class="code-badge" id="ed-code-display"></div>
-    </div>
-    <div class="card">
       <label>Adicionar cantor(a)</label>
       <div class="row">
         <input id="sg-name" placeholder="Nome">
@@ -216,8 +212,6 @@
   <!-- JUDGE JOIN -->
   <div id="view-judge-join" class="hidden">
     <div class="card">
-      <label>Código da edição</label>
-      <input id="jj-code" placeholder="Ex: AB12" style="text-transform:uppercase">
       <label>Seu nome</label>
       <input id="jj-name" placeholder="Como o palco vai te chamar">
       <button class="btn btn-cyan" onclick="joinAsJudge()">Entrar</button>
@@ -296,12 +290,9 @@ let editionId = localStorage.getItem('videoke_admin_edition') || null;
 let judgeSession = JSON.parse(localStorage.getItem('videoke_judge_session') || 'null'); // {editionId, code, name}
 let pollTimer = null;
 let lastVotedSingerId = null;
+let renderedSingerId = undefined;
 
-function genCode(){
-  const c='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
-  let s=''; for(let i=0;i<4;i++) s+=c[Math.floor(Math.random()*c.length)];
-  return s;
-}
+
 
 // ---------- Init ----------
 function init(){
@@ -320,12 +311,10 @@ function init(){
 async function createEdition(){
   const name = document.getElementById('ed-name').value.trim();
   if(!name){ toast('Dê um nome à edição'); return; }
-  const code = genCode();
-  const id = await fbPush('videoke/editions', {name, code, status:'setup', createdAt:Date.now(), currentSingerId:null});
-  await fbSet('videoke/codes/'+code, id);
+  const id = await fbPush('videoke/editions', {name, status:'setup', createdAt:Date.now(), currentSingerId:null});
+  await fbSet('videoke/currentEditionId', id);
   editionId = id;
   localStorage.setItem('videoke_admin_edition', id);
-  document.getElementById('ed-code-display').textContent = code;
   showView('admin-queue');
   loadQueue();
 }
@@ -334,7 +323,6 @@ async function resumeAdmin(){
   const ed = await fbGet('videoke/editions/'+editionId);
   if(!ed){ editionId=null; localStorage.removeItem('videoke_admin_edition'); showView('home'); loadHistory(); return; }
   if(ed.status==='setup'){
-    document.getElementById('ed-code-display').textContent = ed.code;
     showView('admin-queue'); loadQueue();
   } else if(ed.status==='live'){
     showView('admin-live'); pollAdminLive();
@@ -494,11 +482,10 @@ async function loadHistory(){
 
 // ---------- JUDGE ----------
 async function joinAsJudge(){
-  const code = document.getElementById('jj-code').value.trim().toUpperCase();
   const name = document.getElementById('jj-name').value.trim();
-  if(!code||!name){ toast('Preencha código e nome'); return; }
-  const id = await fbGet('videoke/codes/'+code);
-  if(!id){ toast('Código não encontrado'); return; }
+  if(!name){ toast('Preencha seu nome'); return; }
+  const id = await fbGet('videoke/currentEditionId');
+  if(!id){ toast('Nenhuma edição ativa agora'); return; }
   const jKey = name.toLowerCase().replace(/[^a-z0-9]/g,'_')+'_'+Math.floor(Math.random()*1000);
   await fbSet(`videoke/editions/${id}/judges/${jKey}`, {name, joinedAt:Date.now()});
   judgeSession = {editionId:id, name, jKey};
@@ -535,8 +522,8 @@ async function pollJudgeVote(){
 
   const btn = document.getElementById('jv-submit');
   const statusEl = document.getElementById('jv-status');
-  if(ed.currentSingerId !== lastVotedSingerId){
-    // check if already voted for this singer
+  if(ed.currentSingerId !== renderedSingerId){
+    renderedSingerId = ed.currentSingerId;
     const myScore = await fbGet(`videoke/editions/${judgeSession.editionId}/scores/${ed.currentSingerId}/${judgeSession.jKey}`);
     if(myScore){
       btn.disabled=true; btn.textContent='Nota enviada ✓'; statusEl.textContent='Aguarde a próxima apresentação';
