@@ -511,8 +511,9 @@ async function pollJudgeVote(){
   if(!ed) return;
   if(ed.status==='closed'){
     clearInterval(pollTimer);
+    const finishedId = judgeSession.editionId;
     localStorage.removeItem('videoke_judge_session'); judgeSession=null;
-    showView('ranking'); loadRanking(judgeSession ? judgeSession.editionId : ed);
+    showView('ranking'); loadRanking(finishedId);
     return;
   }
   const singers = await fbGet(`videoke/editions/${judgeSession.editionId}/singers`) || {};
