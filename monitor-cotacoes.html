@@ -510,11 +510,39 @@ async function loadBTC() {
 }
 
 async function loadDOP() {
-  // frankfurter.app — 100% CORS-free, sem chave
-  const r = await fetch('https://api.frankfurter.app/latest?from=USD&to=DOP,BRL');
-  const data = await r.json();
-  const usdToDop = data.rates['DOP'];
-  const usdToBrl = data.rates['BRL'];
+  let usdToDop = null;
+  let usdToBrl = null;
+
+  // Tentativa 1: currency-api via pages.dev (CORS-free, tem DOP)
+  try {
+    const r = await fetch('https://latest.currency-api.pages.dev/v1/currencies/usd.min.json');
+    const d = await r.json();
+    usdToDop = d.usd.dop;
+    usdToBrl = d.usd.brl;
+  } catch(e) {}
+
+  // Tentativa 2: jsdelivr mirror (mesmo dataset)
+  if (!usdToDop) {
+    try {
+      const r = await fetch('https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.min.json');
+      const d = await r.json();
+      usdToDop = d.usd.dop;
+      usdToBrl = d.usd.brl;
+    } catch(e) {}
+  }
+
+  // Tentativa 3: ExchangeRate-API pública sem chave
+  if (!usdToDop) {
+    try {
+      const r = await fetch('https://open.er-api.com/v6/latest/USD');
+      const d = await r.json();
+      usdToDop = d.rates.DOP;
+      usdToBrl = d.rates.BRL;
+    } catch(e) {}
+  }
+
+  if (!usdToDop) throw new Error('Não foi possível carregar cotação DOP');
+
   rates.udop = usdToDop;
   rates.bdop = usdToDop / usdToBrl; // 1 BRL = X DOP
 
@@ -526,7 +554,15 @@ async function loadAll() {
   document.getElementById('dot').className = 'dot loading';
   document.getElementById('update-text').textContent = 'Atualizando...';
   try {
-    await Promise.all([loadFX(), loadBTC(), loadDOP()]);
+    await Promise.all([
+      loadFX(),
+      loadBTC(),
+      loadDOP().catch(e => {
+        document.getElementById('udop-rate').textContent = 'Erro ao carregar DOP';
+        document.getElementById('bdop-rate').textContent = 'Erro ao carregar DOP';
+        console.warn('DOP falhou:', e);
+      })
+    ]);
     renderChart(currentTab);
     updateTimestamp();
   } catch (e) {
