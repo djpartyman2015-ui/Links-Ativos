@@ -856,7 +856,10 @@ function rendTrips(data){
   if(!trips.length){list.innerHTML=`<div class="et"><div style="font-size:44px">🗺️</div><div style="margin-top:10px">Nenhuma viagem ainda.</div></div>`;return;}
   list.innerHTML='';
   trips.forEach(t=>{
-    const ai=Object.values(t.malas?.a?.itens||{}),ti=Object.values(t.malas?.t?.itens||{});
+    const aiAll=Object.values(t.malas?.a?.itens||{}),tiAll=Object.values(t.malas?.t?.itens||{});
+    // Excluir itens da Pitanga do cálculo das malas pessoais
+    const ai=aiAll.filter(i=>i.category!=='🐾 Pitanga'&&i.category!=='Pitanga');
+    const ti=tiAll.filter(i=>i.category!=='🐾 Pitanga'&&i.category!=='Pitanga');
     const ap=ai.length?Math.round(ai.filter(i=>i.done).length/ai.length*100):0;
     const tp=ti.length?Math.round(ti.filter(i=>i.done).length/ti.length*100):0;
     const td=ai.filter(i=>i.done).length+ti.filter(i=>i.done).length;
