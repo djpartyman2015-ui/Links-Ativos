@@ -285,6 +285,31 @@ input[type=file]{display:none;}
 .mod-del{background:none;border:none;color:rgba(248,113,113,.4);font-size:14px;padding:2px 6px;border-radius:6px;flex-shrink:0;}
 .mod-del:hover{color:var(--re);background:rgba(248,113,113,.1);}
 
+/* MUNDO */
+.mundo-tab{padding:7px 16px;border-radius:20px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:var(--mu);font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;}
+.mundo-tab.on{border-color:#fbbf24;background:rgba(251,191,36,.15);color:#fbbf24;}
+.mundo-content{animation:fadeIn .2s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+.wish-stat{flex:1;text-align:center;padding:10px 6px;border-radius:12px;border:1px solid;}
+.wish-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);margin-bottom:5px;cursor:pointer;transition:all .2s;}
+.wish-item:hover{background:rgba(255,255,255,.07);}
+.wish-item.done{opacity:.65;background:rgba(74,222,128,.05);border-color:rgba(74,222,128,.15);}
+.wish-check{width:20px;height:20px;border-radius:5px;flex-shrink:0;border:2px solid rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;}
+.wish-item.done .wish-check{border-color:#4ade80;background:rgba(74,222,128,.2);}
+.hist-item{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);margin-bottom:5px;cursor:pointer;transition:all .2s;}
+.hist-item:hover{background:rgba(255,255,255,.07);}
+.hist-date{font-size:12px;font-weight:700;color:#e879f9;min-width:42px;}
+.hist-local{font-size:13px;font-weight:500;flex:1;color:var(--tx);}
+.hist-num{font-size:11px;color:var(--dim);background:rgba(232,121,249,.1);padding:2px 8px;border-radius:10px;border:1px solid rgba(232,121,249,.2);}
+.paises-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.pais-item{display:flex;align-items:flex-start;gap:8px;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);margin-bottom:5px;cursor:pointer;transition:all .2s;}
+.pais-item:hover{background:rgba(255,255,255,.07);}
+.pais-flag{font-size:20px;flex-shrink:0;line-height:1.2;}
+.pais-info{flex:1;min-width:0;}
+.pais-nome{font-size:12px;font-weight:700;color:var(--tx);}
+.pais-anos{font-size:10px;color:var(--dim);margin-top:1px;}
+.pais-nota{font-size:10px;color:#a78bfa;margin-top:1px;font-style:italic;}
+
 /* MODALS */
 .mo{display:none;position:fixed;inset:0;z-index:200;align-items:center;justify-content:center;background:rgba(0,0,0,.82);backdrop-filter:blur(6px);}
 .mo.on{display:flex;}
@@ -359,6 +384,10 @@ input[type=file]{display:none;}
     <!-- LISTA MODELO -->
     <div class="ntt" onclick="showSc('modelo')" style="margin-top:10px;border-color:rgba(99,202,183,.35);background:rgba(99,202,183,.05);color:#6bcab4;">
       <span>📋 Editar Lista Modelo</span>
+      <span>›</span>
+    </div>
+    <div class="ntt" onclick="showSc('mundo')" style="margin-top:10px;border-color:rgba(250,204,21,.3);background:rgba(250,204,21,.04);color:#fbbf24;">
+      <span>🌍 Nosso Mundo</span>
       <span>›</span>
     </div>
     <div class="ntb" id="ntb">
@@ -512,6 +541,103 @@ input[type=file]{display:none;}
   </div>
 </div>
 
+
+<!-- MUNDO SCREEN -->
+<div id="sc-mundo" class="sc">
+  <!-- Header -->
+  <div class="mh mha" style="padding-bottom:12px">
+    <button class="bb" onclick="showSc('via')">← Voltar</button>
+    <div style="font-size:clamp(18px,4vw,24px);font-weight:800;background:linear-gradient(90deg,#fbbf24,#f59e0b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:8px">🌍 Nosso Mundo</div>
+    <!-- Tabs -->
+    <div style="display:flex;gap:6px;flex-wrap:wrap;">
+      <button class="mundo-tab on" id="tab-wish" onclick="setMundoTab('wish')">🗺️ Wish List</button>
+      <button class="mundo-tab" id="tab-hist" onclick="setMundoTab('hist')">❤️ Histórico</button>
+      <button class="mundo-tab" id="tab-paises" onclick="setMundoTab('paises')">🌍 Países</button>
+    </div>
+  </div>
+
+  <!-- WISH LIST TAB -->
+  <div id="tab-wish-content" class="mundo-content">
+    <div style="max-width:720px;margin:0 auto;padding:12px 16px;">
+      <!-- Stats -->
+      <div style="display:flex;gap:10px;margin-bottom:14px;">
+        <div class="wish-stat" style="background:rgba(139,92,246,.1);border-color:rgba(139,92,246,.25)">
+          <div style="font-size:22px;font-weight:800;color:#a78bfa" id="wish-total">0</div>
+          <div style="font-size:10px;color:var(--dim)">DESTINOS</div>
+        </div>
+        <div class="wish-stat" style="background:rgba(74,222,128,.08);border-color:rgba(74,222,128,.2)">
+          <div style="font-size:22px;font-weight:800;color:#4ade80" id="wish-done">0</div>
+          <div style="font-size:10px;color:var(--dim)">VISITADOS</div>
+        </div>
+        <div class="wish-stat" style="background:rgba(251,191,36,.08);border-color:rgba(251,191,36,.2)">
+          <div style="font-size:22px;font-weight:800;color:#fbbf24" id="wish-pend">0</div>
+          <div style="font-size:10px;color:var(--dim)">SONHANDO</div>
+        </div>
+      </div>
+      <!-- Add form -->
+      <div style="display:flex;gap:8px;margin-bottom:14px;">
+        <input class="si" type="text" id="wish-nin" placeholder="✈️ Novo destino..." onkeydown="if(event.key==='Enter')addWish()" style="flex:1"/>
+        <button class="bac" onclick="addWish()" style="background:linear-gradient(135deg,#7c3aed,#a855f7)">+ Add</button>
+      </div>
+      <!-- Pending -->
+      <div style="font-size:11px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px">🌙 Para pesquisar</div>
+      <div id="wish-pend-list"></div>
+      <!-- Done -->
+      <div style="font-size:11px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin:14px 0 8px">✅ Visitados</div>
+      <div id="wish-done-list"></div>
+    </div>
+  </div>
+
+  <!-- HISTÓRICO TAB -->
+  <div id="tab-hist-content" class="mundo-content" style="display:none">
+    <div style="max-width:720px;margin:0 auto;padding:12px 16px;">
+      <div style="text-align:center;margin-bottom:14px;">
+        <div style="font-size:32px;font-weight:800;color:#e879f9" id="hist-count">0</div>
+        <div style="font-size:11px;color:var(--dim);letter-spacing:2px">VIAGENS JUNTOS ❤️</div>
+      </div>
+      <!-- Add form -->
+      <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
+        <input class="si" type="text" id="hist-ndata" placeholder="MM/AA" style="width:70px;flex:0 0 70px"/>
+        <input class="si" type="text" id="hist-nlocal" placeholder="Destino..." onkeydown="if(event.key==='Enter')addHist()" style="flex:1"/>
+        <button class="bac" onclick="addHist()" style="background:linear-gradient(135deg,#db2777,#e879f9)">+ Add</button>
+      </div>
+      <div id="hist-list"></div>
+    </div>
+  </div>
+
+  <!-- PAÍSES TAB -->
+  <div id="tab-paises-content" class="mundo-content" style="display:none">
+    <div style="max-width:720px;margin:0 auto;padding:12px 16px;">
+      <div class="paises-grid">
+        <!-- ANDREY -->
+        <div>
+          <div style="font-size:12px;font-weight:800;color:var(--a);text-transform:uppercase;letter-spacing:2px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;">
+            <span>🧔 Andrey</span>
+            <span style="font-size:18px;color:#e2e8f0" id="pais-count-a">0 países</span>
+          </div>
+          <div style="display:flex;gap:6px;margin-bottom:10px;">
+            <input class="si" type="text" id="pais-a-n" placeholder="País..." style="flex:1;font-size:12px;padding:7px 10px"/>
+            <button onclick="addPais('a')" style="padding:7px 12px;border-radius:8px;border:none;background:var(--a);color:#fff;font-size:12px;cursor:pointer">+</button>
+          </div>
+          <div id="pais-list-a"></div>
+        </div>
+        <!-- TIAGO -->
+        <div>
+          <div style="font-size:12px;font-weight:800;color:var(--t);text-transform:uppercase;letter-spacing:2px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;">
+            <span>👨 Tiago</span>
+            <span style="font-size:18px;color:#e2e8f0" id="pais-count-t">0 países</span>
+          </div>
+          <div style="display:flex;gap:6px;margin-bottom:10px;">
+            <input class="si" type="text" id="pais-t-n" placeholder="País..." style="flex:1;font-size:12px;padding:7px 10px"/>
+            <button onclick="addPais('t')" style="padding:7px 12px;border-radius:8px;border:none;background:var(--t);color:#fff;font-size:12px;cursor:pointer">+</button>
+          </div>
+          <div id="pais-list-t"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL DELETE TRIP -->
 <div class="mo" id="m-del">
   <div class="mb2">
@@ -520,6 +646,57 @@ input[type=file]{display:none;}
     <div class="mod" id="m-del-desc"></div>
     <div style="font-size:12px;color:var(--re);margin-bottom:14px;padding:8px 12px;background:rgba(248,113,113,.08);border-radius:8px;border:1px solid rgba(248,113,113,.2)">⚠️ Apaga para os dois e não pode ser desfeito.</div>
     <div class="mbr"><button class="bca" onclick="closeM('m-del')">Cancelar</button><button class="bde" style="flex:2" onclick="confirmDel()">🗑️ Apagar</button></div>
+  </div>
+</div>
+
+<!-- MODAL EDIT WISH -->
+<div class="mo" id="m-wish-edit">
+  <div class="mb2">
+    <div class="moi">✏️</div>
+    <div class="mot">Editar Destino</div>
+    <input class="moin" id="wish-ei-nome" placeholder="Destino..."/>
+    <input class="moin" id="wish-ei-nota" placeholder="Nota (ex: Jun/26)..." style="margin-top:-2px"/>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+      <input type="checkbox" id="wish-ei-feito" style="width:18px;height:18px;cursor:pointer"/>
+      <label for="wish-ei-feito" style="font-size:14px;color:var(--mu);cursor:pointer">Já visitado</label>
+    </div>
+    <div class="mbr">
+      <button class="bde" onclick="delWish()">🗑️</button>
+      <button class="bca" onclick="closeM('m-wish-edit')">Cancelar</button>
+      <button class="bco" onclick="saveWishEdit()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EDIT HIST -->
+<div class="mo" id="m-hist-edit">
+  <div class="mb2">
+    <div class="moi">✏️</div>
+    <div class="mot">Editar Viagem</div>
+    <input class="moin" id="hist-ei-data" placeholder="MM/AA"/>
+    <input class="moin" id="hist-ei-local" placeholder="Destino..."/>
+    <div class="mbr">
+      <button class="bde" onclick="delHist()">🗑️</button>
+      <button class="bca" onclick="closeM('m-hist-edit')">Cancelar</button>
+      <button class="bco" onclick="saveHistEdit()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EDIT PAIS -->
+<div class="mo" id="m-pais-edit">
+  <div class="mb2">
+    <div class="moi">✏️</div>
+    <div class="mot">Editar País</div>
+    <input class="moin" id="pais-ei-flag" placeholder="Bandeira (emoji)..."/>
+    <input class="moin" id="pais-ei-nome" placeholder="País..."/>
+    <input class="moin" id="pais-ei-anos" placeholder="Anos visitados..."/>
+    <input class="moin" id="pais-ei-nota" placeholder="Nota/memória opcional..."/>
+    <div class="mbr">
+      <button class="bde" onclick="delPais()">🗑️</button>
+      <button class="bca" onclick="closeM('m-pais-edit')">Cancelar</button>
+      <button class="bco" onclick="savePaisEdit()">Salvar</button>
+    </div>
   </div>
 </div>
 
@@ -596,7 +773,7 @@ window.addEventListener('fb-ready',()=>{
   else showSc('who');
 });
 
-function showSc(n){document.querySelectorAll('.sc').forEach(s=>s.classList.remove('on'));document.getElementById('sc-'+n).classList.add('on');if(n==='modelo')loadModelo();}
+function showSc(n){document.querySelectorAll('.sc').forEach(s=>s.classList.remove('on'));document.getElementById('sc-'+n).classList.add('on');if(n==='modelo')loadModelo();if(n==='mundo')loadMundo();}
 
 // USER
 function selUser(u){cu=u;sessionStorage.setItem('mu',u);setChip();showSc('via');loadViagens();}
@@ -1056,6 +1233,225 @@ async function mkItemsFromModelo(){
     obj[key]={label:v.label,category:v.category,done:false,id:key};
   });
   return obj;
+}
+
+
+// ══ MUNDO ══
+const WISH_SEED = [{"nome": "Peru", "feito": false, "nota": ""}, {"nome": "Curaçau", "feito": false, "nota": ""}, {"nome": "San Andrés / Cayo Cangrejo", "feito": false, "nota": ""}, {"nome": "Beto Carrero", "feito": false, "nota": ""}, {"nome": "Aruba", "feito": false, "nota": ""}, {"nome": "Cuba", "feito": false, "nota": ""}, {"nome": "Dubai", "feito": false, "nota": ""}, {"nome": "Tailândia", "feito": false, "nota": ""}, {"nome": "Maldivas", "feito": false, "nota": ""}, {"nome": "Capitólio", "feito": false, "nota": ""}, {"nome": "Vietnã", "feito": false, "nota": ""}, {"nome": "Transamerica Comandatuba", "feito": false, "nota": ""}, {"nome": "MSC Euribia", "feito": false, "nota": ""}, {"nome": "Albânia", "feito": false, "nota": ""}, {"nome": "Bolívia - Salar de Uyuni", "feito": false, "nota": ""}, {"nome": "Turks and Caicos", "feito": false, "nota": ""}, {"nome": "Cruzeiro Virgin Voyage", "feito": false, "nota": ""}, {"nome": "Zanzibar - Tanzânia", "feito": false, "nota": ""}, {"nome": "Noronha", "feito": true, "nota": "Jun/26"}, {"nome": "Uruguai", "feito": true, "nota": "Mar/24"}, {"nome": "Porto de Galinhas", "feito": true, "nota": "Mar/24"}, {"nome": "Maragogi", "feito": true, "nota": "Ago/22"}, {"nome": "Porto Seguro", "feito": true, "nota": "Mar/22"}, {"nome": "João Pessoa", "feito": true, "nota": "Mar/23"}];
+const HIST_SEED = [{"data": "08/26", "local": "Punta Cana"}, {"data": "06/26", "local": "Noronha/PE"}, {"data": "05/26", "local": "Monte Verde/MG"}, {"data": "03/26", "local": "MSC Seaview (Salvador/Búzios/Maceió)"}, {"data": "10/25", "local": "Porto/Caraíva/Brotas"}, {"data": "05/25", "local": "Monte Verde/MG"}, {"data": "04/25", "local": "Maresias"}, {"data": "04/25", "local": "RJ"}, {"data": "03/25", "local": "Ubatuba/Trindade/Paraty"}, {"data": "09/24", "local": "Jampa/Pipa/RIR no RJ"}, {"data": "08/24", "local": "Brotas"}, {"data": "05/24", "local": "Monte Verde/MG"}, {"data": "03/24", "local": "Porto de Galinhas/PE"}, {"data": "03/24", "local": "Montevidéu/Buenos Aires e Punta Del Este"}, {"data": "09/23", "local": "Campos do Jordão/SP"}, {"data": "08/23", "local": "Porto/Arraial/Caraíva/BA"}, {"data": "05/23", "local": "Monte Verde/MG"}, {"data": "03/23", "local": "João Pessoa/PB e Pipa/RN"}, {"data": "01/23", "local": "Rio de Janeiro"}, {"data": "11/22", "local": "Poços de Caldas"}, {"data": "08/22", "local": "Maceió/Maragogi/AL"}, {"data": "06/22", "local": "Salvador/Riachão/BA"}, {"data": "05/22", "local": "Monte Verde/MG"}, {"data": "03/22", "local": "Porto Seguro/BA"}, {"data": "09/21", "local": "Ilhabela/SP"}, {"data": "08/21", "local": "Salvador/Morro de SP/BA"}, {"data": "07/21", "local": "Poços/MG"}, {"data": "03/21", "local": "Natal e Pipa/RN"}, {"data": "11/20", "local": "RJ"}, {"data": "10/20", "local": "Gramado/RS"}, {"data": "09/20", "local": "Praia Grande/SP"}, {"data": "08/20", "local": "Ubatuba/Paraty/RJ"}, {"data": "02/20", "local": "Serra Negra/SP"}, {"data": "11/19", "local": "Poços/MG"}, {"data": "08/19", "local": "Buenos Aires/AR"}, {"data": "03/19", "local": "MSC Seaview - Cruzeiro Ilha Grande/RJ"}, {"data": "02/19", "local": "Brotas/SP"}];
+const PAISES_A_SEED = [{"pais": "Brasil", "flag": "🇧🇷", "anos": "", "nota": ""}, {"pais": "Chile", "flag": "🇨🇱", "anos": "2007, 2017", "nota": ""}, {"pais": "Argentina", "flag": "🇦🇷", "anos": "2007, 2019, 2024", "nota": ""}, {"pais": "Estados Unidos", "flag": "🇺🇸", "anos": "2008, 2012, 2013, 2014, 2015", "nota": ""}, {"pais": "México", "flag": "🇲🇽", "anos": "2008, 2017, 2018", "nota": ""}, {"pais": "Paraguai", "flag": "🇵🇾", "anos": "2009", "nota": ""}, {"pais": "África do Sul", "flag": "🇿🇦", "anos": "2012", "nota": ""}, {"pais": "Bahamas", "flag": "🇧🇸", "anos": "2012, 2015", "nota": ""}, {"pais": "Espanha", "flag": "🇪🇸", "anos": "2014", "nota": ""}, {"pais": "Portugal", "flag": "🇵🇹", "anos": "2014, 2016", "nota": ""}, {"pais": "França", "flag": "🇫🇷", "anos": "2014, 2017", "nota": ""}, {"pais": "Holanda", "flag": "🇳🇱", "anos": "2014, 2017", "nota": ""}, {"pais": "Bélgica", "flag": "🇧🇪", "anos": "2016", "nota": ""}, {"pais": "Grécia", "flag": "🇬🇷", "anos": "2016", "nota": ""}, {"pais": "Croácia", "flag": "🇭🇷", "anos": "2016", "nota": ""}, {"pais": "Turquia", "flag": "🇹🇷", "anos": "2016", "nota": ""}, {"pais": "Itália", "flag": "🇮🇹", "anos": "2016", "nota": ""}, {"pais": "Vaticano", "flag": "🇻🇦", "anos": "2016", "nota": ""}, {"pais": "Rep. Dominicana", "flag": "🇩🇴", "anos": "2017", "nota": ""}, {"pais": "Hungria", "flag": "🇭🇺", "anos": "2017", "nota": ""}, {"pais": "Inglaterra", "flag": "🏴󠁧󠁢󠁥󠁮󠁧󠁿", "anos": "2017", "nota": ""}, {"pais": "Alemanha", "flag": "🇩🇪", "anos": "2017", "nota": ""}, {"pais": "Suíça", "flag": "🇨🇭", "anos": "2017", "nota": ""}, {"pais": "Uruguai", "flag": "🇺🇾", "anos": "2024", "nota": ""}];
+
+let mundoTab = 'wish';
+let wishItems=[], histItems=[], paisesA=[], paisesT=[];
+let unsubWish=null, unsubHist=null, unsubPaisA=null, unsubPaisT=null;
+let editWishId=null, editHistId=null, editPaisId=null, editPaisUser=null;
+
+function setMundoTab(tab){
+  mundoTab=tab;
+  ['wish','hist','paises'].forEach(t=>{
+    document.getElementById('tab-'+t).classList.toggle('on',t===tab);
+    document.getElementById('tab-'+t+'-content').style.display=t===tab?'block':'none';
+  });
+}
+
+function loadMundo(){
+  setMundoTab('wish');
+  subWish(); subHist(); subPaisA(); subPaisT();
+}
+
+// ── WISH LIST ──
+function subWish(){
+  if(unsubWish)unsubWish();
+  unsubWish=fn.onValue(fn.ref(db,'mundo/wishlist'),snap=>{
+    const d=snap.val();
+    if(!d){ seedWish(); return; }
+    wishItems=Object.entries(d).map(([k,v])=>({...v,id:k}));
+    rendWish();
+  });
+}
+async function seedWish(){
+  const obj={};
+  WISH_SEED.forEach((x,i)=>{ const k='w'+i; obj[k]={...x,id:k}; });
+  await fn.set(fn.ref(db,'mundo/wishlist'),obj);
+}
+function rendWish(){
+  const pend=wishItems.filter(x=>!x.feito).sort((a,b)=>a.nome.localeCompare(b.nome));
+  const done=wishItems.filter(x=>x.feito).sort((a,b)=>a.nome.localeCompare(b.nome));
+  document.getElementById('wish-total').textContent=wishItems.length;
+  document.getElementById('wish-done').textContent=done.length;
+  document.getElementById('wish-pend').textContent=pend.length;
+  rendWishList('wish-pend-list',pend,false);
+  rendWishList('wish-done-list',done,true);
+}
+function rendWishList(elId,items,isDone){
+  const wrap=document.getElementById(elId);
+  if(!items.length){wrap.innerHTML=`<div style="color:var(--dim);font-size:12px;padding:8px 0">Nenhum destino aqui ainda.</div>`;return;}
+  wrap.innerHTML='';
+  items.forEach(x=>{
+    const row=document.createElement('div');
+    row.className='wish-item'+(x.feito?' done':'');
+    row.innerHTML=`<div class="wish-check">${isDone?'<svg width="11" height="11" viewBox="0 0 13 13" fill="none"><path d="M2 6.5L5.5 10L11 3" stroke="#4ade80" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>':''}</div>
+      <div style="flex:1"><div style="font-size:13px;font-weight:600;color:${isDone?'#6ee7b7':'var(--tx)'}">${x.nome}</div>${x.nota?`<div style="font-size:11px;color:var(--dim)">${x.nota}</div>`:''}
+      </div><button style="background:none;border:none;color:var(--dim);font-size:13px;cursor:pointer" onclick="event.stopPropagation();openWishEdit('${x.id}')">✏️</button>`;
+    row.addEventListener('click',()=>toggleWish(x.id,!x.feito));
+    wrap.appendChild(row);
+  });
+}
+async function toggleWish(id,v){ await fn.set(fn.ref(db,`mundo/wishlist/${id}/feito`),v); }
+async function addWish(){
+  const n=document.getElementById('wish-nin').value.trim();if(!n)return;
+  const nr=fn.push(fn.ref(db,'mundo/wishlist'));
+  await fn.set(nr,{nome:n,feito:false,nota:'',id:nr.key});
+  document.getElementById('wish-nin').value='';
+}
+function openWishEdit(id){
+  editWishId=id;
+  const x=wishItems.find(i=>i.id===id);if(!x)return;
+  document.getElementById('wish-ei-nome').value=x.nome;
+  document.getElementById('wish-ei-nota').value=x.nota||'';
+  document.getElementById('wish-ei-feito').checked=x.feito;
+  document.getElementById('m-wish-edit').classList.add('on');
+}
+async function saveWishEdit(){
+  if(!editWishId)return;
+  const nome=document.getElementById('wish-ei-nome').value.trim();
+  const nota=document.getElementById('wish-ei-nota').value.trim();
+  const feito=document.getElementById('wish-ei-feito').checked;
+  if(!nome)return;
+  await fn.update(fn.ref(db,`mundo/wishlist/${editWishId}`),{nome,nota,feito});
+  closeM('m-wish-edit');
+}
+async function delWish(){if(!editWishId)return;await fn.remove(fn.ref(db,`mundo/wishlist/${editWishId}`));closeM('m-wish-edit');}
+
+// ── HISTÓRICO ──
+function subHist(){
+  if(unsubHist)unsubHist();
+  unsubHist=fn.onValue(fn.ref(db,'mundo/historico'),snap=>{
+    const d=snap.val();
+    if(!d){ seedHist(); return; }
+    histItems=Object.entries(d).map(([k,v])=>({...v,id:k}));
+    rendHist();
+  });
+}
+async function seedHist(){
+  const obj={};
+  HIST_SEED.forEach((x,i)=>{ const k='h'+i; obj[k]={...x,id:k}; });
+  await fn.set(fn.ref(db,'mundo/historico'),obj);
+}
+function rendHist(){
+  const wrap=document.getElementById('hist-list');
+  document.getElementById('hist-count').textContent=histItems.length;
+  if(!histItems.length){wrap.innerHTML='<div style="color:var(--dim);font-size:12px;padding:8px 0">Nenhuma viagem ainda.</div>';return;}
+  const sorted=[...histItems].sort((a,b)=>{
+    const [ma,ya]=a.data.split('/').map(Number);
+    const [mb,yb]=b.data.split('/').map(Number);
+    return (yb*100+mb)-(ya*100+ma);
+  });
+  wrap.innerHTML='';
+  sorted.forEach((x,i)=>{
+    const row=document.createElement('div');row.className='hist-item';
+    row.innerHTML=`<span class="hist-num">#${histItems.length-i}</span><span class="hist-date">${x.data}</span><span class="hist-local">${x.local}</span><button style="background:none;border:none;color:var(--dim);font-size:13px;cursor:pointer" onclick="event.stopPropagation();openHistEdit('${x.id}')">✏️</button>`;
+    wrap.appendChild(row);
+  });
+}
+async function addHist(){
+  const data=document.getElementById('hist-ndata').value.trim();
+  const local=document.getElementById('hist-nlocal').value.trim();
+  if(!data||!local)return;
+  const nr=fn.push(fn.ref(db,'mundo/historico'));
+  await fn.set(nr,{data,local,id:nr.key});
+  document.getElementById('hist-ndata').value='';
+  document.getElementById('hist-nlocal').value='';
+}
+function openHistEdit(id){
+  editHistId=id;
+  const x=histItems.find(i=>i.id===id);if(!x)return;
+  document.getElementById('hist-ei-data').value=x.data;
+  document.getElementById('hist-ei-local').value=x.local;
+  document.getElementById('m-hist-edit').classList.add('on');
+}
+async function saveHistEdit(){
+  if(!editHistId)return;
+  const data=document.getElementById('hist-ei-data').value.trim();
+  const local=document.getElementById('hist-ei-local').value.trim();
+  if(!data||!local)return;
+  await fn.update(fn.ref(db,`mundo/historico/${editHistId}`),{data,local});
+  closeM('m-hist-edit');
+}
+async function delHist(){if(!editHistId)return;await fn.remove(fn.ref(db,`mundo/historico/${editHistId}`));closeM('m-hist-edit');}
+
+// ── PAÍSES ──
+function subPaisA(){
+  if(unsubPaisA)unsubPaisA();
+  unsubPaisA=fn.onValue(fn.ref(db,'mundo/paises/a'),snap=>{
+    const d=snap.val();
+    if(!d){ seedPaisA(); return; }
+    paisesA=Object.entries(d).map(([k,v])=>({...v,id:k}));
+    rendPaises('a',paisesA);
+  });
+}
+function subPaisT(){
+  if(unsubPaisT)unsubPaisT();
+  unsubPaisT=fn.onValue(fn.ref(db,'mundo/paises/t'),snap=>{
+    const d=snap.val();
+    if(!d){ paisesT=[]; rendPaises('t',[]); return; }
+    paisesT=Object.entries(d).map(([k,v])=>({...v,id:k}));
+    rendPaises('t',paisesT);
+  });
+}
+async function seedPaisA(){
+  const obj={};
+  PAISES_A_SEED.forEach((x,i)=>{ const k='pa'+i; obj[k]={...x,id:k}; });
+  await fn.set(fn.ref(db,'mundo/paises/a'),obj);
+}
+function rendPaises(u,items){
+  const wrap=document.getElementById('pais-list-'+u);
+  const count=document.getElementById('pais-count-'+u);
+  if(count)count.textContent=items.length+' países';
+  const sorted=[...items].sort((a,b)=>a.pais.localeCompare(b.pais));
+  wrap.innerHTML='';
+  sorted.forEach(x=>{
+    const row=document.createElement('div');row.className='pais-item';
+    row.innerHTML=`<div class="pais-flag">${x.flag||'🌍'}</div>
+      <div class="pais-info">
+        <div class="pais-nome">${x.pais}</div>
+        ${x.anos?`<div class="pais-anos">${x.anos}</div>`:''}
+        ${x.nota?`<div class="pais-nota">${x.nota}</div>`:''}
+      </div>
+      <button style="background:none;border:none;color:var(--dim);font-size:12px;cursor:pointer" onclick="event.stopPropagation();openPaisEdit('${u}','${x.id}')">✏️</button>`;
+    wrap.appendChild(row);
+  });
+}
+async function addPais(u){
+  const n=document.getElementById('pais-'+u+'-n').value.trim();if(!n)return;
+  const nr=fn.push(fn.ref(db,'mundo/paises/'+u));
+  await fn.set(nr,{pais:n,flag:'🌍',anos:'',nota:'',id:nr.key});
+  document.getElementById('pais-'+u+'-n').value='';
+}
+function openPaisEdit(u,id){
+  editPaisId=id; editPaisUser=u;
+  const items=u==='a'?paisesA:paisesT;
+  const x=items.find(i=>i.id===id);if(!x)return;
+  document.getElementById('pais-ei-flag').value=x.flag||'🌍';
+  document.getElementById('pais-ei-nome').value=x.pais;
+  document.getElementById('pais-ei-anos').value=x.anos||'';
+  document.getElementById('pais-ei-nota').value=x.nota||'';
+  document.getElementById('m-pais-edit').classList.add('on');
+}
+async function savePaisEdit(){
+  if(!editPaisId||!editPaisUser)return;
+  const flag=document.getElementById('pais-ei-flag').value.trim()||'🌍';
+  const pais=document.getElementById('pais-ei-nome').value.trim();
+  const anos=document.getElementById('pais-ei-anos').value.trim();
+  const nota=document.getElementById('pais-ei-nota').value.trim();
+  if(!pais)return;
+  await fn.update(fn.ref(db,`mundo/paises/${editPaisUser}/${editPaisId}`),{flag,pais,anos,nota});
+  closeM('m-pais-edit');
+}
+async function delPais(){
+  if(!editPaisId||!editPaisUser)return;
+  await fn.remove(fn.ref(db,`mundo/paises/${editPaisUser}/${editPaisId}`));
+  closeM('m-pais-edit');
 }
 
 function closeM(id){document.getElementById(id).classList.remove('on');}
