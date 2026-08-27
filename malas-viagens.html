@@ -865,7 +865,13 @@ function rendTrips(data){
     const td=ai.filter(i=>i.done).length+ti.filter(i=>i.done).length;
     const ta=ai.length+ti.length,gp=ta?Math.round(td/ta*100):0;
     const dias=calcCD(t.dataIda);
-    const pill=dias!==null?(dias===0?`<div class="tcp">🛫 Hoje!</div>`:dias>0?`<div class="tcp">⏳ ${dias} dias</div>`:`<div class="tcp" style="color:#4ade80">✈️ Em viagem</div>`):'';
+    const diasVolta=t.dataVolta?calcCD(t.dataVolta):null;
+    const pill=dias!==null?(
+      dias===0?`<div class="tcp">🛫 Hoje!</div>`:
+      dias>0?`<div class="tcp">⏳ ${dias} dias</div>`:
+      (diasVolta!==null&&diasVolta<0)?`<div class="tcp" style="color:#a78bfa">🏠 Concluída</div>`:
+      `<div class="tcp" style="color:#4ade80">✈️ Em viagem</div>`
+    ):'';
     const card=document.createElement('div');card.className='tc';
     card.innerHTML=`<div class="tch"><div class="tei">${t.emoji||'✈️'}</div><div class="ti"><div class="tn">${t.nome}</div><div class="td">${t.dataIda?fmtD(t.dataIda):''}${t.dataVolta?' → '+fmtD(t.dataVolta):''}</div>${pill}<div class="tba">${ai.length?`<div class="mb a">🧔 ${ap}%</div>`:'<div class="mb a" style="opacity:.4">🧔 —</div>'}${ti.length?`<div class="mb t">👨 ${tp}%</div>`:'<div class="mb t" style="opacity:.4">👨 —</div>'}</div></div></div><div class="tcf"><div class="bw"><div class="bf" style="width:${gp}%"></div></div><span style="font-size:11px;color:var(--dim)">${gp}% geral</span><button class="tdb" title="Apagar">🗑️</button></div>`;
     card.addEventListener('click',e=>{if(e.target.closest('.tdb')){e.stopPropagation();openDel(t.id,t.nome);return;}abrirMala(t);});
