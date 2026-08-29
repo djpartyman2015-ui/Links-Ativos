@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Skincare Firmador</title>
 
 <!-- PWA / "Add to Home Screen" no iPhone -->
@@ -164,19 +164,23 @@
 
   /* ZOOM MODAL */
   .zoom-modal{
-    display:none; position:fixed; inset:0; background:rgba(10,11,13,0.96); z-index:1000;
-    padding:20px; overflow:auto;
+    display:none; position:fixed; inset:0; background:rgba(10,11,13,0.97); z-index:1000;
+    overflow-y:auto; -webkit-overflow-scrolling:touch;
   }
-  .zoom-modal.open{display:flex; flex-direction:column;}
+  .zoom-modal.open{display:block;}
   .zoom-modal-close{
-    align-self:flex-end; background:var(--panel-2); border:1px solid var(--line); color:var(--text);
-    border-radius:8px; width:38px; height:38px; font-size:18px; cursor:pointer; margin-bottom:14px; flex-shrink:0;
+    position:fixed; top:16px; right:16px; z-index:1001;
+    background:var(--panel-2); border:1px solid var(--line); color:var(--text);
+    border-radius:8px; width:42px; height:42px; font-size:20px; cursor:pointer;
   }
-  .zoom-modal-imgs{display:flex; gap:16px; flex:1; align-items:flex-start; justify-content:center; flex-wrap:wrap;}
+  .zoom-modal-imgs{
+    display:flex; gap:20px; min-height:100%; align-items:flex-start; justify-content:center;
+    flex-wrap:wrap; padding:70px 20px 40px;
+  }
   .zoom-modal-col{text-align:center; max-width:100%;}
   .zoom-modal-col .photo-day-label{margin-bottom:8px; font-size:13px;}
   .zoom-modal-col img{
-    max-width:min(90vw, 480px); width:100%; height:auto; border-radius:10px; display:block; touch-action:pinch-zoom;
+    max-width:min(90vw, 480px); width:100%; height:auto; border-radius:10px; display:block;
   }
   @media(max-width:700px){
     .zoom-modal-imgs{flex-direction:column; align-items:center;}
@@ -483,7 +487,9 @@ let selectedDate = todayKey();
 
 const PAUSES = [
   { start:"2026-08-13", end:"2026-08-27", productKeys:["retinal","ahagel"],
-    reason:"Viagem pro Caribe (17-24/08) com sol forte — Retinal e AHA pausados por fotossensibilidade. Pausa de 13/08 a 27/08 (antes e depois da viagem)." }
+    reason:"Viagem pro Caribe (17-24/08) com sol forte — Retinal e AHA pausados por fotossensibilidade. Pausa de 13/08 a 27/08 (antes e depois da viagem)." },
+  { start:"2026-08-28", end:"2026-09-06", productKeys:["retinal","ahagel"],
+    reason:"Hotel fazenda (31/08-03/09) com sol na piscina — Retinal e AHA pausados por fotossensibilidade. Pausa de 28/08 a 06/09 (antes e depois da viagem)." }
 ];
 
 function activePauseForDate(dateStr){
