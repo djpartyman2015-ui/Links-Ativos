@@ -653,7 +653,7 @@ function renderRings(){
   const calendarDays = daysSince(start, asOf);
   const skipped = skippedCountSince(start, asOf);
   const dayN = Math.max(1, calendarDays - skipped);
-  document.getElementById("dayCount").textContent = dayN;
+  document.getElementById("dayCount").textContent = Math.round(dayN);
   const dowNames = ["Domingo","Segunda","Terça","Quarta","Quinta","Sexta","Sábado"];
   const asOfDate = parseLocalDate(asOf);
   const dowLabel = dowNames[asOfDate.getDay()];
