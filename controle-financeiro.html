@@ -128,6 +128,7 @@ nav button[aria-pressed="true"]{color:var(--brand)}
   background:var(--ink);color:#fff;padding:9px 16px;border-radius:22px;font-size:12.5px;z-index:60;opacity:0;transition:opacity .25s;max-width:88%;text-align:center}
 .toast.on{opacity:1}
 .chart{position:relative;height:160px}
+#chartAnoWrap{position:relative;height:220px}
 .mini{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
 .mini div{background:var(--surface);border-radius:var(--r);padding:10px;box-shadow:var(--shadow)}
 .mini span{font-size:10.5px;color:var(--muted);display:block}
@@ -196,6 +197,10 @@ nav button[aria-pressed="true"]{color:var(--brand)}
         <h2>Lançamentos recentes<button onclick="troca('lanc')">ver todos</button></h2>
         <div id="listaRecentes"></div>
       </div>
+    </div>
+    <div class="card">
+      <h2>Gastos do ano por categoria<small id="anoLabel"></small></h2>
+      <div id="chartAnoWrap"><canvas id="chartAno"></canvas></div>
     </div>
   </section>
 
@@ -481,6 +486,30 @@ function renderDash(mes){
       <span>${ICONE[l.cat]||'•'} ${l.cat}</span><b>${brlc(g)} / ${brlc(l.valor)}</b></div>
       <div class="bar"><i style="width:${p}%;background:${cor}"></i></div></div>`;
   }).join('') : '<div class="empty"><b>Sem limites definidos</b>Defina um teto por categoria.</div>';
+
+  renderAno();
+}
+function renderAno(){
+  const ano=ref.getFullYear();
+  const anual=lancArray().filter(l=>l.tipo==='despesa'&&l.data&&l.data.slice(0,4)===String(ano));
+  const porCat={};
+  anual.forEach(l=>porCat[l.cat]=(porCat[l.cat]||0)+(+l.valor||0));
+  const ord=Object.entries(porCat).sort((a,b)=>b[1]-a[1]);
+  const tot=ord.reduce((s,[,v])=>s+v,0);
+  document.getElementById('anoLabel').textContent = ano + (tot? ' · '+brlc(tot) : '');
+  document.getElementById('chartAnoWrap').style.height = Math.max(160, ord.length*30) + 'px';
+  desenhar('chartAno','bar',{
+    labels: ord.map(x=>x[0]),
+    datasets:[{data:ord.map(x=>x[1]), backgroundColor:CORES, borderRadius:4, maxBarThickness:20}]
+  },{
+    indexAxis:'y',
+    plugins:{legend:{display:false},
+      tooltip:{callbacks:{label:c=>` ${brl(c.raw)}${tot?' ('+Math.round(c.raw/tot*100)+'%)':''}`}}},
+    scales:{
+      x:{ticks:{callback:v=>brlc(v),font:{size:10}},grid:{color:'#EBEFF4'}},
+      y:{grid:{display:false},ticks:{font:{size:11}}}
+    }
+  });
 }
 function renderLanc(mes){
   const f=filtrados(mes);
