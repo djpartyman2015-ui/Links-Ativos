@@ -424,10 +424,11 @@ function render(){
   if(aba==='inv')  renderInv();
   if(aba==='lim')  renderLimites(mes);
 }
+const truncar = (s,n) => { s=String(s||''); return s.length>n ? s.slice(0,n-1).trimEnd()+'…' : s; };
 function linha(l){
   return `<div class="item" onclick="abrir('lanc','${l.id}')">
     <div class="ic">${ICONE[l.cat]||'•'}</div>
-    <div class="txt"><b>${esc(l.desc||l.cat)}</b>
+    <div class="txt"><b>${esc(truncar(l.desc||l.cat,32))}</b>
       <span>${new Date(l.data+'T12:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})} · ${esc(l.cat)}${l.conta?' · '+esc(l.conta):''}
       ${l.pago===false?'<span class="tag">a pagar</span>':''}${l.origem==='fatura'?'<span class="tag of">fatura</span>':''}</span></div>
     <div class="val ${l.tipo==='receita'?'pos':'neg'}">${l.tipo==='receita'?'+':'−'} ${brl(l.valor).replace('R$ ','')}</div>
