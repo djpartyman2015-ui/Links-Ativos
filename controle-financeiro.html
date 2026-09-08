@@ -522,7 +522,7 @@ function renderInv(){
        <td>${t}</td><td class="v">${brlc(v)}</td><td class="p">${atu?Math.round(v/atu*100):0}%</td></tr>`).join('')
     : '<tr><td class="empty">Cadastre um ativo.</td></tr>';
 
-  document.getElementById('listaInv').innerHTML = ivs.length? ivs.map(([id,i])=>{
+  document.getElementById('listaInv').innerHTML = ivs.length? [...ivs].sort((a,b)=>(+b[1].atual||0)-(+a[1].atual||0)).map(([id,i])=>{
     const g=(+i.atual||0)-(+i.aplicado||0), pc=i.aplicado?g/+i.aplicado*100:0;
     const dias=i.atualizadoEm? Math.floor((Date.now()-new Date(i.atualizadoEm+'T12:00'))/86400000) : null;
     const desatualizado = dias===null || dias>30;
