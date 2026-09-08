@@ -226,9 +226,10 @@ nav button[aria-pressed="true"]{color:var(--brand)}
   </section>
 
   <section id="tab-inv" class="hide">
-    <div class="mini">
+    <div class="mini" style="grid-template-columns:repeat(4,1fr)">
       <div><span>Aplicado</span><b class="num" id="iApl">—</b></div>
       <div><span>Hoje</span><b class="num" id="iAtu">—</b></div>
+      <div><span>Rendimento</span><b class="num" id="iRendR">—</b></div>
       <div><span>Rendimento</span><b class="num" id="iRend">—</b></div>
     </div>
     <div class="grid d2">
@@ -291,7 +292,7 @@ const CAT_IN  = ['Salário','Freelance','Rendimentos','Reembolso','Presente','Ou
 const ICONE = {Moradia:'🏠',Alimentação:'🍽️',Mercado:'🛒',Transporte:'🚗',Saúde:'💊',Lazer:'🎬',Educação:'📚',
   Assinaturas:'📺',Pet:'🐶',Vestuário:'👕',Cartão:'💳',Viagens:'✈️',Presentes:'🎁','Compras Online':'📦',Eletrônicos:'💻',Outros:'•',Salário:'💼',Freelance:'🧾',Rendimentos:'📈',Reembolso:'↩️',Presente:'🎁'};
 const CORES = ['#132B4C','#0D7A62','#BE4028','#B0801F','#5B4B8A','#2E7DA8','#7A9E3F','#C46A9B','#8A6D3B','#4A5568','#D08B3C','#3C8B7E'];
-const TIPO_INV = ['Renda fixa','Ações','FIIs','Cripto','Tesouro','Fundos','Previdência','Reserva'];
+const TIPO_INV = ['Renda fixa','Ações','FIIs','Cripto','Tesouro','Fundos','Previdência','Moeda','Reserva'];
 
 /* dicionário inicial: palavra no texto → categoria */
 const SEED = {
@@ -509,6 +510,8 @@ function renderInv(){
   const apl=ivs.reduce((s,[,i])=>s+(+i.aplicado||0),0), atu=ivs.reduce((s,[,i])=>s+(+i.atual||0),0);
   document.getElementById('iApl').textContent=brlc(apl);
   document.getElementById('iAtu').textContent=brlc(atu);
+  const ganho=atu-apl, elR=document.getElementById('iRendR');
+  elR.textContent=(ganho>=0?'+':'')+brlc(ganho); elR.className='num '+(ganho>=0?'pos':'neg');
   const r=apl?(atu-apl)/apl*100:0, el=document.getElementById('iRend');
   el.textContent=(r>=0?'+':'')+r.toFixed(1)+'%'; el.className='num '+(r>=0?'pos':'neg');
 
