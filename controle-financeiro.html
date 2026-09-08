@@ -524,8 +524,12 @@ function renderInv(){
 
   document.getElementById('listaInv').innerHTML = ivs.length? ivs.map(([id,i])=>{
     const g=(+i.atual||0)-(+i.aplicado||0), pc=i.aplicado?g/+i.aplicado*100:0;
+    const dias=i.atualizadoEm? Math.floor((Date.now()-new Date(i.atualizadoEm+'T12:00'))/86400000) : null;
+    const desatualizado = dias===null || dias>30;
+    const dataTxt = i.atualizadoEm? new Date(i.atualizadoEm+'T12:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}) : 'nunca';
     return `<div class="item" onclick="abrir('inv','${id}')">
-      <div class="ic">📊</div><div class="txt"><b>${esc(i.nome)}</b><span>${i.tipo} · aplicado ${brlc(i.aplicado)}</span></div>
+      <div class="ic">📊</div><div class="txt"><b>${esc(i.nome)}</b><span>${i.tipo}${i.corretora?' · '+esc(i.corretora):''}
+        ${desatualizado?`<span class="tag" style="background:#FBF0E0;color:#8F5310">atualizar (${dataTxt})</span>`:`<span class="tag of">${dataTxt}</span>`}</span></div>
       <div class="val">${brlc(i.atual)}<br><span class="${g>=0?'pos':'neg'}" style="font-size:10.5px">${g>=0?'+':''}${pc.toFixed(1)}%</span></div></div>`;
   }).join('') : '<div class="empty"><b>Nenhum ativo cadastrado</b>Adicione onde seu dinheiro está aplicado.</div>';
 }
@@ -782,10 +786,13 @@ function formInv(id){
   const i=id?dados.investimentos[id]:{};
   return `<h3>${id?'Editar ativo':'Novo ativo'}<button onclick="fechar()">×</button></h3>
   <div class="field"><label>Nome do ativo</label><input id="v_nome" placeholder="Ex.: CDB Nubank 110%" value="${esc(i.nome)}"></div>
-  <div class="field"><label>Tipo</label><select id="v_tipo">${TIPO_INV.map(t=>`<option ${t===i.tipo?'selected':''}>${t}</option>`).join('')}</select></div>
+  <div class="two">
+    <div class="field"><label>Tipo</label><select id="v_tipo">${TIPO_INV.map(t=>`<option ${t===i.tipo?'selected':''}>${t}</option>`).join('')}</select></div>
+    <div class="field"><label>Corretora ou plataforma</label><input id="v_corretora" placeholder="Ex.: Rico, XP, C6" value="${esc(i.corretora)}"></div></div>
   <div class="two">
     <div class="field"><label>Valor aplicado</label><input id="v_apl" inputmode="decimal" placeholder="0,00" value="${i.aplicado?String(i.aplicado).replace('.',','):''}"></div>
     <div class="field"><label>Valor hoje</label><input id="v_atu" inputmode="decimal" placeholder="0,00" value="${i.atual?String(i.atual).replace('.',','):''}"></div></div>
+  ${i.atualizadoEm?`<div class="blabel" style="margin:-2px 0 10px"><span>Atualizado pela última vez em ${new Date(i.atualizadoEm+'T12:00').toLocaleDateString('pt-BR')}</span></div>`:''}
   <button class="btn" onclick="gravarInv('${id||''}')">${id?'Salvar alterações':'Adicionar ativo'}</button>
   ${id?`<div style="text-align:center;margin-top:12px"><button class="del" onclick="excluir('investimentos','${id}')">Excluir ativo</button></div>`:''}`;
 }
@@ -793,8 +800,10 @@ function gravarInv(id){
   const nome=document.getElementById('v_nome').value.trim();
   if(!nome){ toast('Informe o nome do ativo'); return; }
   salvar('investimentos',{nome,tipo:document.getElementById('v_tipo').value,
+    corretora:document.getElementById('v_corretora').value.trim(),
     aplicado:num(document.getElementById('v_apl').value),
-    atual:num(document.getElementById('v_atu').value)}, id||null);
+    atual:num(document.getElementById('v_atu').value),
+    atualizadoEm:hoje()}, id||null);
   fechar();
 }
 function formLim(id){
