@@ -496,6 +496,7 @@ function renderAno(){
   anual.forEach(l=>porCat[l.cat]=(porCat[l.cat]||0)+(+l.valor||0));
   const ord=Object.entries(porCat).sort((a,b)=>b[1]-a[1]);
   const tot=ord.reduce((s,[,v])=>s+v,0);
+  const maior=ord.length?ord[0][1]:0;
   document.getElementById('anoLabel').textContent = ano + (tot? ' · '+brlc(tot) : '');
   document.getElementById('chartAnoWrap').style.height = Math.max(160, ord.length*30) + 'px';
   desenhar('chartAno','bar',{
@@ -503,13 +504,14 @@ function renderAno(){
     datasets:[{data:ord.map(x=>x[1]), backgroundColor:CORES, borderRadius:4, maxBarThickness:20}]
   },{
     indexAxis:'y',
+    layout:{padding:{right:64}},
     plugins:{legend:{display:false},
       tooltip:{callbacks:{label:c=>` ${brl(c.raw)}${tot?' ('+Math.round(c.raw/tot*100)+'%)':''}`}}},
     scales:{
-      x:{ticks:{callback:v=>brlc(v),font:{size:10}},grid:{color:'#EBEFF4'}},
+      x:{max:maior*1.25||undefined,ticks:{callback:v=>brlc(v),font:{size:10}},grid:{color:'#EBEFF4'}},
       y:{grid:{display:false},ticks:{font:{size:11}}}
     }
-  });
+  },[plugRotulosH]);
 }
 function renderLanc(mes){
   const f=filtrados(mes);
@@ -594,11 +596,30 @@ function renderLimites(mes){
         <span>${rest>=0?brl(rest)+' disponível':'estourou '+brl(-rest)}</span></div></div>`;
   }).join('') : '<div class="empty"><b>Sem limites definidos</b>Escolha um teto por categoria e acompanhe em tempo real.</div>';
 }
-function desenhar(id,tipo,data,opts){
+function desenhar(id,tipo,data,opts,plugins){
   if(charts[id]) charts[id].destroy();
   charts[id]=new Chart(document.getElementById(id),{type:tipo,data,
-    options:Object.assign({responsive:true,maintainAspectRatio:false},opts)});
+    options:Object.assign({responsive:true,maintainAspectRatio:false},opts),
+    plugins:plugins||[]});
 }
+const plugRotulosH={
+  id:'valueLabelsH',
+  afterDatasetsDraw(chart){
+    const {ctx}=chart;
+    chart.data.datasets.forEach((ds,di)=>{
+      chart.getDatasetMeta(di).data.forEach((bar,i)=>{
+        const v=ds.data[i]; if(!v) return;
+        ctx.save();
+        ctx.font="600 11px Inter, sans-serif";
+        ctx.fillStyle="#101A26";
+        ctx.textAlign="left";
+        ctx.textBaseline="middle";
+        ctx.fillText(brlc(v), bar.x+6, bar.y);
+        ctx.restore();
+      });
+    });
+  }
+};
 
 /* ==================== IMPORTAR FATURA ==================== */
 function normalizar(s){
