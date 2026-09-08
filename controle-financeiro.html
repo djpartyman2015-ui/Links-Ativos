@@ -466,7 +466,7 @@ function renderDash(mes){
              y:{ticks:{callback:v=>brlc(v),font:{size:10}},grid:{color:'#EBEFF4'}}}});
 
   const gasto={}; mes.filter(l=>l.tipo==='despesa').forEach(l=>gasto[l.cat]=(gasto[l.cat]||0)+(+l.valor||0));
-  const ls=Object.entries(dados.limites);
+  const ls=Object.entries(dados.limites).sort((a,b)=>a[1].cat.localeCompare(b[1].cat,'pt-BR'));
   document.getElementById('dashLim').innerHTML = ls.length? ls.map(([id,l])=>{
     const g=gasto[l.cat]||0, p=Math.min(100,g/(+l.valor||1)*100);
     const cor=p>=100?'var(--out)':p>=80?'var(--warn)':'var(--in)';
@@ -530,7 +530,7 @@ function renderInv(){
 }
 function renderLimites(mes){
   const gasto={}; mes.filter(l=>l.tipo==='despesa').forEach(l=>gasto[l.cat]=(gasto[l.cat]||0)+(+l.valor||0));
-  const ls=Object.entries(dados.limites);
+  const ls=Object.entries(dados.limites).sort((a,b)=>a[1].cat.localeCompare(b[1].cat,'pt-BR'));
   document.getElementById('listaLimites').innerHTML = ls.length? ls.map(([id,l])=>{
     const g=gasto[l.cat]||0, p=Math.min(100,g/(+l.valor||1)*100), rest=(+l.valor||0)-g;
     const cor=p>=100?'var(--out)':p>=80?'var(--warn)':'var(--in)';
