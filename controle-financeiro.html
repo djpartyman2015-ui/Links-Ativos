@@ -303,6 +303,7 @@ const ICONE = {Moradia:'🏠',Alimentação:'🍽️',Mercado:'🛒',Transporte:
   Assinaturas:'📺',Pet:'🐶',Vestuário:'👕',Cartão:'💳',Viagens:'✈️',Presentes:'🎁','Compras Online':'📦',Eletrônicos:'💻','Bem-Estar':'🧘',Outros:'•',Salário:'💼',Freelance:'🧾',Rendimentos:'📈',Reembolso:'↩️',Presente:'🎁'};
 const CORES = ['#132B4C','#0D7A62','#BE4028','#B0801F','#5B4B8A','#2E7DA8','#7A9E3F','#C46A9B','#8A6D3B','#4A5568','#D08B3C','#3C8B7E'];
 const TIPO_INV = ['Renda fixa','Ações','FIIs','Cripto','Tesouro','Fundos','Previdência','Moeda','Reserva'];
+const ICONE_INV = {'Renda fixa':'🏦','Ações':'📈','FIIs':'🏢','Cripto':'₿','Tesouro':'🏛️','Fundos':'🧺','Previdência':'🌳','Moeda':'💱','Reserva':'🛟'};
 
 /* dicionário inicial: palavra no texto → categoria */
 const SEED = {
@@ -567,7 +568,7 @@ function renderInv(){
     const desatualizado = dias===null || dias>30;
     const dataTxt = i.atualizadoEm? new Date(i.atualizadoEm+'T12:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}) : 'nunca';
     return `<div class="item" onclick="abrir('inv','${id}')">
-      <div class="ic">📊</div><div class="txt"><b>${esc(i.nome)}</b><span>${i.tipo}${i.corretora?' · '+esc(i.corretora):''}
+      <div class="ic">${ICONE_INV[i.tipo]||'📊'}</div><div class="txt"><b>${esc(i.nome)}</b><span>${i.tipo}${i.corretora?' · '+esc(i.corretora):''}
         ${desatualizado?`<span class="tag" style="background:#FBF0E0;color:#8F5310">atualizar (${dataTxt})</span>`:`<span class="tag of">${dataTxt}</span>`}</span></div>
       <div class="val">${brlc(i.atual)}<br><span class="${g>=0?'pos':'neg'}" style="font-size:10.5px">${g>=0?'+':''}${pc.toFixed(1)}%</span></div></div>`;
   }).join('') : '<div class="empty"><b>Nenhum ativo cadastrado</b>Adicione onde seu dinheiro está aplicado.</div>';
