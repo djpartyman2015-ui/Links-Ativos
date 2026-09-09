@@ -22,7 +22,8 @@
   --in:#0D7A62; --out:#BE4028; --gold:#B0801F; --warn:#C2761B;
   --r:12px; --shadow:0 1px 2px rgba(16,26,38,.06), 0 6px 18px rgba(16,26,38,.05);
 }
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;min-width:0}
+html,body{overflow-x:hidden;max-width:100vw}
 body{margin:0;background:var(--bg);color:var(--ink);
   font-family:Inter,-apple-system,BlinkMacSystemFont,sans-serif;font-size:13.5px;line-height:1.4;
   padding-bottom:calc(66px + env(safe-area-inset-bottom))}
@@ -304,6 +305,7 @@ const ICONE = {Moradia:'🏠',Alimentação:'🍽️',Mercado:'🛒',Transporte:
 const CORES = ['#132B4C','#0D7A62','#BE4028','#B0801F','#5B4B8A','#2E7DA8','#7A9E3F','#C46A9B','#8A6D3B','#4A5568','#D08B3C','#3C8B7E'];
 const TIPO_INV = ['Renda fixa','Ações','FIIs','Cripto','Tesouro','Fundos','Previdência','Moeda','Reserva'];
 const ICONE_INV = {'Renda fixa':'🏦','Ações':'📈','FIIs':'🏢','Cripto':'₿','Tesouro':'🏛️','Fundos':'🧺','Previdência':'🌳','Moeda':'💱','Reserva':'🛟'};
+const COR_INV = {'Renda fixa':'#132B4C','Ações':'#0D7A62','FIIs':'#B0801F','Cripto':'#C2761B','Tesouro':'#5B4B8A','Fundos':'#2E7DA8','Previdência':'#7A9E3F','Moeda':'#C46A9B','Reserva':'#BE4028'};
 
 /* dicionário inicial: palavra no texto → categoria */
 const SEED = {
@@ -568,7 +570,7 @@ function renderInv(){
     const desatualizado = dias===null || dias>30;
     const dataTxt = i.atualizadoEm? new Date(i.atualizadoEm+'T12:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}) : 'nunca';
     return `<div class="item" onclick="abrir('inv','${id}')">
-      <div class="ic">${ICONE_INV[i.tipo]||'📊'}</div><div class="txt"><b>${esc(i.nome)}</b><span>${i.tipo}${i.corretora?' · '+esc(i.corretora):''}
+      <div class="ic" style="background:${COR_INV[i.tipo]||'#132B4C'}22">${ICONE_INV[i.tipo]||'📊'}</div><div class="txt"><b>${esc(i.nome)}</b><span>${i.tipo}${i.corretora?' · '+esc(i.corretora):''}
         ${desatualizado?`<span class="tag" style="background:#FBF0E0;color:#8F5310">atualizar (${dataTxt})</span>`:`<span class="tag of">${dataTxt}</span>`}</span></div>
       <div class="val">${brlc(i.atual)}<br><span class="${g>=0?'pos':'neg'}" style="font-size:10.5px">${g>=0?'+':''}${pc.toFixed(1)}%</span></div></div>`;
   }).join('') : '<div class="empty"><b>Nenhum ativo cadastrado</b>Adicione onde seu dinheiro está aplicado.</div>';
