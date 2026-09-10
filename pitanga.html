@@ -730,6 +730,57 @@ async function adjustFiltroEstoque(delta){
 }
 
 /* ============================= GENERIC COLLECTION RENDER ============================= */
+/* ============================= INSIGHTS DE VACINAS ============================= */
+const CORE_VACINAS = [
+  {label:"V10 / V8", keywords:["v10","v8"]},
+  {label:"Antirrábica", keywords:["raiv","antirráb","antirrab"]},
+];
+const NONCORE_VACINAS = [
+  {label:"Gripe canina / tosse dos canis", keywords:["gripe","tosse dos canis","bordetella","traqueobronquite"], motivo:"indicada pra cães que frequentam petshop/banho com frequência"},
+  {label:"Giárdia", keywords:["giardia","giárdia"], motivo:"costuma entrar no protocolo com reforço anual"},
+  {label:"Leishmaniose", keywords:["leishman"], motivo:"depende da região — vale confirmar risco local com a vet"},
+];
+
+function vacinaInsightsHtml(items){
+  const norm = s => (s||"").toLowerCase();
+  const coreStatus = CORE_VACINAS.map(core=>{
+    const matches = items.filter(([,it])=> core.keywords.some(k=> norm(it.tipo).includes(k)));
+    if(!matches.length) return {...core, achou:false};
+    const lastDate = matches.map(([,it])=>it.data).filter(Boolean).sort().slice(-1)[0];
+    const proxima = addDays(lastDate, 365);
+    const dias = daysBetween(todayISO(), proxima);
+    return {...core, achou:true, lastDate, proxima, dias};
+  });
+
+  const faltando = NONCORE_VACINAS.filter(nc=> !items.some(([,it])=> nc.keywords.some(k=> norm(it.tipo).includes(k) || norm(it.obs).includes(k))));
+
+  const coreHtml = coreStatus.map(c=>{
+    if(!c.achou) return `<div class="stat-card" style="min-width:150px;"><div class="lbl">${c.label}</div><div class="meta">sem registro ainda</div></div>`;
+    const badge = c.dias<0 ? '<span class="badge warn">vencida</span>' : c.dias<=30 ? '<span class="badge warn">renovar em breve</span>' : '<span class="badge ok">em dia</span>';
+    return `<div class="stat-card" style="min-width:150px;">
+      <div class="lbl">${c.label} ${badge}</div>
+      <div class="val" style="font-size:17px;">${c.dias>=0? `${c.dias} dias` : `${Math.abs(c.dias)} dias atrás`}</div>
+      <div class="meta">última: ${toBR(c.lastDate)} · próxima: ${toBR(c.proxima)}</div>
+    </div>`;
+  }).join("");
+
+  const perguntasHtml = faltando.length ? `
+    <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--line);">
+      <div class="lbl" style="margin-bottom:6px;">Vale perguntar à vet sobre</div>
+      ${faltando.map(f=> `<div class="item-sub" style="margin-bottom:3px;">• <b style="color:var(--steel-dark);">${f.label}</b> — ${f.motivo}</div>`).join("")}
+    </div>
+  ` : `<div class="meta" style="margin-top:12px;">Sem sugestões pendentes com base no histórico atual.</div>`;
+
+  return `
+    <div class="card" style="margin-bottom:18px;">
+      <div class="lbl" style="margin-bottom:10px;">Panorama vacinal</div>
+      <div style="display:flex;gap:20px;flex-wrap:wrap;">${coreHtml}</div>
+      ${perguntasHtml}
+      <div class="meta" style="margin-top:10px;font-size:11px;">Cálculo automático (reforço anual) a partir dos registros abaixo — não substitui orientação veterinária.</div>
+    </div>
+  `;
+}
+
 function renderCollection(key){
   const cfg = COLLECTIONS[key];
   const obj = DATA[key] || {};
@@ -749,6 +800,7 @@ function renderCollection(key){
         <button class="btn btn-ghost" onclick="document.getElementById('vac-photo-input').click()">📷 ${DATA.carteiraVacina?"Trocar foto":"Adicionar foto"}</button>
         <input type="file" id="vac-photo-input" accept="image/*" capture="environment" style="display:none" onchange="handleVacCardChange(event)">
       </div>
+      ${vacinaInsightsHtml(items)}
     `;
   }
   if(key==="pesagem") extra = `<div class="card" style="margin-bottom:18px;"><canvas id="peso-chart" height="90"></canvas></div>`;
