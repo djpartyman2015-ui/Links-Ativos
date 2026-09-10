@@ -242,27 +242,43 @@ async function translate(text){
   }catch(e){ return ''; }
 }
 
-async function fetchFromDictionaryApi(word){
-  try{
-    const r = await fetch('https://api.dictionaryapi.dev/api/v2/entries/en/' + encodeURIComponent(word));
-    if(!r.ok) return null;
-    const data = await r.json();
-    const entry = data[0];
-    const phonetic = entry.phonetic || (entry.phonetics || []).map(p=>p.text).find(Boolean) || '';
-    let definition = '', example = '';
-    for(const m of entry.meanings || []){
-      for(const d of m.definitions || []){
-        if(!definition) definition = d.definition;
-        if(!example && d.example) example = d.example;
-        if(definition && example) break;
-      }
+async function parseDictionaryApiResponse(r, word){
+  if(!r.ok) return null;
+  const data = await r.json();
+  const entry = data[0];
+  const phonetic = entry.phonetic || (entry.phonetics || []).map(p=>p.text).find(Boolean) || '';
+  let definition = '', example = '';
+  for(const m of entry.meanings || []){
+    for(const d of m.definitions || []){
+      if(!definition) definition = d.definition;
+      if(!example && d.example) example = d.example;
       if(definition && example) break;
     }
-    return { word: entry.word || word, phonetic, definition, example };
-  }catch(e){
-    console.error('dictionaryapi.dev failed (ignorado, usando fallback):', e);
-    return null;
+    if(definition && example) break;
   }
+  return { word: entry.word || word, phonetic, definition, example };
+}
+
+async function fetchFromDictionaryApi(word){
+  const directUrl = 'https://api.dictionaryapi.dev/api/v2/entries/en/' + encodeURIComponent(word);
+  // 1ª tentativa: direto
+  try{
+    const r = await fetch(directUrl);
+    const parsed = await parseDictionaryApiResponse(r, word);
+    if(parsed) return parsed;
+  }catch(e){
+    console.error('dictionaryapi.dev direto falhou, tentando via proxy CORS:', e);
+  }
+  // 2ª tentativa: via proxy (contorna CORS instável do provedor)
+  try{
+    const proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(directUrl);
+    const r2 = await fetch(proxyUrl);
+    const parsed2 = await parseDictionaryApiResponse(r2, word);
+    if(parsed2) return parsed2;
+  }catch(e){
+    console.error('dictionaryapi.dev via proxy também falhou (ignorado, usando fallback):', e);
+  }
+  return null;
 }
 
 async function fetchFromDatamuse(word){
