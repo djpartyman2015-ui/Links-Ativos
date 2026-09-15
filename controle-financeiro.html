@@ -246,6 +246,14 @@ nav button[aria-pressed="true"]{color:var(--brand)}
       </div>
       <div class="card">
         <h2>Ativos<button onclick="abrir('inv')">novo</button></h2>
+        <select id="ordInv" onchange="render()" style="width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:9px;background:#FBFCFD;color:var(--ink);margin-bottom:10px;font-size:12.5px">
+          <option value="valor_desc">Maior valor primeiro</option>
+          <option value="valor_asc">Menor valor primeiro</option>
+          <option value="corretora">Corretora (A-Z)</option>
+          <option value="nome">Nome (A-Z)</option>
+          <option value="atualizado">Mais desatualizado primeiro</option>
+          <option value="rendimento">Maior rendimento (%)</option>
+        </select>
         <div id="listaInv"></div>
       </div>
     </div>
@@ -563,7 +571,18 @@ function renderInv(){
        <td>${t}</td><td class="v">${brlc(v)}</td><td class="p">${atu?Math.round(v/atu*100):0}%</td></tr>`).join('')
     : '<tr><td class="empty">Cadastre um ativo.</td></tr>';
 
-  document.getElementById('listaInv').innerHTML = ivs.length? [...ivs].sort((a,b)=>(+b[1].atual||0)-(+a[1].atual||0)).map(([id,i])=>{
+  const ordem=document.getElementById('ordInv').value;
+  const rend=i=>i.aplicado?((+i.atual||0)-(+i.aplicado||0))/+i.aplicado*100:0;
+  const diasDesde=i=>i.atualizadoEm? Math.floor((Date.now()-new Date(i.atualizadoEm+'T12:00'))/86400000) : 999999;
+  const ordenadores={
+    valor_desc:(a,b)=>(+b[1].atual||0)-(+a[1].atual||0),
+    valor_asc:(a,b)=>(+a[1].atual||0)-(+b[1].atual||0),
+    corretora:(a,b)=>(a[1].corretora||'').localeCompare(b[1].corretora||'','pt-BR')||a[1].nome.localeCompare(b[1].nome,'pt-BR'),
+    nome:(a,b)=>a[1].nome.localeCompare(b[1].nome,'pt-BR'),
+    atualizado:(a,b)=>diasDesde(b[1])-diasDesde(a[1]),
+    rendimento:(a,b)=>rend(b[1])-rend(a[1])
+  };
+  document.getElementById('listaInv').innerHTML = ivs.length? [...ivs].sort(ordenadores[ordem]||ordenadores.valor_desc).map(([id,i])=>{
     const g=(+i.atual||0)-(+i.aplicado||0), pc=i.aplicado?g/+i.aplicado*100:0;
     const dias=i.atualizadoEm? Math.floor((Date.now()-new Date(i.atualizadoEm+'T12:00'))/86400000) : null;
     const desatualizado = dias===null || dias>30;
