@@ -174,7 +174,14 @@ nav button[aria-pressed="true"] svg{stroke-width:2.4}
     <div>A pagar<b id="hPend">—</b></div>
     <div>Patrimônio<b id="hPat">—</b></div>
   </div>
-  <div class="userbar"><span id="userMail"></span><button onclick="sair()">Sair</button></div>
+  <div class="userbar"><span id="userMail"></span>
+    <span style="display:flex;align-items:center;gap:14px">
+      <button onclick="atualizarApp()" title="Forçar atualização" aria-label="Forçar atualização" style="display:flex">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
+      </button>
+      <button onclick="sair()">Sair</button>
+    </span>
+  </div>
 </header>
 
 <main>
@@ -362,6 +369,11 @@ async function entrarGoogle(){
   }
 }
 function sair(){ authFB.signOut(); }
+function atualizarApp(){
+  const u=new URL(location.href);
+  u.searchParams.set('v',Date.now());
+  location.href=u.toString();
+}
 authFB.onAuthStateChanged(async user=>{
   if(user){
     token = await user.getIdToken();
