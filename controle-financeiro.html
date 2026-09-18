@@ -132,6 +132,10 @@ nav button[aria-pressed="true"] svg{stroke-width:2.4}
 .chart{position:relative;height:160px}
 #chartAnoWrap{position:relative;height:220px}
 .mini{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
+.mkt-item{background:var(--soft);border-radius:10px;padding:9px 8px;text-align:center}
+.mkt-item span{display:block;font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.02em}
+.mkt-item b{display:block;font-family:Sora;font-size:15px;margin-top:2px}
+.mkt-item small{display:block;font-size:9px;color:var(--faint);margin-top:1px;line-height:1.25}
 .mini div{background:var(--surface);border-radius:var(--r);padding:10px;box-shadow:var(--shadow)}
 .mini span{font-size:10.5px;color:var(--muted);display:block}
 .mini b{font-family:Sora;font-size:15px;font-variant-numeric:tabular-nums;display:block;margin-top:2px}
@@ -245,6 +249,16 @@ nav button[aria-pressed="true"] svg{stroke-width:2.4}
       <div><span>Hoje</span><b class="num" id="iAtu">—</b></div>
       <div><span>Rendimento</span><b class="num" id="iRendR">—</b></div>
       <div><span>Rendimento</span><b class="num" id="iRend">—</b></div>
+    </div>
+    <div class="card">
+      <h2>Panorama do mercado<small id="mktAtualizado"></small></h2>
+      <div id="mktGrid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:8px">
+        <div class="mkt-item" data-k="selic"><span>Selic</span><b class="num">—</b><small></small></div>
+        <div class="mkt-item" data-k="cdi"><span>CDI</span><b class="num">—</b><small></small></div>
+        <div class="mkt-item" data-k="ipca"><span>IPCA 12m</span><b class="num">—</b><small></small></div>
+        <div class="mkt-item" data-k="usd"><span>Dólar</span><b class="num">—</b><small></small></div>
+        <div class="mkt-item" data-k="btc"><span>Bitcoin</span><b class="num">—</b><small></small></div>
+      </div>
     </div>
     <div class="grid d2">
       <div class="card">
@@ -433,12 +447,42 @@ function montarFiltro(){
   sel.value=atual;
 }
 function mudaMes(n){ ref.setMonth(ref.getMonth()+n); render(); }
+let indicadoresCarregados=false;
 function troca(t){
   aba=t;
   ['dash','lanc','meta','inv','lim'].forEach(x=>document.getElementById('tab-'+x).classList.toggle('hide',x!==t));
   document.querySelectorAll('nav button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.tab===t));
   document.getElementById('fab').classList.toggle('hide',!['dash','lanc'].includes(t));
   window.scrollTo(0,0); render();
+  if(t==='inv' && !indicadoresCarregados){ indicadoresCarregados=true; carregarIndicadores(); }
+}
+async function carregarIndicadores(){
+  const set=(k,val,nota)=>{
+    const el=document.querySelector(`.mkt-item[data-k="${k}"]`);
+    if(!el) return;
+    el.querySelector('b').textContent=val;
+    el.querySelector('small').textContent=nota||'';
+  };
+  const bcb=async cod=>{
+    const r=await fetch(`https://api.bcb.gov.br/dados/serie/bcdata.sgs.${cod}/dados/ultimos/1?formato=json`);
+    const d=await r.json();
+    return d && d[0] ? d[0] : null;
+  };
+  try{
+    const [selic,cdi,ipca]=await Promise.all([bcb(432),bcb(4392),bcb(13522)]);
+    if(selic) set('selic', selic.valor.replace('.',',')+'% a.a.', 'impacta Tesouro Selic e CDBs');
+    if(cdi)   set('cdi', cdi.valor.replace('.',',')+'% a.a.', 'impacta CDBs, LCI/LCA');
+    if(ipca)  set('ipca', ipca.valor.replace('.',',')+'%', 'impacta Tesouro IPCA+');
+  }catch(e){ /* segue sem travar o resto */ }
+  try{
+    const r=await fetch('https://economia.awesomeapi.com.br/last/USD-BRL,BTC-BRL');
+    const d=await r.json();
+    if(d.USDBRL) set('usd', 'R$ '+(+d.USDBRL.bid).toFixed(2).replace('.',','),
+      (+d.USDBRL.pctChange>=0?'+':'')+(+d.USDBRL.pctChange).toFixed(2)+'% hoje');
+    if(d.BTCBRL) set('btc', 'R$ '+Math.round(+d.BTCBRL.bid).toLocaleString('pt-BR'),
+      (+d.BTCBRL.pctChange>=0?'+':'')+(+d.BTCBRL.pctChange).toFixed(2)+'% hoje');
+  }catch(e){ /* segue sem travar o resto */ }
+  document.getElementById('mktAtualizado').textContent = 'atualizado agora';
 }
 
 /* ==================== RENDER ==================== */
