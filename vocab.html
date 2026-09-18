@@ -77,10 +77,9 @@
   .empty{text-align:center;padding:60px 20px;color:#8A8065;font-family:'Fraunces',serif;font-size:17px;}
   .hidden{display:none !important;}
   .refresh{
-    position:fixed;bottom:10px;right:12px;
     font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#C9BFA5;
     background:none;border:none;cursor:pointer;letter-spacing:.04em;
-    opacity:.6;
+    opacity:.6;padding:8px 4px;
   }
   .refresh:hover{opacity:1;color:var(--sage);}
 </style>
@@ -111,7 +110,6 @@
     <div id="list"></div>
   </div>
 </div>
-<button class="refresh" id="refreshBtn" title="Forçar atualização (limpa cache)">↻ atualizar</button>
 
 <script>
 const firebaseConfig = {
@@ -164,8 +162,14 @@ auth.onAuthStateChanged(async (user) => {
         ${user.displayName || user.email || ''}
       </div>
       <button class="signout" id="signoutBtn">Sair</button>
+      <button class="refresh" id="refreshBtn" title="Forçar atualização (limpa cache)">↻</button>
     `;
     document.getElementById('signoutBtn').addEventListener('click', signOutUser);
+    document.getElementById('refreshBtn').addEventListener('click', () => {
+      const url = new URL(window.location.href);
+      url.searchParams.set('_r', Date.now());
+      window.location.href = url.toString();
+    });
     await loadWords();
   }else{
     idToken = null;
@@ -402,12 +406,6 @@ async function removeWord(key){
     setStatus('Não consegui remover (' + e.message + ').', true);
   }
 }
-
-document.getElementById('refreshBtn').addEventListener('click', () => {
-  const url = new URL(window.location.href);
-  url.searchParams.set('_r', Date.now());
-  window.location.href = url.toString();
-});
 
 function render(){
   countEl.textContent = words.length + (words.length === 1 ? ' palavra aprendida' : ' palavras aprendidas');
