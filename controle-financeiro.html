@@ -548,8 +548,9 @@ function renderDash(mes){
   const ls=Object.entries(dados.limites).sort((a,b)=>a[1].cat.localeCompare(b[1].cat,'pt-BR'));
   const totLimD=ls.reduce((s,[,l])=>s+(+l.valor||0),0);
   const totGastoD=ls.reduce((s,[,l])=>s+(gasto[l.cat]||0),0);
-  const pctD=totLimD? Math.min(100,totGastoD/totLimD*100) : 0;
-  const corD=pctD>=100?'var(--out)':pctD>=80?'var(--warn)':'var(--in)';
+  const pctDReal=totLimD? totGastoD/totLimD*100 : 0;
+  const pctDBar=Math.min(100,pctDReal);
+  const corD=pctDReal>=100?'var(--out)':pctDReal>=80?'var(--warn)':'var(--in)';
   document.getElementById('dashLim').innerHTML = (ls.length? ls.map(([id,l])=>{
     const g=gasto[l.cat]||0, p=Math.min(100,g/(+l.valor||1)*100);
     const cor=p>=100?'var(--out)':p>=80?'var(--warn)':'var(--in)';
@@ -559,8 +560,8 @@ function renderDash(mes){
   }).join('') : '<div class="empty"><b>Sem limites definidos</b>Defina um teto por categoria.</div>')
   + (ls.length? `<div style="margin-top:4px;padding-top:12px;border-top:1px solid var(--line)">
       <div class="blabel" style="margin:0"><b style="color:var(--ink)">Total</b>
-        <b style="color:${corD}">${brlc(totGastoD)} / ${brlc(totLimD)} · ${Math.round(pctD)}%</b></div>
-      <div class="bar" style="height:7px"><i style="width:${pctD}%;background:${corD}"></i></div>
+        <b style="color:${corD}">${brlc(totGastoD)} / ${brlc(totLimD)} · ${Math.round(pctDReal)}%</b></div>
+      <div class="bar" style="height:7px"><i style="width:${pctDBar}%;background:${corD}"></i></div>
     </div>` : '');
 
   renderAno();
@@ -665,7 +666,7 @@ function renderLimites(mes){
 
   const totLim=ls.reduce((s,[,l])=>s+(+l.valor||0),0);
   const totGasto=ls.reduce((s,[,l])=>s+(gasto[l.cat]||0),0);
-  const pctGeral=totLim? Math.min(100,totGasto/totLim*100) : 0;
+  const pctGeral=totLim? totGasto/totLim*100 : 0;
   const corGeral=pctGeral>=100?'var(--out)':pctGeral>=80?'var(--warn)':'var(--in)';
   document.getElementById('limTot').textContent=brlc(totLim);
   document.getElementById('limGasto').textContent=brlc(totGasto);
@@ -673,12 +674,12 @@ function renderLimites(mes){
   elPct.textContent=Math.round(pctGeral)+'%'; elPct.style.color=corGeral;
 
   document.getElementById('listaLimites').innerHTML = ls.length? ls.map(([id,l])=>{
-    const g=gasto[l.cat]||0, p=Math.min(100,g/(+l.valor||1)*100), rest=(+l.valor||0)-g;
-    const cor=p>=100?'var(--out)':p>=80?'var(--warn)':'var(--in)';
+    const g=gasto[l.cat]||0, pReal=g/(+l.valor||1)*100, pBar=Math.min(100,pReal), rest=(+l.valor||0)-g;
+    const cor=pReal>=100?'var(--out)':pReal>=80?'var(--warn)':'var(--in)';
     return `<div style="padding:9px 0;border-bottom:1px solid var(--line)" onclick="abrir('lim','${id}')">
       <div class="blabel" style="margin:0"><b>${ICONE[l.cat]||'•'} ${l.cat}</b>
-        <span style="color:${cor};font-weight:600">${Math.round(p)}%</span></div>
-      <div class="bar"><i style="width:${p}%;background:${cor}"></i></div>
+        <span style="color:${cor};font-weight:600">${Math.round(pReal)}%</span></div>
+      <div class="bar"><i style="width:${pBar}%;background:${cor}"></i></div>
       <div class="blabel"><span><b>${brl(g)}</b> de ${brl(l.valor)}</span>
         <span>${rest>=0?brl(rest)+' disponível':'estourou '+brl(-rest)}</span></div></div>`;
   }).join('') : '<div class="empty"><b>Sem limites definidos</b>Escolha um teto por categoria e acompanhe em tempo real.</div>';
