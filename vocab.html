@@ -297,15 +297,34 @@ async function fetchFromDatamuse(word){
   }
 }
 
+async function fetchExampleFromTatoeba(word){
+  try{
+    const url = 'https://tatoeba.org/eng/api_v0/search?from=eng&query=' + encodeURIComponent(word) + '&sort=relevance';
+    const r = await fetch(url);
+    if(!r.ok) return '';
+    const data = await r.json();
+    const results = (data.results || []).filter(s => s.text && s.text.toLowerCase().includes(word.toLowerCase()));
+    if(!results.length) return '';
+    // prioriza frases de tamanho médio (nem curtas demais, nem longas demais) para facilitar o aprendizado
+    const mid = results.filter(s => s.text.length >= 15 && s.text.length <= 90);
+    const pool = mid.length ? mid : results;
+    return pool[Math.floor(Math.random() * Math.min(pool.length, 5))].text;
+  }catch(e){
+    console.error('tatoeba failed:', e);
+    return '';
+  }
+}
+
 async function fetchWord(word){
-  const [primary, secondary] = await Promise.all([
+  const [primary, secondary, realExample] = await Promise.all([
     fetchFromDictionaryApi(word),
-    fetchFromDatamuse(word)
+    fetchFromDatamuse(word),
+    fetchExampleFromTatoeba(word)
   ]);
   const definition = (primary && primary.definition) || (secondary && secondary.definition) || '';
   if(!definition) throw new Error('DICT_NOT_FOUND');
   const phonetic = (primary && primary.phonetic) || '';
-  const example = (primary && primary.example) || `I learned the word "${word}" today.`;
+  const example = realExample || (primary && primary.example) || `I learned the word "${word}" today.`;
   const usedFallback = !(primary && primary.definition);
   return { word: (primary && primary.word) || word, phonetic, definition, example, degraded: usedFallback };
 }
