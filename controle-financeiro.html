@@ -873,6 +873,7 @@ function gravarMeta(id){
 }
 function formInv(id){
   const i=id?dados.investimentos[id]:{};
+  const hist=i.historico? Object.values(i.historico).sort((a,b)=>b.data.localeCompare(a.data)) : [];
   return `<h3>${id?'Editar ativo':'Novo ativo'}<button onclick="fechar()">×</button></h3>
   <div class="field"><label>Nome do ativo</label><input id="v_nome" placeholder="Ex.: CDB Nubank 110%" value="${esc(i.nome)}"></div>
   <div class="two">
@@ -883,7 +884,36 @@ function formInv(id){
     <div class="field"><label>Valor hoje</label><input id="v_atu" inputmode="decimal" placeholder="0,00" value="${i.atual?String(i.atual).replace('.',','):''}"></div></div>
   ${i.atualizadoEm?`<div class="blabel" style="margin:-2px 0 10px"><span>Atualizado pela última vez em ${new Date(i.atualizadoEm+'T12:00').toLocaleDateString('pt-BR')}</span></div>`:''}
   <button class="btn" onclick="gravarInv('${id||''}')">${id?'Salvar alterações':'Adicionar ativo'}</button>
-  ${id?`<div style="text-align:center;margin-top:12px"><button class="del" onclick="excluir('investimentos','${id}')">Excluir ativo</button></div>`:''}`;
+  ${id?`
+  <div class="field" style="margin-top:16px;padding-top:14px;border-top:1px solid var(--line)">
+    <label>Registrar novo aporte neste ativo</label>
+    <div class="two">
+      <input id="ap_valor" inputmode="decimal" placeholder="0,00">
+      <button class="btn ghost sm" style="flex:0 0 auto;padding:9px 16px" onclick="registrarAporte('${id}')">Aportar</button>
+    </div>
+    <div class="blabel" style="margin:6px 0 0"><span>Soma ao aplicado e ao valor hoje na mesma hora — o rendimento não é distorcido.</span></div>
+  </div>
+  ${hist.length?`<div class="blabel" style="margin:14px 0 6px"><span>Histórico de aportes</span></div>
+    <div style="max-height:130px;overflow:auto">
+      ${hist.map(h=>`<div class="blabel" style="margin:0 0 6px"><span>${new Date(h.data+'T12:00').toLocaleDateString('pt-BR')}</span><b class="num pos">+${brl(h.valor)}</b></div>`).join('')}
+    </div>`:''}
+  <div style="text-align:center;margin-top:14px"><button class="del" onclick="excluir('investimentos','${id}')">Excluir ativo</button></div>`:''}`;
+}
+async function registrarAporte(id){
+  const v=num(document.getElementById('ap_valor').value);
+  if(!v){ toast('Informe o valor do aporte'); return; }
+  const i=dados.investimentos[id];
+  try{
+    await api(`investimentos/${id}/historico`,'POST',{data:hoje(),valor:v});
+    await api('investimentos','PATCH',{
+      aplicado:(+i.aplicado||0)+v,
+      atual:(+i.atual||0)+v,
+      atualizadoEm:hoje()
+    },id);
+    await carregar();
+    toast('Aporte registrado');
+    abrir('inv',id);
+  }catch(e){ toast('Não deu para registrar o aporte.'); }
 }
 function gravarInv(id){
   const nome=document.getElementById('v_nome').value.trim();
