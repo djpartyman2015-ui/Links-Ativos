@@ -285,24 +285,33 @@ const AUTH_API_KEY = "AIzaSyBnU7bTrKb2jQT64aifNvuF74GJBBQzOMI";
 
 function authQS(){ return idToken ? `?auth=${idToken}` : ''; }
 
+function checkDbError(res){
+  if(res && typeof res === 'object' && res.error){
+    throw new Error('Firebase: ' + res.error);
+  }
+  return res;
+}
 async function dbGet(path){
   const r = await fetch(`${DB_BASE}/${path}.json${authQS()}`);
-  return r.json();
+  return checkDbError(await r.json());
 }
 async function dbPost(path, data){
   const r = await fetch(`${DB_BASE}/${path}.json${authQS()}`, {method:'POST', body:JSON.stringify(data)});
-  return r.json();
+  const res = checkDbError(await r.json());
+  if(!res || !res.name) throw new Error('Gravação não confirmada pelo Firebase');
+  return res;
 }
 async function dbPut(path, data){
   const r = await fetch(`${DB_BASE}/${path}.json${authQS()}`, {method:'PUT', body:JSON.stringify(data)});
-  return r.json();
+  return checkDbError(await r.json());
 }
 async function dbPatch(path, data){
   const r = await fetch(`${DB_BASE}/${path}.json${authQS()}`, {method:'PATCH', body:JSON.stringify(data)});
-  return r.json();
+  return checkDbError(await r.json());
 }
 async function dbDelete(path){
-  await fetch(`${DB_BASE}/${path}.json${authQS()}`, {method:'DELETE'});
+  const r = await fetch(`${DB_BASE}/${path}.json${authQS()}`, {method:'DELETE'});
+  if(!r.ok) throw new Error('Falha ao excluir no Firebase');
 }
 
 /* ---------- Auth (Firebase Email/Password) ---------- */
@@ -442,6 +451,15 @@ function startApp(){
     const rt = localStorage.getItem('medicos_refresh');
     if(rt){ try{ await refreshIdToken(rt); }catch(e){} }
   }, 50*60*1000);
+  document.addEventListener('visibilitychange', async ()=>{
+    if(document.visibilityState === 'visible'){
+      const rt = localStorage.getItem('medicos_refresh');
+      if(rt){
+        try{ await refreshIdToken(rt); await loadAll(); }
+        catch(e){}
+      }
+    }
+  });
   loadAll();
 }
 
@@ -481,8 +499,13 @@ function iconFor(esp){
 function toast(msg){
   const t = document.getElementById('toast');
   t.textContent = msg; t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'), 2200);
+  setTimeout(()=>t.classList.remove('show'), 3200);
 }
+window.addEventListener('unhandledrejection', function(e){
+  console.error('Falha não tratada:', e.reason);
+  toast('⚠️ Não foi possível salvar — verifique sua conexão e tente de novo');
+  e.preventDefault();
+});
 
 /* ---------- Load ---------- */
 async function loadAll(){
