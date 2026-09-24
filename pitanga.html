@@ -559,13 +559,17 @@ function renderNav(user){
       <div class="brand-text"><div class="name">Pitanga</div><div class="who">rotina & cuidados</div></div>
     </div>
     <div id="nav-items"></div>
-    <div class="nav-user">Logado como <b>${escapeHtml(user)}</b><br><button onclick="logout()">trocar usuário</button></div>
+    <div class="nav-user">Logado como <b>${escapeHtml(user)}</b><br><button onclick="logout()">trocar usuário</button> · <button onclick="forceRefresh()" title="Recarrega ignorando o cache">atualizar app</button></div>
   `;
   const items = TABS.map(t=>`<div class="navitem" data-tab="${t.key}" onclick="goTab('${t.key}')"><span class="ico">${t.icon}</span>${t.label}</div>`).join("");
   $("#nav-items").innerHTML = items;
   $("#tabbar").innerHTML = TABS.map(t=>`<div class="navitem" data-tab="${t.key}" onclick="goTab('${t.key}')"><span class="ico">${t.icon}</span>${t.label}</div>`).join("");
 }
 function logout(){ localStorage.removeItem("pitanga_user"); location.reload(); }
+function forceRefresh(){
+  const url = location.pathname + "?_=" + Date.now();
+  location.href = url;
+}
 
 function goTab(key){
   currentTab = key;
