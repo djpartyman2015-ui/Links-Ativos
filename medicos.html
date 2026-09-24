@@ -509,13 +509,23 @@ window.addEventListener('unhandledrejection', function(e){
 
 /* ---------- Load ---------- */
 async function loadAll(){
-  const [m, c, e, v, vc] = await Promise.all([dbGet('medicos'), dbGet('consultas'), dbGet('exames'), dbGet('vacinas'), dbGet('vacinas_config')]);
-  medicos = m || {};
-  consultas = c || {};
-  exames = e || {};
-  vacinas = v || {};
-  vacinasConfig = vc || { intervalo_dias: 90 };
+  const results = await Promise.allSettled([dbGet('medicos'), dbGet('consultas'), dbGet('exames'), dbGet('vacinas'), dbGet('vacinas_config')]);
+  const [m, c, e, v, vc] = results.map(r => r.status === 'fulfilled' ? r.value : undefined);
+  const falhas = results.filter(r => r.status === 'rejected');
+  if(falhas.length){
+    console.error('Falha ao carregar dados:', falhas.map(f=>f.reason));
+  }
+  // Só substitui os dados já carregados em memória se a leitura teve sucesso,
+  // para nunca apagar da tela algo que já estava exibido por causa de uma falha pontual.
+  if(m !== undefined) medicos = m || {};
+  if(c !== undefined) consultas = c || {};
+  if(e !== undefined) exames = e || {};
+  if(v !== undefined) vacinas = v || {};
+  if(vc !== undefined) vacinasConfig = vc || { intervalo_dias: 90 };
   render();
+  if(falhas.length){
+    toast('⚠️ Parte dos dados não carregou — toque em 🔄 para tentar de novo');
+  }
 }
 
 /* ---------- Helpers ---------- */
