@@ -514,11 +514,12 @@ function iconFor(esp){
 function toast(msg){
   const t = document.getElementById('toast');
   t.textContent = msg; t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'), 3200);
+  setTimeout(()=>t.classList.remove('show'), 5500);
 }
 window.addEventListener('unhandledrejection', function(e){
   console.error('Falha não tratada:', e.reason);
-  toast('⚠️ Não foi possível salvar — verifique sua conexão e tente de novo');
+  const msg = (e.reason && e.reason.message) ? e.reason.message : 'erro desconhecido';
+  toast('⚠️ Falha: ' + msg);
   e.preventDefault();
 });
 
