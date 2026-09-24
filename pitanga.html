@@ -241,6 +241,7 @@
 <script>
 /* ============================= CONFIG ============================= */
 const DB = "https://pitanga-andrey-default-rtdb.firebaseio.com";
+const FIREBASE_API_KEY = "AIzaSyAX8GryyAY-ySDPKuJms-2993muJWWG71E";
 const BIRTH = "2023-07-05"; // 05/07/2023
 
 /* ============================= UTILS ============================= */
@@ -252,18 +253,31 @@ function daysBetween(a,b){ return Math.round((new Date(b)-new Date(a))/86400000)
 function addDays(iso, days){ const d = new Date(iso+"T00:00:00"); d.setDate(d.getDate()+days); return d.toISOString().slice(0,10); }
 function escapeHtml(s){ return (s||"").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
+let AUTH_TOKEN = null;
+async function ensureAuth(){
+  if(AUTH_TOKEN) return AUTH_TOKEN;
+  try{
+    const r = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${FIREBASE_API_KEY}`, {
+      method:"POST", body: JSON.stringify({returnSecureToken:true})
+    });
+    const d = await r.json();
+    AUTH_TOKEN = d.idToken || null;
+  }catch(err){ console.error("Erro na autenticação anônima:", err); }
+  return AUTH_TOKEN;
+}
+function authQS(){ return AUTH_TOKEN ? `?auth=${AUTH_TOKEN}` : ""; }
 async function fbGet(path){
-  const r = await fetch(`${DB}/${path}.json`);
+  const r = await fetch(`${DB}/${path}.json${authQS()}`);
   return r.ok ? r.json() : null;
 }
 async function fbSet(path, data){
-  await fetch(`${DB}/${path}.json`, {method:"PUT", body: JSON.stringify(data)});
+  await fetch(`${DB}/${path}.json${authQS()}`, {method:"PUT", body: JSON.stringify(data)});
 }
 async function fbPatch(path, data){
-  await fetch(`${DB}/${path}.json`, {method:"PATCH", body: JSON.stringify(data)});
+  await fetch(`${DB}/${path}.json${authQS()}`, {method:"PATCH", body: JSON.stringify(data)});
 }
 async function fbDelete(path){
-  await fetch(`${DB}/${path}.json`, {method:"DELETE"});
+  await fetch(`${DB}/${path}.json${authQS()}`, {method:"DELETE"});
 }
 
 /* ============================= LOGIN ============================= */
@@ -523,6 +537,7 @@ async function boot(){
   $("#login-screen").style.display = "none";
   $("#app").style.display = "flex";
   renderNav(user);
+  await ensureAuth();
   DATA = await fbGet("") || {};
   let precisaRecarregar = false;
   if(!DATA._seeded){ await seedIfEmpty(); precisaRecarregar = true; }
