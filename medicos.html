@@ -291,27 +291,42 @@ function checkDbError(res){
   }
   return res;
 }
+async function dbRequest(path, options, allowRetry){
+  if(allowRetry === undefined) allowRetry = true;
+  const r = await fetch(`${DB_BASE}/${path}.json${authQS()}`, options);
+  if((r.status === 401 || r.status === 403) && allowRetry){
+    const rt = localStorage.getItem('medicos_refresh');
+    if(rt){
+      try{
+        await refreshIdToken(rt);
+        return dbRequest(path, options, false);
+      }catch(e){ /* segue e trata como falha normal abaixo */ }
+    }
+  }
+  if(options && options.method === 'DELETE'){
+    if(!r.ok) throw new Error('Falha ao excluir no Firebase (' + r.status + ')');
+    return null;
+  }
+  let json;
+  try{ json = await r.json(); }catch(e){ throw new Error('Resposta inválida do Firebase'); }
+  return checkDbError(json);
+}
 async function dbGet(path){
-  const r = await fetch(`${DB_BASE}/${path}.json${authQS()}`);
-  return checkDbError(await r.json());
+  return dbRequest(path);
 }
 async function dbPost(path, data){
-  const r = await fetch(`${DB_BASE}/${path}.json${authQS()}`, {method:'POST', body:JSON.stringify(data)});
-  const res = checkDbError(await r.json());
+  const res = await dbRequest(path, {method:'POST', body:JSON.stringify(data)});
   if(!res || !res.name) throw new Error('Gravação não confirmada pelo Firebase');
   return res;
 }
 async function dbPut(path, data){
-  const r = await fetch(`${DB_BASE}/${path}.json${authQS()}`, {method:'PUT', body:JSON.stringify(data)});
-  return checkDbError(await r.json());
+  return dbRequest(path, {method:'PUT', body:JSON.stringify(data)});
 }
 async function dbPatch(path, data){
-  const r = await fetch(`${DB_BASE}/${path}.json${authQS()}`, {method:'PATCH', body:JSON.stringify(data)});
-  return checkDbError(await r.json());
+  return dbRequest(path, {method:'PATCH', body:JSON.stringify(data)});
 }
 async function dbDelete(path){
-  const r = await fetch(`${DB_BASE}/${path}.json${authQS()}`, {method:'DELETE'});
-  if(!r.ok) throw new Error('Falha ao excluir no Firebase');
+  await dbRequest(path, {method:'DELETE'});
 }
 
 /* ---------- Auth (Firebase Email/Password) ---------- */
