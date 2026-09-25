@@ -106,7 +106,10 @@
       <button class="add" type="submit" id="addBtn">Adicionar</button>
     </form>
     <div class="status" id="status"></div>
-    <div class="count" id="count"></div>
+    <div class="count" id="count">
+      <span id="countText"></span>
+      <button class="refresh" id="regenAllBtn" style="margin-left:10px;font-size:10px;" title="Buscar frases reais para todas as palavras já salvas">🔄 atualizar todas as frases</button>
+    </div>
     <div id="list"></div>
   </div>
 </div>
@@ -125,6 +128,7 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const DB = firebaseConfig.databaseURL;
 const NODE = "vocab_words"; // nó próprio, isolado dos dados de médicos
+const MW_KEY = "7583525a-9fd9-4c24-9d53-8ac97da4485e"; // Merriam-Webster Collegiate Dictionary
 
 let idToken = null;
 let words = []; // {key, word, phonetic, translation, definition, example, examplePt, date}
@@ -138,6 +142,7 @@ const addBtn = document.getElementById('addBtn');
 const statusEl = document.getElementById('status');
 const listEl = document.getElementById('list');
 const countEl = document.getElementById('count');
+document.getElementById('regenAllBtn').addEventListener('click', regenerateAllExamples);
 
 function setStatus(msg, isErr){
   statusEl.textContent = msg || '';
@@ -246,6 +251,59 @@ async function translate(text){
   }catch(e){ return ''; }
 }
 
+function stripMwMarkup(text){
+  return String(text || '')
+    .replace(/\{bc\}/g, ': ')
+    .replace(/\{(wi|it|phrase|b|inf|sup|sc)\}/g, '')
+    .replace(/\{\/(wi|it|phrase|b|inf|sup|sc)\}/g, '')
+    .replace(/\{sx\|([^|}]+)\|[^}]*\}/g, '$1')
+    .replace(/\{a_link\|([^}]+)\}/g, '$1')
+    .replace(/\{d_link\|([^|}]+)\|[^}]*\}/g, '$1')
+    .replace(/\{dx[^}]*\}/g, '')
+    .replace(/\{[^}]*\}/g, '')
+    .trim();
+}
+
+function findFirstMwExample(node){
+  if(Array.isArray(node)){
+    if(node.length === 2 && node[0] === 'vis' && Array.isArray(node[1])){
+      for(const item of node[1]){
+        if(item && item.t) return stripMwMarkup(item.t);
+      }
+    }
+    for(const child of node){
+      const found = findFirstMwExample(child);
+      if(found) return found;
+    }
+  }else if(node && typeof node === 'object'){
+    for(const key in node){
+      const found = findFirstMwExample(node[key]);
+      if(found) return found;
+    }
+  }
+  return null;
+}
+
+async function fetchFromMerriamWebster(word){
+  try{
+    const r = await fetch('https://www.dictionaryapi.com/api/v3/references/collegiate/json/' + encodeURIComponent(word) + '?key=' + MW_KEY);
+    if(!r.ok) return null;
+    const data = await r.json();
+    if(!Array.isArray(data) || !data.length || typeof data[0] === 'string') return null; // sem match exato (só sugestões)
+    const entry = data.find(e => e && e.meta && e.meta.id && e.meta.id.split(':')[0].toLowerCase() === word.toLowerCase()) || data[0];
+    if(!entry || typeof entry !== 'object' || !entry.shortdef || !entry.shortdef.length) return null;
+    const definition = entry.shortdef[0];
+    const mwPr = entry.hwi && entry.hwi.prs && entry.hwi.prs[0] && entry.hwi.prs[0].mw;
+    const phonetic = mwPr ? '/' + mwPr + '/' : '';
+    const example = findFirstMwExample(entry.def) || '';
+    const cleanWord = (entry.meta && entry.meta.id) ? entry.meta.id.split(':')[0] : word;
+    return { word: cleanWord, phonetic, definition, example };
+  }catch(e){
+    console.error('merriam-webster failed:', e);
+    return null;
+  }
+}
+
 async function parseDictionaryApiResponse(r, word){
   if(!r.ok) return null;
   const data = await r.json();
@@ -337,17 +395,19 @@ async function fetchExampleFromTatoeba(word){
 }
 
 async function fetchWord(word){
-  const [primary, secondary, realExample] = await Promise.all([
+  const [mw, primary, secondary, realExample] = await Promise.all([
+    fetchFromMerriamWebster(word),
     fetchFromDictionaryApi(word),
     fetchFromDatamuse(word),
     fetchExampleFromTatoeba(word)
   ]);
-  const definition = (primary && primary.definition) || (secondary && secondary.definition) || '';
+  const definition = (mw && mw.definition) || (primary && primary.definition) || (secondary && secondary.definition) || '';
   if(!definition) throw new Error('DICT_NOT_FOUND');
-  const phonetic = (primary && primary.phonetic) || '';
-  const example = realExample || (primary && primary.example) || `I learned the word "${word}" today.`;
-  const usedFallback = !(primary && primary.definition);
-  return { word: (primary && primary.word) || word, phonetic, definition, example, degraded: usedFallback };
+  const phonetic = (mw && mw.phonetic) || (primary && primary.phonetic) || '';
+  const example = (mw && mw.example) || realExample || (primary && primary.example) || `I learned the word "${word}" today.`;
+  const usedFallback = !(mw && mw.definition) && !(primary && primary.definition);
+  const wordOut = (mw && mw.word) || (primary && primary.word) || word;
+  return { word: wordOut, phonetic, definition, example, degraded: usedFallback };
 }
 
 form.addEventListener('submit', async (e) => {
@@ -424,8 +484,52 @@ async function removeWord(key){
   }
 }
 
+async function refetchAndApply(key, wordText){
+  const w = words.find(x => x.key === key);
+  if(!w) return false;
+  try{
+    const info = await fetchWord(wordText);
+    const ptExample = await translate(info.example);
+    const updates = { definition: info.definition, example: info.example, examplePt: ptExample, phonetic: info.phonetic };
+    await freshToken();
+    const r = await fetch(`${DB}/${NODE}/${key}.json?auth=${idToken}`, {
+      method: 'PATCH',
+      body: JSON.stringify(updates)
+    });
+    if(!r.ok) throw new Error('HTTP ' + r.status);
+    Object.assign(w, updates);
+    return true;
+  }catch(e){
+    console.error('refetchAndApply failed for "' + wordText + '":', e);
+    return false;
+  }
+}
+
+async function regenerateExample(key, wordText){
+  setStatus('Buscando frase real para "' + wordText + '"…');
+  const ok = await refetchAndApply(key, wordText);
+  render();
+  setStatus(ok ? 'Atualizado ✓' : 'Não consegui atualizar essa palavra.', !ok);
+  setTimeout(() => setStatus(''), ok ? 2000 : 4000);
+}
+
+async function regenerateAllExamples(){
+  if(!words.length) return;
+  const total = words.length;
+  let okCount = 0;
+  for(let i = 0; i < total; i++){
+    setStatus(`Atualizando frases… (${i + 1}/${total})`);
+    const ok = await refetchAndApply(words[i].key, words[i].word);
+    if(ok) okCount++;
+    render();
+    await new Promise(res => setTimeout(res, 250));
+  }
+  setStatus(`Concluído: ${okCount}/${total} palavras atualizadas ✓`);
+  setTimeout(() => setStatus(''), 5000);
+}
+
 function render(){
-  countEl.textContent = words.length + (words.length === 1 ? ' palavra aprendida' : ' palavras aprendidas');
+  document.getElementById('countText').textContent = words.length + (words.length === 1 ? ' palavra aprendida' : ' palavras aprendidas');
   if(words.length === 0){
     listEl.innerHTML = '<div class="empty">Seu caderno está vazio.<br>Adicione a primeira palavra acima.</div>';
     return;
@@ -444,7 +548,11 @@ function render(){
       </div>
       <div class="meta">
         <span>${w.date ? new Date(w.date).toLocaleDateString('pt-BR') : ''}</span>
-        <button class="del" onclick="removeWord('${w.key}')">remover</button>
+        <span>
+          <button class="del" onclick="regenerateExample('${w.key}', '${escapeJs(w.word)}')">🔄 nova frase</button>
+          &nbsp;·&nbsp;
+          <button class="del" onclick="removeWord('${w.key}')">remover</button>
+        </span>
       </div>
     </div>
   `).join('');
