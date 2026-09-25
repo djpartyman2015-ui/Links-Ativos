@@ -592,7 +592,9 @@ function renderAno(){
 }
 function renderLanc(mes){
   const f=filtrados(mes);
-  document.getElementById('lancCount').textContent=`${f.length} de ${mes.length}`;
+  const netF=f.reduce((s,l)=>s+(l.tipo==='receita'?+l.valor||0:-(+l.valor||0)),0);
+  const subTxt=f.length? ` · <span style="color:${netF>=0?'var(--in)':'var(--out)'};font-weight:700">${netF>=0?'+':'−'} ${brl(Math.abs(netF)).replace('R$ ','')}</span>` : '';
+  document.getElementById('lancCount').innerHTML=`${f.length} de ${mes.length}${subTxt}`;
   document.getElementById('listaLanc').innerHTML = f.length? f.map(linha).join('')
     : '<div class="empty"><b>Nada encontrado</b>Ajuste os filtros ou registre um lançamento.</div>';
 }
