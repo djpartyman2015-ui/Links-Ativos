@@ -603,10 +603,25 @@ function renderMetas(){
   document.getElementById('listaMetas').innerHTML = ms.length? ms.map(([id,m])=>{
     const p=m.alvo?Math.min(100,(+m.guardado||0)/+m.alvo*100):0;
     const falta=Math.max(0,(+m.alvo||0)-(+m.guardado||0));
+    let countdown='', porDia='';
+    if(m.prazo && falta>0){
+      const hj=new Date(); hj.setHours(0,0,0,0);
+      const alvo=new Date(m.prazo+'T00:00');
+      const dias=Math.ceil((alvo-hj)/86400000);
+      if(dias>0){
+        countdown=`<span>${dias} dia${dias>1?'s':''} até o prazo</span>`;
+        porDia=`<span>${brl(falta/dias)}/dia</span>`;
+      } else if(dias===0){
+        countdown=`<span style="color:var(--warn)">Prazo é hoje</span>`;
+      } else {
+        countdown=`<span style="color:var(--out)">Prazo vencido há ${-dias} dia${-dias>1?'s':''}</span>`;
+      }
+    }
     return `<div class="card"><h2>${esc(m.nome)}<small>${m.prazo?new Date(m.prazo+'T12:00').toLocaleDateString('pt-BR',{month:'short',year:'2-digit'}):''}</small></h2>
       <div class="bar"><i style="width:${p}%;background:var(--gold)"></i></div>
       <div class="blabel"><span><b>${brl(m.guardado)}</b> de ${brl(m.alvo)}</span><span>${Math.round(p)}%</span></div>
-      <div class="blabel"><span>${falta>0?'Faltam '+brl(falta):'Meta alcançada'}</span></div>
+      <div class="blabel"><span>${falta>0?'Faltam '+brl(falta):'Meta alcançada'}</span>${porDia}</div>
+      ${countdown?`<div class="blabel">${countdown}</div>`:''}
       <div class="row-btn">
         <button class="btn ghost sm" onclick="deposito('${id}',1)">Guardar</button>
         <button class="btn ghost sm" onclick="deposito('${id}',-1)">Resgatar</button>
