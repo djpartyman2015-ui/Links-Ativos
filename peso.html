@@ -1003,13 +1003,17 @@ function renderCalendar(){
 }
 
 /* ====== CROSS LIFE ====== */
+function findEntryByDate(date){
+  return Object.values(entries).find(e => e.date === date) || null;
+}
 function updateClWeightHint(){
   const date = document.getElementById('clDate').value;
   const hint = document.getElementById('clWeightHint');
   const weightInput = document.getElementById('clWeight');
-  if(date && entries[date]){
-    weightInput.value = entries[date].weight;
-    hint.textContent = `Peso puxado automaticamente do registro de ${new Date(date+'T00:00').toLocaleDateString('pt-BR')} (${entries[date].weight.toFixed(1)}kg).`;
+  const match = date ? findEntryByDate(date) : null;
+  if(match){
+    weightInput.value = match.weight;
+    hint.textContent = `Peso puxado automaticamente do registro de ${new Date(date+'T00:00').toLocaleDateString('pt-BR')} (${match.weight.toFixed(1)}kg).`;
   } else if(date) {
     hint.textContent = 'Nenhum peso registrado nesse dia no Dashboard — digite manualmente.';
   } else {
@@ -1023,7 +1027,8 @@ document.getElementById('btnAddSession').addEventListener('click', async ()=>{
   const weight = parseFloat(document.getElementById('clWeight').value) || null;
   const note = document.getElementById('clNote').value.trim();
   if(!date){ alert('Informe a data.'); return; }
-  const auto = !!(entries[date] && weight === entries[date].weight);
+  const dbEntry = findEntryByDate(date);
+  const auto = !!(dbEntry && weight === dbEntry.weight);
   const data = {date, weight, note, auto};
   const res = await fbPush('crosslife_sessions', data);
   clSessions[res.name] = data;
