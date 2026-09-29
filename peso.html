@@ -179,6 +179,7 @@
         <button class="tab-btn active" data-tab="dashboard">Dashboard</button>
         <button class="tab-btn" data-tab="calendar">Calendário</button>
         <button class="tab-btn" data-tab="canetas">Canetas</button>
+        <button class="tab-btn" data-tab="crosslife">Cross Life</button>
         <button class="tab-btn" data-tab="settings">Meta</button>
       </div>
     </div>
@@ -305,6 +306,55 @@
     </div>
   </section>
 
+  <!-- CROSS LIFE -->
+  <section id="crosslife-tab" hidden>
+
+    <div class="cards-row" id="clCardsRow">
+      <div class="card"><div class="k">Idas totais</div><div class="v" id="clTotalSessions">0</div><div class="sub" id="clSince"></div></div>
+      <div class="card"><div class="k">Investido</div><div class="v" id="clTotalCost">R$ 0</div><div class="sub">total lançado</div></div>
+      <div class="card"><div class="k">Custo por ida</div><div class="v" id="clCostPerSession">--</div><div class="sub">investido ÷ idas</div></div>
+      <div class="card"><div class="k">Peso perdido</div><div class="v" id="clWeightLost">--.-</div><div class="sub" id="clWeightLostSub">desde a 1ª ida</div></div>
+      <div class="card"><div class="k">Freq. semanal</div><div class="v" id="clWeeklyFreq">--</div><div class="sub">média de idas/semana</div></div>
+    </div>
+
+    <div class="panel">
+      <h2>Idas por semana <span class="em">·</span> últimas 8 semanas</h2>
+      <div class="chart-wrap" style="height:160px;"><canvas id="clFreqChart"></canvas></div>
+    </div>
+
+    <div class="panel">
+      <h2>Registrar ida</h2>
+      <div class="form-row">
+        <div class="field"><label>Data</label><input type="date" id="clDate"></div>
+        <div class="field"><label>Peso (kg)</label><input type="number" step="0.1" id="clWeight" placeholder="auto se você já pesou nesse dia"></div>
+        <div class="field" style="flex:2;"><label>Observação</label><input type="text" id="clNote" placeholder="ex: treino de pernas, WOD..."></div>
+      </div>
+      <div class="sub" id="clWeightHint" style="margin-top:6px;"></div>
+      <div style="margin-top:12px;"><button class="btn" id="btnAddSession">Salvar ida</button></div>
+    </div>
+
+    <div class="panel">
+      <h2>Lançar custo</h2>
+      <div class="form-row">
+        <div class="field"><label>Data</label><input type="date" id="clCostDate"></div>
+        <div class="field"><label>Valor (R$)</label><input type="number" step="0.01" id="clCostAmount" placeholder="150.00"></div>
+        <div class="field" style="flex:2;"><label>Descrição</label><input type="text" id="clCostNote" placeholder="ex: mensalidade, matrícula, roupa..."></div>
+      </div>
+      <div style="margin-top:12px;"><button class="btn secondary" id="btnAddCost">Salvar custo</button></div>
+    </div>
+
+    <div class="panel">
+      <h2>Histórico de idas</h2>
+      <div id="clSessionsList"></div>
+    </div>
+
+    <div class="panel">
+      <h2>Histórico de custos</h2>
+      <div id="clCostsList"></div>
+    </div>
+
+  </section>
+
   <!-- SETTINGS -->
   <section id="settings-tab" hidden>
     <div class="panel">
@@ -421,25 +471,32 @@ document.querySelectorAll('.tab-btn').forEach(b=>{
   b.addEventListener('click', ()=>{
     document.querySelectorAll('.tab-btn').forEach(x=>x.classList.remove('active'));
     b.classList.add('active');
-    ['dashboard','calendar','canetas','settings'].forEach(t=>{
+    ['dashboard','calendar','canetas','crosslife','settings'].forEach(t=>{
       document.getElementById(t+'-tab').hidden = (t !== b.dataset.tab);
     });
     if(b.dataset.tab === 'calendar') renderCalendar();
+    if(b.dataset.tab === 'crosslife') renderCrossLife();
   });
 });
 
 /* ====== INIT ====== */
 document.getElementById('inDate').valueAsDate = new Date();
 document.getElementById('cStart').valueAsDate = new Date();
+document.getElementById('clDate').valueAsDate = new Date();
+document.getElementById('clCostDate').valueAsDate = new Date();
 
 let goals = {}; // id -> {weight}
+let clSessions = {}; // id -> {date, weight, note, auto}
+let clCosts = {}; // id -> {date, amount, note}
 
 async function loadAll(){
-  const [e, c, s, g] = await Promise.all([fbGet('entries'), fbGet('canetas'), fbGet('settings'), fbGet('goals')]);
+  const [e, c, s, g, cls, clc] = await Promise.all([fbGet('entries'), fbGet('canetas'), fbGet('settings'), fbGet('goals'), fbGet('crosslife_sessions'), fbGet('crosslife_costs')]);
   entries = e || {};
   canetas = c || {};
   settings = s || {};
   goals = g || {};
+  clSessions = cls || {};
+  clCosts = clc || {};
   document.getElementById('sHeight').value = settings.height || '';
 
   // migrate legacy single "settings.goal" into the new goals list, once
@@ -448,6 +505,13 @@ async function loadAll(){
     goals[res.name] = {weight: settings.goal};
   }
   render();
+}
+
+function sortedSessions(){
+  return Object.entries(clSessions).map(([id,v])=>({id,...v})).sort((a,b)=> a.date.localeCompare(b.date));
+}
+function sortedCosts(){
+  return Object.entries(clCosts).map(([id,v])=>({id,...v})).sort((a,b)=> b.date.localeCompare(a.date));
 }
 
 function sortedGoals(){
@@ -936,6 +1000,147 @@ function renderCalendar(){
     html += `<div class="cal-cell ${isToday?'today':''}"><div class="cal-day">${d}</div>${weightHtml}</div>`;
   }
   grid.innerHTML = html;
+}
+
+/* ====== CROSS LIFE ====== */
+function updateClWeightHint(){
+  const date = document.getElementById('clDate').value;
+  const hint = document.getElementById('clWeightHint');
+  const weightInput = document.getElementById('clWeight');
+  if(date && entries[date]){
+    weightInput.value = entries[date].weight;
+    hint.textContent = `Peso puxado automaticamente do registro de ${new Date(date+'T00:00').toLocaleDateString('pt-BR')} (${entries[date].weight.toFixed(1)}kg).`;
+  } else if(date) {
+    hint.textContent = 'Nenhum peso registrado nesse dia no Dashboard — digite manualmente.';
+  } else {
+    hint.textContent = '';
+  }
+}
+document.getElementById('clDate').addEventListener('change', updateClWeightHint);
+
+document.getElementById('btnAddSession').addEventListener('click', async ()=>{
+  const date = document.getElementById('clDate').value;
+  const weight = parseFloat(document.getElementById('clWeight').value) || null;
+  const note = document.getElementById('clNote').value.trim();
+  if(!date){ alert('Informe a data.'); return; }
+  const auto = !!(entries[date] && weight === entries[date].weight);
+  const data = {date, weight, note, auto};
+  const res = await fbPush('crosslife_sessions', data);
+  clSessions[res.name] = data;
+  document.getElementById('clWeight').value = '';
+  document.getElementById('clNote').value = '';
+  document.getElementById('clWeightHint').textContent = '';
+  renderCrossLife();
+});
+
+document.getElementById('btnAddCost').addEventListener('click', async ()=>{
+  const date = document.getElementById('clCostDate').value;
+  const amount = parseFloat(document.getElementById('clCostAmount').value);
+  const note = document.getElementById('clCostNote').value.trim();
+  if(!date || !amount){ alert('Informe data e valor.'); return; }
+  const data = {date, amount, note};
+  const res = await fbPush('crosslife_costs', data);
+  clCosts[res.name] = data;
+  document.getElementById('clCostAmount').value = '';
+  document.getElementById('clCostNote').value = '';
+  renderCrossLife();
+});
+
+async function deleteClSession(id){
+  if(!confirm('Excluir esta ida?')) return;
+  await fbDelete('crosslife_sessions/'+id);
+  delete clSessions[id];
+  renderCrossLife();
+}
+async function deleteClCost(id){
+  if(!confirm('Excluir este custo?')) return;
+  await fbDelete('crosslife_costs/'+id);
+  delete clCosts[id];
+  renderCrossLife();
+}
+
+let clChart;
+function renderCrossLife(){
+  const sessions = sortedSessions();
+  const costs = sortedCosts();
+
+  // cards
+  document.getElementById('clTotalSessions').textContent = sessions.length;
+  if(sessions.length){
+    document.getElementById('clSince').textContent = 'desde ' + new Date(sessions[0].date+'T00:00').toLocaleDateString('pt-BR');
+  } else { document.getElementById('clSince').textContent = 'nenhuma ida ainda'; }
+
+  const totalCost = costs.reduce((s,c)=>s+c.amount,0);
+  document.getElementById('clTotalCost').textContent = 'R$ ' + totalCost.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+
+  document.getElementById('clCostPerSession').textContent = sessions.length ? 'R$ ' + (totalCost/sessions.length).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2}) : '--';
+
+  const weighted = sessions.filter(s=>s.weight!=null);
+  if(weighted.length >= 2){
+    const diff = weighted[0].weight - weighted[weighted.length-1].weight;
+    document.getElementById('clWeightLost').textContent = Math.abs(diff).toFixed(1);
+    document.getElementById('clWeightLostSub').textContent = (diff>=0?'kg perdidos':'kg ganhos') + ' desde a 1ª ida';
+  } else {
+    document.getElementById('clWeightLost').textContent = '--.-';
+    document.getElementById('clWeightLostSub').textContent = 'precisa de 2+ idas com peso';
+  }
+
+  if(sessions.length){
+    const weeksSince = Math.max(1, daysBetween(sessions[0].date, sessions[sessions.length-1].date)/7);
+    document.getElementById('clWeeklyFreq').textContent = (sessions.length/weeksSince).toFixed(1);
+  } else { document.getElementById('clWeeklyFreq').textContent = '--'; }
+
+  // weekly frequency chart — last 8 weeks
+  const weekLabels = [];
+  const weekCounts = [];
+  const now = new Date();
+  for(let i=7;i>=0;i--){
+    const wStart = new Date(now); wStart.setDate(wStart.getDate() - wStart.getDay() - i*7);
+    const wEnd = new Date(wStart); wEnd.setDate(wEnd.getDate()+6);
+    const count = sessions.filter(s=>{ const d=new Date(s.date+'T00:00'); return d>=wStart && d<=wEnd; }).length;
+    weekLabels.push(`${wStart.getDate()}/${wStart.getMonth()+1}`);
+    weekCounts.push(count);
+  }
+  const ctx = document.getElementById('clFreqChart');
+  if(clChart) clChart.destroy();
+  clChart = new Chart(ctx, {
+    type:'bar',
+    data:{ labels:weekLabels, datasets:[{ data:weekCounts, backgroundColor:'#6FFFB0', borderRadius:4, maxBarThickness:28 }] },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, tooltip:{callbacks:{label:(c)=>c.parsed.y+' ida(s)'}} },
+      scales:{
+        x:{ ticks:{ color:'#5E7167', font:{size:10} }, grid:{ display:false } },
+        y:{ ticks:{ color:'#5E7167', font:{size:10}, stepSize:1 }, grid:{ color:'#1B2422' }, beginAtZero:true }
+      }
+    }
+  });
+
+  // sessions list
+  const sEl = document.getElementById('clSessionsList');
+  if(!sessions.length){ sEl.innerHTML = '<div class="empty">Nenhuma ida registrada ainda.</div>'; }
+  else {
+    sEl.innerHTML = [...sessions].reverse().map(s=>`
+      <div class="hist-row">
+        <div class="date">${new Date(s.date+'T00:00').toLocaleDateString('pt-BR')}</div>
+        <div class="note">${s.note||''}</div>
+        <div class="w">${s.weight!=null ? s.weight.toFixed(1)+'kg' : '—'}</div>
+        <div class="hist-actions"><button class="icon-btn" onclick="deleteClSession('${s.id}')" title="excluir">✕</button></div>
+      </div>`).join('');
+  }
+
+  // costs list
+  const cEl = document.getElementById('clCostsList');
+  if(!costs.length){ cEl.innerHTML = '<div class="empty">Nenhum custo lançado ainda.</div>'; }
+  else {
+    cEl.innerHTML = costs.map(c=>`
+      <div class="hist-row">
+        <div class="date">${new Date(c.date+'T00:00').toLocaleDateString('pt-BR')}</div>
+        <div class="note">${c.note||''}</div>
+        <div class="w">R$ ${c.amount.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
+        <div class="hist-actions"><button class="icon-btn" onclick="deleteClCost('${c.id}')" title="excluir">✕</button></div>
+      </div>`).join('');
+  }
 }
 
 loadAll();
