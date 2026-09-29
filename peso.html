@@ -262,6 +262,11 @@
 
   <!-- CANETAS -->
   <section id="canetas-tab" hidden>
+    <div class="cards-row" id="canetaCostCards" style="grid-template-columns:repeat(3,1fr);">
+      <div class="card"><div class="k">Investido em canetas</div><div class="v" id="cTotalCost">R$ 0</div><div class="sub" id="cTotalCostSub">total lançado</div></div>
+      <div class="card"><div class="k">Custo por dia</div><div class="v" id="cCostPerDay">--</div><div class="sub">desde a 1ª caneta</div></div>
+      <div class="card"><div class="k">Custo médio/ciclo</div><div class="v" id="cCostAvg">--</div><div class="sub" id="cCostAvgSub"></div></div>
+    </div>
     <div class="panel">
       <h2>Novo ciclo de caneta</h2>
       <div class="form-row">
@@ -272,6 +277,7 @@
           </select>
         </div>
         <div class="field"><label>Dose</label><input type="text" id="cDose" placeholder="ex: 0.25mg"></div>
+        <div class="field"><label>Preço (R$)</label><input type="number" step="0.01" id="cPrice" placeholder="ex: 950.00"></div>
         <div class="field"><label>Início</label><input type="date" id="cStart"></div>
         <div class="field"><label>Fim (opcional)</label><input type="date" id="cEnd"></div>
       </div>
@@ -407,6 +413,7 @@
         </select>
       </div>
       <div class="field"><label>Dose</label><input type="text" id="editCDose"></div>
+      <div class="field"><label>Preço (R$)</label><input type="number" step="0.01" id="editCPrice"></div>
     </div>
     <div class="form-row" style="margin-top:10px;">
       <div class="field"><label>Início</label><input type="date" id="editCStart"></div>
@@ -801,15 +808,16 @@ document.getElementById('photoInput').addEventListener('change', (e)=>{
 document.getElementById('btnAddCaneta').addEventListener('click', async ()=>{
   const brand = document.getElementById('cBrand').value;
   const dose = document.getElementById('cDose').value.trim();
+  const price = parseFloat(document.getElementById('cPrice').value) || null;
   const start = document.getElementById('cStart').value;
   const end = document.getElementById('cEnd').value || null;
   const note = document.getElementById('cNote').value.trim();
   if(!start){ alert('Informe a data de início.'); return; }
-  const data = { brand, dose, start, end, effects:[...selectedEffects], note, photo: pendingPhoto };
+  const data = { brand, dose, price, start, end, effects:[...selectedEffects], note, photo: pendingPhoto };
   const res = await fbPush('canetas', data);
   canetas[res.name] = data;
   // reset form
-  document.getElementById('cDose').value=''; document.getElementById('cNote').value='';
+  document.getElementById('cDose').value=''; document.getElementById('cPrice').value=''; document.getElementById('cNote').value='';
   document.querySelectorAll('#effChips .chip').forEach(c=>c.classList.remove('selected'));
   selectedEffects.clear(); pendingPhoto = null;
   document.getElementById('photoDrop').innerHTML = 'Clique para escolher foto';
@@ -817,15 +825,35 @@ document.getElementById('btnAddCaneta').addEventListener('click', async ()=>{
   render();
 });
 
+function fmtBRL(v){ return 'R$ ' + v.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2}); }
+
 function renderCanetas(){
   const el = document.getElementById('canetaCards');
   const list = sortedCanetas();
-  if(!list.length){ el.innerHTML = '<div class="empty">Nenhum ciclo registrado.</div>'; return; }
   const today = new Date().toISOString().slice(0,10);
+
+  // cost summary cards
+  const priced = list.filter(c => c.price != null);
+  const totalCost = priced.reduce((s,c)=>s+c.price,0);
+  document.getElementById('cTotalCost').textContent = fmtBRL(totalCost);
+  document.getElementById('cTotalCostSub').textContent = `${priced.length} de ${list.length} ciclo(s) com preço`;
+  if(list.length){
+    const firstStart = [...list].sort((a,b)=>a.start.localeCompare(b.start))[0].start;
+    const daysSinceFirst = Math.max(1, daysBetween(firstStart, today));
+    document.getElementById('cCostPerDay').textContent = fmtBRL(totalCost/daysSinceFirst);
+  } else { document.getElementById('cCostPerDay').textContent = '--'; }
+  if(priced.length){
+    document.getElementById('cCostAvg').textContent = fmtBRL(totalCost/priced.length);
+    document.getElementById('cCostAvgSub').textContent = 'por ciclo';
+  } else { document.getElementById('cCostAvg').textContent = '--'; document.getElementById('cCostAvgSub').textContent = ''; }
+
+  if(!list.length){ el.innerHTML = '<div class="empty">Nenhum ciclo registrado.</div>'; return; }
+
   el.innerHTML = list.map(c=>{
     const active = !c.end || c.end >= today;
     const endForCalc = c.end || today;
     const days = daysBetween(c.start, endForCalc);
+    const priceHtml = c.price != null ? `<div class="caneta-meta">${fmtBRL(c.price)}${days>0 ? ' · '+fmtBRL(c.price/days)+'/dia' : ''}</div>` : '';
     return `
     <div class="caneta-card ${active?'active':''}">
       <div class="caneta-top">
@@ -833,6 +861,7 @@ function renderCanetas(){
         <div class="caneta-status ${active?'active':'done'}">${active?'Em uso':'Finalizada'}</div>
       </div>
       <div class="caneta-meta">${new Date(c.start+'T00:00').toLocaleDateString('pt-BR')} → ${c.end? new Date(c.end+'T00:00').toLocaleDateString('pt-BR') : 'atual'}</div>
+      ${priceHtml}
       <div class="caneta-days">${days}<span class="u"> dias de uso</span></div>
       ${c.effects && c.effects.length ? `<div class="caneta-effects">${c.effects.map(e=>`<span class="eff-tag">${e}</span>`).join('')}</div>` : ''}
       ${c.note ? `<div class="caneta-note">${c.note}</div>` : ''}
@@ -934,6 +963,7 @@ function openEditCaneta(id){
   editingCanetaId = id;
   document.getElementById('editCBrand').value = c.brand || 'Wegovy';
   document.getElementById('editCDose').value = c.dose || '';
+  document.getElementById('editCPrice').value = c.price != null ? c.price : '';
   document.getElementById('editCStart').value = c.start || '';
   document.getElementById('editCEnd').value = c.end || '';
   document.getElementById('editCNote').value = c.note || '';
@@ -949,12 +979,13 @@ document.getElementById('btnSaveEditCaneta').addEventListener('click', async ()=
   if(!editingCanetaId) return;
   const brand = document.getElementById('editCBrand').value;
   const dose = document.getElementById('editCDose').value.trim();
+  const price = parseFloat(document.getElementById('editCPrice').value);
   const start = document.getElementById('editCStart').value;
   const end = document.getElementById('editCEnd').value || null;
   const note = document.getElementById('editCNote').value.trim();
   if(!start){ alert('Informe a data de início.'); return; }
   const existing = canetas[editingCanetaId] || {};
-  const data = {...existing, brand, dose, start, end, effects:[...editSelectedEffects], note};
+  const data = {...existing, brand, dose, price: isNaN(price) ? null : price, start, end, effects:[...editSelectedEffects], note};
   await fbSet('canetas/'+editingCanetaId, data);
   canetas[editingCanetaId] = data;
   closeEditCaneta();
