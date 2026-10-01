@@ -129,6 +129,7 @@ const auth = firebase.auth();
 const DB = firebaseConfig.databaseURL;
 const NODE = "vocab_words"; // nó próprio, isolado dos dados de médicos
 const MW_KEY = "7583525a-9fd9-4c24-9d53-8ac97da4485e"; // Merriam-Webster Collegiate Dictionary
+const WORDNIK_KEY = "zu99e0y1nuolzr66kioozxp34ufcio1zbywl0ijbmk53vcogt"; // Wordnik — exemplos reais de livros/artigos
 
 let idToken = null;
 let words = []; // {key, word, phonetic, translation, definition, example, examplePt, date}
@@ -359,6 +360,24 @@ async function fetchFromDatamuse(word){
   }
 }
 
+async function fetchExampleFromWordnik(word){
+  try{
+    const url = 'https://api.wordnik.com/v4/word.json/' + encodeURIComponent(word) +
+      '/examples?includeDuplicates=false&useCanonical=true&limit=5&api_key=' + WORDNIK_KEY;
+    const r = await fetch(url);
+    if(!r.ok) return '';
+    const data = await r.json();
+    const examples = (data && data.examples) || [];
+    const clean = examples.filter(e => e.text && e.text.length >= 15 && e.text.length <= 140);
+    const pool = clean.length ? clean : examples;
+    if(!pool.length) return '';
+    return pool[Math.floor(Math.random() * Math.min(pool.length, 5))].text;
+  }catch(e){
+    console.error('wordnik failed:', e);
+    return '';
+  }
+}
+
 function pickExampleFromTatoebaJson(data, word){
   const results = (data.results || []).filter(s => s.text && s.text.toLowerCase().includes(word.toLowerCase()));
   if(!results.length) return '';
@@ -395,16 +414,17 @@ async function fetchExampleFromTatoeba(word){
 }
 
 async function fetchWord(word){
-  const [mw, primary, secondary, realExample] = await Promise.all([
+  const [mw, primary, secondary, wordnikExample, tatoebaExample] = await Promise.all([
     fetchFromMerriamWebster(word),
     fetchFromDictionaryApi(word),
     fetchFromDatamuse(word),
+    fetchExampleFromWordnik(word),
     fetchExampleFromTatoeba(word)
   ]);
   const definition = (mw && mw.definition) || (primary && primary.definition) || (secondary && secondary.definition) || '';
   if(!definition) throw new Error('DICT_NOT_FOUND');
   const phonetic = (mw && mw.phonetic) || (primary && primary.phonetic) || '';
-  const example = (mw && mw.example) || realExample || (primary && primary.example) || `I learned the word "${word}" today.`;
+  const example = (mw && mw.example) || wordnikExample || tatoebaExample || (primary && primary.example) || `I learned the word "${word}" today.`;
   const usedFallback = !(mw && mw.definition) && !(primary && primary.definition);
   const wordOut = (mw && mw.word) || (primary && primary.word) || word;
   return { word: wordOut, phonetic, definition, example, degraded: usedFallback };
