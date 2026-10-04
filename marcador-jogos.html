@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0d2b26">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Marcador de Jogos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=Figtree:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --felt:#0d2b26; --felt-2:#12372f; --panel:#17463d; --panel-2:#1e554a;
+  --chalk:#eef2ea; --muted:#9db8ae; --brass:#e3b04b; --brass-ink:#2a1d00;
+  --red:#ee7a62; --green:#7fd6a0; --line:rgba(238,242,234,.14);
+  --disp:'Bricolage Grotesque',system-ui,sans-serif; --body:'Figtree',system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0}
+html{-webkit-text-size-adjust:100%}
+body{background:var(--felt);color:var(--chalk);font:400 16px/1.45 var(--body);min-height:100dvh;padding-bottom:calc(84px + env(safe-area-inset-bottom))}
+a{color:inherit}
+.wrap{max-width:720px;margin:0 auto;padding:16px;padding-top:calc(16px + env(safe-area-inset-top))}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}
+h1{font:800 26px/1 var(--disp);letter-spacing:-.01em}
+h2{font:800 19px/1.2 var(--disp);margin:22px 0 10px}
+h2.tit{font-size:26px;margin:14px 0 2px}
+h3{font:700 16px/1.2 var(--body)}
+h4{font:700 15px/1.3 var(--body);margin:14px 0 4px;color:var(--brass)}
+.muted{color:var(--muted)} .sm{font-size:14px} .xs{font-size:12px}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;padding:5px 10px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
+.chip i{width:8px;height:8px;border-radius:50%;background:var(--brass)}
+.chip.on i{background:var(--green)}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.row>.btn{flex:1}
+.rowb{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px}
+.lista{display:grid;gap:10px}
+.pcard{display:block;text-decoration:none}
+.pcard .linha{margin:6px 0 4px;font-size:17px}
+.live{color:var(--green);font-weight:700}
+.tiles{display:grid;gap:12px}
+.tile{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:14px;display:grid;grid-template-columns:auto 1fr;gap:4px 14px;align-items:center}
+.tile .row{grid-column:1/-1;margin-top:8px}
+.glifo{font:800 40px/1 var(--disp);width:52px;text-align:center}
+.glifo.r{color:var(--red)}
+.tile b{font:800 20px var(--disp);display:block}
+.btn{appearance:none;border:1px solid var(--line);background:var(--panel-2);color:var(--chalk);font:600 15px var(--body);padding:11px 14px;border-radius:12px;cursor:pointer;min-height:44px;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;touch-action:manipulation}
+.btn:active{transform:scale(.97)}
+.btn.brass{background:var(--brass);color:var(--brass-ink);border-color:transparent}
+.btn.ghost{background:transparent}
+.btn.danger{color:var(--red)}
+.btn.sm{min-height:36px;padding:6px 11px;font-size:14px}
+.btn.block{width:100%;margin:12px 0}
+.btn:disabled{opacity:.3;pointer-events:none}
+:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+.x{appearance:none;background:none;border:0;color:var(--muted);font-size:20px;line-height:1;padding:6px 8px;cursor:pointer}
+.chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;margin-bottom:8px}
+.chipb{appearance:none;flex:none;border:1px solid var(--line);background:transparent;color:var(--muted);font:600 14px var(--body);padding:7px 13px;border-radius:999px;cursor:pointer}
+.chipb.on{background:var(--brass);color:var(--brass-ink);border-color:transparent}
+/* truco */
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.lado{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:12px;min-width:0}
+.lado.lead{border-color:var(--brass)}
+.lado h3{overflow-wrap:anywhere}
+.score{font:800 84px/1 var(--disp);font-variant-numeric:tabular-nums;text-align:center;margin:8px 0}
+.score.md{font-size:48px}
+.pips{display:flex;flex-wrap:wrap;gap:4px;justify-content:center}
+.pip{width:11px;height:11px;border-radius:50%;border:1.5px solid var(--muted);display:block}
+.pip.on{background:var(--brass);border-color:var(--brass)}
+.pts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.pts .full{grid-column:1/-1}
+.pts .full.big{min-height:56px;font-size:20px}
+.aviso{background:rgba(227,176,75,.14);border:1px solid var(--brass);border-radius:12px;padding:10px 12px;margin:12px 0;font-size:15px}
+.winner{background:var(--brass);color:var(--brass-ink);border-radius:14px;padding:12px 14px;margin:12px 0;font:800 18px var(--disp)}
+.log{list-style:none;padding:0;margin:8px 0 0}
+.log li{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font-size:15px}
+.barra{height:8px;background:var(--felt);border-radius:99px;overflow:hidden;margin-top:6px}
+.barra i{display:block;height:100%;background:var(--brass)}
+/* tabelas */
+.scroll{overflow-x:auto;margin-top:6px}
+.tb{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+.tb th,.tb td{padding:9px 6px;text-align:center;border-bottom:1px solid var(--line);vertical-align:middle}
+.tb th{font-size:13px;color:var(--muted);font-weight:600}
+.tb tfoot td{font:800 19px var(--disp);border-bottom:0;border-top:2px solid var(--line)}
+.pos{color:var(--green)} .neg{color:var(--red)}
+.rks{display:grid;gap:8px;margin:6px 0}
+.rk{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px 14px}
+.rk.lead{border-color:var(--brass)}
+.rkv{font:800 24px var(--disp);font-variant-numeric:tabular-nums}
+.rk em{font-style:normal;font-size:12px;color:var(--red);margin-left:6px}
+.vazio{padding:18px 4px}
+/* rank */
+.rank td:nth-child(2),.rank th:nth-child(2){text-align:left}
+/* modal */
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.62);display:flex;align-items:flex-end;justify-content:center;z-index:50}
+.ov[hidden]{display:none}
+.sheet{background:var(--felt-2);width:100%;max-width:560px;max-height:92dvh;overflow:auto;border-radius:20px 20px 0 0;border:1px solid var(--line);padding:18px;padding-bottom:calc(18px + env(safe-area-inset-bottom))}
+@media(min-width:640px){.ov{align-items:center}.sheet{border-radius:20px}}
+.sheet h3{font:800 21px var(--disp);margin-bottom:6px}
+.sheet p{margin:6px 0}
+label{display:block;font-size:13px;color:var(--muted);margin:10px 0 4px}
+input,select{width:100%;background:var(--felt);color:var(--chalk);border:1px solid var(--line);border-radius:10px;padding:11px 12px;font:16px var(--body);min-height:44px}
+input:disabled{opacity:.35}
+.rowj{display:flex;gap:6px;align-items:center;margin-top:8px}
+.rowj input{flex:1}
+.linhaR{display:grid;grid-template-columns:1fr 120px;gap:10px;align-items:center;margin-top:8px}
+.rad,.chk{display:flex;align-items:center;gap:10px;font-size:16px;color:var(--chalk);margin:0;padding:6px 0}
+.rad input,.chk input{width:22px;height:22px;min-height:0;flex:none;accent-color:#e3b04b}
+.fs{border:1px solid var(--line);border-radius:14px;padding:6px 12px 12px;margin-top:12px;min-width:0}
+.fs legend{padding:0 6px;font-weight:700}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}
+.tot{font:800 20px var(--disp);margin-top:8px;text-align:right}
+.fontes{margin-top:14px;font-size:13px;color:var(--muted)}
+.fontes a{display:block;margin-top:4px;overflow-wrap:anywhere}
+.toast{position:fixed;left:50%;bottom:calc(92px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--chalk);color:#0d2b26;padding:10px 16px;border-radius:999px;font-weight:700;z-index:80;max-width:90vw;text-align:center}
+.toast[hidden]{display:none}
+.nav{position:fixed;left:0;right:0;bottom:0;background:var(--felt-2);border-top:1px solid var(--line);display:flex;padding-bottom:env(safe-area-inset-bottom);z-index:40}
+.nav a{flex:1;text-align:center;padding:14px 4px;color:var(--muted);text-decoration:none;font-weight:700}
+.nav a.on{color:var(--brass)}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}.btn:active{transform:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top"><h1>Marcador</h1><span class="chip" id="chip"><i></i><span></span></span></header>
+  <main id="view"></main>
+</div>
+<nav class="nav" aria-label="Navegação">
+  <a href="#/" data-r="jogos">Jogos</a>
+  <a href="#/historico" data-r="historico">Histórico</a>
+  <a href="#/ranking" data-r="ranking">Ranking</a>
+</nav>
+<div id="modal" class="ov" hidden></div>
+<div id="toast" class="toast" hidden role="status"></div>
+
+<script type="module">
+/* =========================================================
+   1) CONFIGURAÇÃO DO FIREBASE
+   Cole aqui a config do seu projeto (Console Firebase →
+   Configurações do projeto → Seus apps → Web).
+   Enquanto estiver como "COLE_AQUI", o app roda em modo local
+   (salva só neste aparelho, via localStorage).
+   ========================================================= */
+const firebaseConfig = {
+  apiKey: "COLE_AQUI",
+  authDomain: "SEU-PROJETO.firebaseapp.com",
+  projectId: "SEU-PROJETO",
+  storageBucket: "SEU-PROJETO.appspot.com",
+  messagingSenderId: "000000000000",
+  appId: "1:000000000000:web:0000000000000000"
+};
+const COL = "marcador_partidas";   // coleção do Firestore
+const LS  = "marcador_partidas_v1"; // chave do modo local
+
+/* =========================================================
+   2) DEFINIÇÃO DOS JOGOS E REGRAS
+   ========================================================= */
+const JOGOS = {
+  truco:    {nome:'Truco Paulista', glifo:'♠', vermelho:false, tipo:'duplas',     desc:'Duas duplas · vai a 12'},
+  rummikub: {nome:'Rummikub',       glifo:'▦', vermelho:false, tipo:'individual', min:2, max:6, ini:4, desc:'Soma das pedras que sobram'},
+  tranca:   {nome:'Tranca',         glifo:'♣', vermelho:false, tipo:'duplas',     desc:'Canastra · meta de pontos'},
+  buraco:   {nome:'Buraco',         glifo:'♦', vermelho:true,  tipo:'duplas',     desc:'Canastras · meta de pontos'},
+  poker:    {nome:"Poker Texas Hold'em", glifo:'◉', vermelho:false, tipo:'individual', min:2, max:10, ini:5, desc:'Buy-in, cash-out e saldo'},
+  cacheta:  {nome:'Cacheta',        glifo:'♥', vermelho:true,  tipo:'individual', min:2, max:8, ini:4, desc:'Pontos que sobram na mão'}
+};
+const jogosOrdenados=()=>Object.entries(JOGOS).sort((a,b)=>a[1].nome.localeCompare(b[1].nome,'pt-BR'));
+const VAL = {limpa:200, suja:100, batida:100, morto:100};
+
+const REGRAS = {
+ truco:{
+  html:`
+  <h4>Em resumo</h4>
+  <p>Jogado em duas duplas (dá para jogar 1×1). Vence a queda quem chegar primeiro a 12 pontos. O baralho tem 40 cartas: sem 8, 9 e 10.</p>
+  <h4>Força das cartas</h4>
+  <p>Da maior para a menor: manilha, 3, 2, Ás, Rei, Valete, Dama, 7, 6, 5, 4. A manilha é a carta seguinte à "vira" (carta virada do monte) e muda a cada mão. Entre as manilhas: paus (zap) &gt; copas &gt; espadas &gt; ouros.</p>
+  <h4>A mão</h4>
+  <p>Cada jogador recebe 3 cartas e ganha a mão quem vencer 2 das 3 rodadas. Se a primeira rodada empatar, quem vencer a segunda leva a mão. Uma mão vale 1 ponto.</p>
+  <h4>Truco, Seis, Nove e Doze</h4>
+  <p>A mão pode valer mais: Truco (3), Seis (6), Nove (9) e Doze (12). Quem é desafiado aceita, aumenta ou corre. Se correr, quem pediu leva o valor anterior (1, 3, 6 ou 9 pontos). Quem foi trucado pede Seis; quem pediu Truco responde com Nove; e assim por diante.</p>
+  <h4>Mão de onze</h4>
+  <p>A dupla que chega a 11 pontos vê as cartas e decide: jogar (a mão vale 3) ou correr (o adversário leva 1). Nessa mão não se pode pedir truco.</p>
+  <h4>Mão de ferro</h4>
+  <p>Quando as duas duplas estão em 11. A mão é jogada às escuras (ninguém vê as próprias cartas) e quem vencer leva a partida.</p>
+  <h4>Marcador</h4>
+  <p>Use +1 para mão simples e os botões Truco, Seis, Nove e Doze para somar o valor da mão ao vencedor. Na mão de onze, Seis, Nove e Doze ficam bloqueados.</p>
+  <p class="muted sm">As regras variam entre mesas (carta coberta, manilha velha etc.). Combinem antes de começar.</p>`,
+  fontes:[
+   ['Regulamento de Truco Paulista (UFFS)','https://site-antigo-2025.uffs.edu.br/pastas-ocultas/bd/pro-reitoria-de-assuntos-estudantis/arquivos/regulamento-truco-paulista/@@download/file'],
+   ['Dia Mundial do Truco (Viva)','https://viva.com.br/estilo-de-vida/dia-mundial-do-truco-aprenda-a-jogar.html'],
+   ['Regulamento de Truco (UNESP)','https://www.ict.unesp.br/Home/sobreoict/fundacoeseassociacoes/asfo/regulamento-de-truco-2019.pdf']
+  ]},
+ rummikub:{
+  html:`
+  <h4>Peças</h4>
+  <p>106 peças: números de 1 a 13 em 4 cores, dois jogos de cada, mais 2 coringas. Cada jogador começa com 14 peças.</p>
+  <h4>Objetivo</h4>
+  <p>Ser o primeiro a esvaziar o suporte jogando todas as peças na mesa.</p>
+  <h4>Combinações</h4>
+  <p>Sequência: 3 ou mais números seguidos da mesma cor. Grupo: 3 ou 4 peças do mesmo número, todas de cores diferentes. O coringa substitui qualquer peça.</p>
+  <h4>Jogada</h4>
+  <p>A primeira baixada de cada jogador precisa somar pelo menos 30 pontos, só com peças do próprio suporte. Depois disso é permitido rearranjar peças da mesa. Quem não consegue jogar compra uma peça.</p>
+  <h4>Fim da rodada</h4>
+  <p>Quando alguém esvazia o suporte. Se o monte acabar e ninguém puder jogar, vence a rodada quem tiver menos pontos nas pedras.</p>
+  <h4>Pontuação neste marcador</h4>
+  <p>Cada perdedor soma o valor das pedras que sobraram (coringa = 30) e perde esse total. Quem fechou a rodada ganha a soma dos pontos de todos os perdedores. Vence a partida quem tiver mais pontos no final; combinem antes quantas rodadas serão jogadas.</p>`,
+  fontes:[]},
+ tranca:{
+  html:`
+  <h4>Em resumo</h4>
+  <p>Também chamada de Canastra. Jogada em duplas com dois baralhos mais coringas. Cada jogador recebe 11 cartas e há dois "mortos" de 11 cartas.</p>
+  <h4>Jogos e canastras</h4>
+  <p>Baixe sequências de 3 ou mais cartas do mesmo naipe (em algumas mesas também trincas). Com 7 cartas ou mais, o jogo vira canastra: limpa (sem coringa) ou suja (com coringa).</p>
+  <h4>Pontuação mais usada</h4>
+  <p>Canastra limpa 200, suja 100, batida 100. Cartas de 3 a 7 valem 5, de 8 a Rei valem 10 (Ás e coringa costumam valer mais; combinem). Ao final, soma-se o que está na mesa e desconta-se o que sobrou na mão. Não pegar o morto custa 100 pontos.</p>
+  <h4>Bater</h4>
+  <p>Só é possível bater com pelo menos uma canastra limpa. A dupla que bate ganha 100 pontos.</p>
+  <h4>Meta</h4>
+  <p>Costuma-se jogar até 3.000 pontos. Ajuste a meta ao criar a partida.</p>
+  <h4>Marcador</h4>
+  <p>Em cada mão, informe canastras, cartas na mesa, cartas na mão, batida e morto. O total é calculado sozinho; use "Extras" para bônus ou penalidades combinados na mesa.</p>
+  <p class="muted sm">Os valores variam por mesa. Combinem antes de começar.</p>`,
+  fontes:[
+   ['Regras de Buraco/Canastra (Timóteo-MG)','https://intrateste.timoteo.mg.gov.br/arquivos/Imprensa/DownloadsDiversos/A0011814.pdf'],
+   ['Jogo de Canastra (Tribuna de Minas)','https://tribunademinas.com.br/colunas/maistendencias/?p=1196']
+  ]},
+ buraco:{
+  html:`
+  <h4>Em resumo</h4>
+  <p>Jogado em duas duplas, com dois baralhos (com coringas). Cada jogador recebe 11 cartas e há dois "mortos" de 11 cartas. Vence a dupla que atingir primeiro a meta combinada.</p>
+  <h4>Jogos e canastras</h4>
+  <p>Baixe sequências do mesmo naipe ou trincas, sempre com 3 ou mais cartas. Um jogo com 7 cartas ou mais é uma canastra: limpa (sem coringa) ou suja (com coringa).</p>
+  <h4>Pontuação mais usada</h4>
+  <p>Canastra limpa 200, suja 100, batida 100. Soma-se o valor das cartas baixadas e desconta-se o que sobrou na mão. Não pegar o morto custa 100 pontos, e pegar sem usar também.</p>
+  <h4>Bater</h4>
+  <p>A batida final exige pelo menos uma canastra limpa. Quem bate ganha 100 pontos e o adversário perde os pontos das cartas que sobraram na mão.</p>
+  <h4>Meta</h4>
+  <p>Costuma-se jogar até 3.000 pontos. Ajuste a meta ao criar a partida.</p>
+  <h4>Marcador</h4>
+  <p>Em cada mão, informe canastras, cartas na mesa, cartas na mão, batida e morto. O total é calculado sozinho; use "Extras" para ajustes combinados na mesa.</p>
+  <p class="muted sm">Também chamado de Biriba. Os valores variam por mesa. Combinem antes de começar.</p>`,
+  fontes:[
+   ['Regras de Buraco (Timóteo-MG)','https://intrateste.timoteo.mg.gov.br/arquivos/Imprensa/DownloadsDiversos/A0011814.pdf'],
+   ['Buraco (Tesauro UFRGS)','https://www.ufrgs.br/tesauros/index.php/thesa/c/53186']
+  ]},
+ poker:{
+  html:`
+  <h4>Em resumo</h4>
+  <p>De 2 a 10 jogadores, um baralho de 52 cartas. Cada jogador recebe 2 cartas fechadas e há 5 cartas comunitárias na mesa. Vale a melhor combinação de 5 cartas entre as 7 disponíveis (as suas 2 e as 5 da mesa).</p>
+  <h4>Blinds e botão</h4>
+  <p>O "botão" indica quem distribui e gira a cada mão. Os dois jogadores à esquerda do botão colocam as apostas obrigatórias: small blind e big blind.</p>
+  <h4>Rodadas de apostas</h4>
+  <p>Pré-flop (depois de receber as cartas), flop (3 cartas comunitárias), turn (a 4ª) e river (a 5ª), com apostas em cada etapa. Em cada vez você pode desistir (fold), passar (check), pagar (call), aumentar (raise) ou apostar tudo (all-in).</p>
+  <h4>Showdown</h4>
+  <p>Depois da última aposta, quem continua na mão mostra as cartas e a melhor combinação leva o pote. Em caso de empate, o pote é dividido. Se todos desistirem, o último jogador leva sem mostrar.</p>
+  <h4>Ranking das combinações</h4>
+  <p>Da maior para a menor: royal flush, straight flush, quadra, full house, flush, sequência, trinca, dois pares, par e carta alta. Em empate de combinação, desempata a carta mais alta fora dela (kicker).</p>
+  <h4>Marcador</h4>
+  <p>Informe o buy-in de cada jogador, lance recompras quando houver e registre o cash-out (valor final em fichas) ao sair da mesa. Saldo = cash-out − total investido, e vence a sessão quem tiver o maior saldo. A soma dos cash-outs deve igualar o total investido; o app avisa se houver diferença.</p>
+  <p class="muted sm">Estrutura de blinds, recompras e valor das fichas variam entre mesas. Combinem antes de começar.</p>`,
+  fontes:[]},
+ cacheta:{
+  html:`
+  <h4>Em resumo</h4>
+  <p>Também conhecido como Pife ou Pif-Paf. Usa dois baralhos de 52 cartas (com ou sem coringa, conforme a mesa) e aceita de 3 a 8 jogadores. Cada um começa com 9 cartas.</p>
+  <h4>Objetivo</h4>
+  <p>Formar combinações com as cartas da mão e bater: normalmente, as 9 cartas organizadas em jogos de 3.</p>
+  <h4>Combinações</h4>
+  <p>Trinca: 3 ou mais cartas do mesmo valor, de naipes diferentes. Sequência: 3 ou mais cartas seguidas do mesmo naipe.</p>
+  <h4>Jogada</h4>
+  <p>Na sua vez, compre uma carta (do monte ou do descarte) e descarte outra. Quem completar os jogos primeiro bate e encerra a rodada.</p>
+  <h4>Pontuação neste marcador</h4>
+  <p>Cada jogador soma os pontos das cartas que ficaram fora de jogo (convenção comum: Ás = 1, números pelo valor, figuras = 10). Quem bateu marca zero. Vence quem tiver o menor total. Opcionalmente, defina um limite: quem chegar nele "estoura" e sai da disputa.</p>
+  <p class="muted sm">A contagem varia bastante entre mesas. Combinem antes de começar.</p>`,
+  fontes:[
+   ['Pife/Cacheta (Tesauro UFRGS)','https://www.ufrgs.br/tesauros/index.php/thesa/c/53193']
+  ]}
+};
+
+/* =========================================================
+   3) UTILITÁRIOS
+   ========================================================= */
+const $  = (s,el=document)=>el.querySelector(s);
+const $$ = (s,el=document)=>[...el.querySelectorAll(s)];
+const h  = s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid = ()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const hoje = ()=>new Date(Date.now()-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10);
+const fmtData = iso=>{const [y,m,d]=(iso||'').split('-');return d?`${d}/${m}/${y}`:''};
+const membros = n=>String(n||'').split(/\s*(?:,|&|\+|\se\s)\s*/i).map(s=>s.trim()).filter(Boolean);
+const dec = v=>{const n=parseFloat(String(v??'').replace(',','.'));return Number.isFinite(n)?Math.round(n*100)/100:0};
+const r2 = x=>Math.round(x*100)/100;
+const num = v=>{const n=parseInt(String(v??'').replace(/[^\d-]/g,''),10);return Number.isFinite(n)?n:0};
+const fe=(f,n)=>f.elements.namedItem(n);
+const view=$('#view'), modal=$('#modal');
+let toastT;
+function toast(msg){const t=$('#toast');t.textContent=msg;t.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>t.hidden=true,2600);}
+
+/* =========================================================
+   4) ARMAZENAMENTO (Firestore ao vivo ou localStorage)
+   ========================================================= */
+let partidas=[], modo='local', db=null, F=null, pronto=false;
+const ui={hist:'todos', rank:'todos'};
+
+async function iniciarStore(){
+  const ok = firebaseConfig.apiKey && !/^COLE/i.test(firebaseConfig.apiKey);
+  if(ok){
+    try{
+      const V='10.12.2';
+      const {initializeApp}=await import(`https://www.gstatic.com/firebasejs/${V}/firebase-app.js`);
+      F=await import(`https://www.gstatic.com/firebasejs/${V}/firebase-firestore.js`);
+      db=F.getFirestore(initializeApp(firebaseConfig));
+      modo='firebase';
+      F.onSnapshot(F.query(F.collection(db,COL),F.orderBy('criadoEm','desc')),
+        snap=>{partidas=snap.docs.map(d=>({...d.data(),id:d.id}));pronto=true;render();},
+        err=>{console.error(err);toast('Firebase negou acesso. Confira as regras do Firestore.');pronto=true;render();});
+      return;
+    }catch(e){console.error(e);toast('Falha ao carregar o Firebase. Usando modo local.');}
+  }
+  modo='local';
+  try{partidas=JSON.parse(localStorage.getItem(LS)||'[]');}catch{partidas=[];}
+  pronto=true;render();
+}
+function ordenar(){partidas.sort((a,b)=>(b.criadoEm||0)-(a.criadoEm||0));}
+async function salvar(p){
+  p.atualizadoEm=Date.now();
+  if(!partidas.includes(p))partidas.push(p);
+  ordenar();
+  if(modo==='firebase'){
+    try{await F.setDoc(F.doc(db,COL,p.id),JSON.parse(JSON.stringify(p)));}
+    catch(e){console.error(e);toast('Não consegui salvar no Firebase.');}
+  }else{
+    try{localStorage.setItem(LS,JSON.stringify(partidas));}catch{}
+  }
+}
+async function excluir(id){
+  partidas=partidas.filter(p=>p.id!==id);
+  if(modo==='firebase'){
+    try{await F.deleteDoc(F.doc(db,COL,id));}catch(e){console.error(e);toast('Erro ao excluir.');}
+  }else{
+    try{localStorage.setItem(LS,JSON.stringify(partidas));}catch{}
+  }
+}
+function mut(id,fn){
+  const p=partidas.find(x=>x.id===id); if(!p)return;
+  fn(p); salvar(p); render();
+}
+
+/* =========================================================
+   5) REGRAS DE NEGÓCIO
+   ========================================================= */
+function totais(p){
+  if(p.jogo==='truco')return p.placar.slice();
+  if(p.jogo==='poker')return p.pk.map(x=>r2((x.final==null?0:x.final-x.buy.reduce((a,b)=>a+b,0))));
+  const t=Array(p.lados.length).fill(0);
+  p.rodadas.forEach(r=>r.delta.forEach((d,i)=>t[i]+=d));
+  return t;
+}
+function calcVenc(p){
+  if(p.jogo==='truco'){
+    const [qa,qb]=p.quedas,[a,b]=p.placar;
+    if(qa!==qb)return [qa>qb?0:1];
+    if(a!==b)return [a>b?0:1];
+    return [];
+  }
+  if(p.jogo==='poker'){if(!p.pk.some(x=>x.final!=null))return [];}
+  else if(!p.rodadas.length)return [];
+  const t=totais(p); let idx=t.map((_,i)=>i);
+  if(p.jogo==='cacheta'){
+    const lim=p.cfg.limite||0;
+    if(lim>0){const vivos=idx.filter(i=>t[i]<lim);if(vivos.length)idx=vivos;}
+    const m=Math.min(...idx.map(i=>t[i]));
+    return idx.filter(i=>t[i]===m);
+  }
+  const m=Math.max(...t);
+  return idx.filter(i=>t[i]===m);
+}
+function nomesVenc(p,v){return v.length?v.map(i=>p.lados[i].nome).join(' e '):'';}
+
+/* ---- Truco ---- */
+function trucoPonto(p,lado,pts){
+  if(p.status==='encerrada')return null;
+  const novo=Math.max(0,Math.min(12,p.placar[lado]+pts));
+  const real=novo-p.placar[lado];
+  if(!real)return null;
+  const antes={placar:p.placar.slice(),quedas:p.quedas.slice(),hist:p.hist.length,status:p.status,venc:(p.vencedores||[]).slice()};
+  p.placar[lado]=novo;
+  const ev={lado,pts:real,res:p.placar.slice(),queda:false,antes};
+  let msg=null;
+  if(novo>=12){
+    ev.queda=true;
+    p.quedas[lado]++;
+    p.hist.push({placar:p.placar.slice(),venc:lado});
+    const precisa=Math.ceil(p.cfg.melhorDe/2);
+    if(p.quedas[lado]>=precisa){
+      p.status='encerrada';p.vencedores=[lado];p.encerradaEm=Date.now();
+      msg='Partida para '+p.lados[lado].nome;
+    }else{
+      p.placar=[0,0];
+      msg='Queda para '+p.lados[lado].nome;
+    }
+  }
+  p.eventos.push(ev);
+  return msg;
+}
+function trucoDesfazer(p){
+  const ev=p.eventos.pop(); if(!ev)return;
+  const a=ev.antes;
+  p.placar=a.placar; p.quedas=a.quedas; p.hist.length=a.hist; p.status=a.status; p.vencedores=a.venc;
+  if(p.status!=='encerrada')delete p.encerradaEm;
+}
+
+/* ---- Canastra (Tranca/Buraco) ---- */
+const calcCanastra=d=>d.limpas*VAL.limpa+d.sujas*VAL.suja+(d.batida?VAL.batida:0)+d.mesa-d.mao-(d.morto?VAL.morto:0)+d.extra;
+function lerCanastra(f,i){
+  const d={
+    limpas:Math.max(0,num(fe(f,'l'+i).value)), sujas:Math.max(0,num(fe(f,'s'+i).value)),
+    mesa:Math.max(0,num(fe(f,'m'+i).value)),   mao:Math.max(0,num(fe(f,'c'+i).value)),
+    extra:num(fe(f,'x'+i).value), batida:fe(f,'b'+i).checked, morto:fe(f,'d'+i).checked
+  };
+  d.total=calcCanastra(d);
+  return d;
+}
+
+/* =========================================================
+   6) ROTAS E RENDER
+   ========================================================= */
+const rota=()=>{const [a,b]=location.hash.replace(/^#\/?/,'').split('/');return {nome:a||'jogos',id:b};};
+const atual=()=>partidas.find(x=>x.id===rota().id);
+window.addEventListener('hashchange',()=>{closeModal();render();window.scrollTo(0,0);});
+
+function render(){
+  const chip=$('#chip');
+  chip.classList.toggle('on',modo==='firebase');
+  $('span',chip).textContent=modo==='firebase'?'Ao vivo':'Só neste aparelho';
+  if(!pronto){view.innerHTML='<p class="muted">Carregando…</p>';return;}
+  const r=rota();
+  view.innerHTML = r.nome==='p'?vPartida(r.id) : r.nome==='historico'?vHist() : r.nome==='ranking'?vRank() : vHome();
+  const ativo=r.nome==='p'?'historico':r.nome;
+  $$('.nav a').forEach(a=>a.classList.toggle('on',a.dataset.r===ativo));
+}
+
+function cardPartida(p){
+  const j=JOGOS[p.jogo], t=totais(p), venc=new Set(p.vencedores||[]);
+  const estrela=i=>venc.has(i)?'★ ':'';
+  let linha;
+  if(p.jogo==='truco'){
+    linha=`${estrela(0)}${h(p.lados[0].nome)} <b>${p.placar[0]}</b> × <b>${p.placar[1]}</b> ${estrela(1)}${h(p.lados[1].nome)}`;
+    if(p.cfg.melhorDe>1)linha+=` <span class="muted sm">· quedas ${p.quedas[0]}×${p.quedas[1]}</span>`;
+  }else{
+    const ord=p.lados.map((l,i)=>({l,i,v:t[i]})).sort((a,b)=>p.jogo==='cacheta'?a.v-b.v:b.v-a.v);
+    linha=ord.map(o=>`${estrela(o.i)}${h(o.l.nome)} <b>${o.v}</b>`).join(' · ');
+  }
+  return `<a class="card pcard" href="#/p/${p.id}">
+    <div class="rowb"><b>${j.glifo} ${j.nome}</b><span class="muted sm">${fmtData(p.data)}</span></div>
+    <div class="linha">${linha}</div>
+    <div class="muted sm">${p.local?h(p.local)+' · ':''}${p.status==='encerrada'?'Encerrada':'<span class="live">Em andamento</span>'}</div></a>`;
+}
+function chipsJogo(sel,act){
+  const itens=[['todos','Todos'],...jogosOrdenados().map(([k,j])=>[k,j.nome])];
+  return `<div class="chips">${itens.map(([k,n])=>`<button class="chipb ${sel===k?'on':''}" data-act="${act}" data-j="${k}">${n}</button>`).join('')}</div>`;
+}
+
+function vHome(){
+  const and=partidas.filter(p=>p.status!=='encerrada');
+  return `
+  ${modo==='local'?`<div class="aviso">Modo local: as partidas ficam só neste aparelho. Para compartilhar ao vivo, preencha o <b>firebaseConfig</b> no topo do arquivo.</div>`:''}
+  ${and.length?`<h2>Em andamento</h2><div class="lista">${and.map(cardPartida).join('')}</div>`:''}
+  <h2>Jogos</h2>
+  <div class="tiles">${jogosOrdenados().map(([k,j])=>`
+    <div class="tile">
+      <div class="glifo ${j.vermelho?'r':''}">${j.glifo}</div>
+      <div><b>${j.nome}</b><span class="muted sm">${j.desc}</span></div>
+      <div class="row"><button class="btn brass" data-act="nova" data-jogo="${k}">Nova partida</button><button class="btn ghost" data-act="regras" data-jogo="${k}">Regras</button></div>
+    </div>`).join('')}</div>`;
+}
+
+function filtraHist(){
+  const q=(ui.busca||'').trim().toLowerCase();
+  return partidas.filter(p=>(ui.hist==='todos'||p.jogo===ui.hist)&&(!q||
+    [p.local,p.data,fmtData(p.data),JOGOS[p.jogo].nome,...p.lados.map(l=>l.nome)].join(' ').toLowerCase().includes(q)));
+}
+const listaHist=l=>l.length?l.map(cardPartida).join(''):`<p class="muted vazio">Nenhuma partida encontrada.</p>`;
+function vHist(){
+  return `<h2 style="margin-top:0">Histórico <span class="muted sm">· ${partidas.length} partida${partidas.length===1?'':'s'} salva${partidas.length===1?'':'s'}</span></h2>
+   <input id="busca" type="search" placeholder="Buscar por jogador, local ou data" value="${h(ui.busca||'')}" style="margin-bottom:10px">
+   ${chipsJogo(ui.hist,'fh')}
+   <div id="listaHist" class="lista">${listaHist(filtraHist())}</div>
+   <div class="row"><button class="btn" data-act="expjson">Backup (JSON)</button><button class="btn" data-act="expcsv">Planilha (CSV)</button></div>`;
+}
+function baixar(nome,txt,tipo){
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([txt],{type:tipo}));a.download=nome;
+  document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+function csvPartidas(){
+  const q=v=>`"${String(v??'').replace(/"/g,'""')}"`;
+  const linhas=[['Data','Jogo','Local','Situação','Placar','Vencedor','Rodadas']];
+  [...partidas].reverse().forEach(p=>{
+    const t=totais(p);
+    const placar=p.lados.map((l,i)=>`${l.nome}: ${p.jogo==='truco'&&p.cfg.melhorDe>1?p.quedas[i]:t[i]}`).join(' | ');
+    linhas.push([fmtData(p.data),JOGOS[p.jogo].nome,p.local||'',p.status==='encerrada'?'Encerrada':'Em andamento',placar,nomesVenc(p,p.vencedores||[]),p.jogo==='truco'?p.hist.length:p.jogo==='poker'?p.pk.reduce((a,x)=>a+x.buy.length,0):p.rodadas.length]);
+  });
+  return '\ufeff'+linhas.map(l=>l.map(q).join(';')).join('\r\n');
+}
+
+function rankData(jogo){
+  const mapa={};
+  partidas.filter(p=>p.status==='encerrada'&&(jogo==='todos'||p.jogo===jogo)).forEach(p=>{
+    const venc=new Set(p.vencedores||[]);
+    p.lados.forEach((l,i)=>membros(l.nome).forEach(m=>{
+      const k=m.toLowerCase(); const o=mapa[k]||(mapa[k]={nome:m,j:0,v:0});
+      o.j++; if(venc.has(i))o.v++;
+    }));
+  });
+  return Object.values(mapa).sort((a,b)=>b.v-a.v||(b.v/b.j-a.v/a.j)||b.j-a.j);
+}
+function vRank(){
+  const d=rankData(ui.rank);
+  return `<h2 style="margin-top:0">Ranking</h2>${chipsJogo(ui.rank,'fr')}
+   ${d.length?`<div class="card scroll"><table class="tb rank"><thead><tr><th>#</th><th>Jogador</th><th>Partidas</th><th>Vitórias</th><th>%</th></tr></thead><tbody>
+   ${d.map((o,i)=>`<tr><td>${i+1}</td><td>${h(o.nome)}</td><td>${o.j}</td><td><b>${o.v}</b></td><td>${Math.round(o.v/o.j*100)}%</td></tr>`).join('')}
+   </tbody></table></div><p class="muted sm" style="margin-top:8px">Conta só partidas encerradas. Em duplas, cada jogador recebe a vitória.</p>`
+   :`<p class="muted vazio">O ranking aparece quando houver partidas encerradas.</p>`}`;
+}
+
+/* ---- Tela da partida ---- */
+function vPartida(id){
+  const p=partidas.find(x=>x.id===id);
+  if(!p)return `<p>Partida não encontrada.</p><p><a class="btn" href="#/">Voltar</a></p>`;
+  const j=JOGOS[p.jogo], fim=p.status==='encerrada';
+  const corpo = p.jogo==='truco'?vTruco(p) : (p.jogo==='tranca'||p.jogo==='buraco')?vCanastra(p) : p.jogo==='rummikub'?vRummikub(p) : p.jogo==='poker'?vPoker(p) : vCacheta(p);
+  const v=p.vencedores||[];
+  const reabrir=fim&&(p.jogo!=='truco'||Math.max(...p.placar)<12);
+  return `
+  <div class="rowb"><a class="btn sm ghost" href="#/historico">← Voltar</a>
+    <div class="row" style="margin:0"><button class="btn sm ghost" data-act="regras" data-jogo="${p.jogo}">Regras</button><button class="btn sm ghost" data-act="copiar">Copiar link</button></div></div>
+  <h2 class="tit">${j.glifo} ${j.nome}</h2>
+  <p class="muted sm">${fmtData(p.data)}${p.local?' · '+h(p.local):''} · ${fim?'encerrada':'<span class="live">em andamento</span>'}</p>
+  ${fim?`<div class="winner">${v.length?'Vencedor: '+h(nomesVenc(p,v)):'Partida encerrada sem vencedor'}</div>`:''}
+  ${corpo}
+  <div class="row" style="margin-top:22px">
+    ${!fim?`<button class="btn brass" data-act="encerrar">Encerrar partida</button>`:''}
+    ${reabrir?`<button class="btn" data-act="reabrir">Reabrir partida</button>`:''}
+    <button class="btn ghost danger" data-act="excluir">Excluir partida</button>
+  </div>`;
+}
+
+function vTruco(p){
+  const [a,b]=p.placar, fim=p.status==='encerrada';
+  const onze=a===11||b===11, ferro=a===11&&b===11;
+  const aviso=fim?'':ferro?`<div class="aviso"><b>Mão de ferro.</b> Os dois estão em 11: cartas às escuras, quem vencer leva a partida.</div>`
+    :onze?`<div class="aviso"><b>Mão de onze.</b> ${h(p.lados[a===11?0:1].nome)} está em 11. A mão vale 3 e não pode pedir truco.</div>`:'';
+  const lado=i=>{
+    const n=p.placar[i], lider=n>p.placar[1-i];
+    const bt=(pts,rot,cls='')=>`<button class="btn ${cls}" data-act="tp" data-lado="${i}" data-pts="${pts}" ${(fim||(onze&&pts>3))?'disabled':''}>${rot}</button>`;
+    return `<div class="lado ${lider?'lead':''}">
+      <h3>${h(p.lados[i].nome)}</h3>
+      ${p.cfg.melhorDe>1?`<div class="muted sm">Quedas: <b>${p.quedas[i]}</b></div>`:''}
+      <div class="score" aria-label="Pontos">${n}</div>
+      <div class="pips" aria-hidden="true">${Array.from({length:12},(_,k)=>`<i class="pip ${k<n?'on':''}"></i>`).join('')}</div>
+      <div class="pts">
+        ${bt(1,'+1','brass full big')}
+        ${bt(3,'Truco 3')}${bt(6,'Seis 6')}${bt(9,'Nove 9')}${bt(12,'Doze 12')}
+        <button class="btn ghost sm full" data-act="tp" data-lado="${i}" data-pts="-1" ${fim?'disabled':''}>−1</button>
+      </div></div>`;
+  };
+  const log=p.eventos.slice(-10).reverse().map(ev=>`<li><span>${h(p.lados[ev.lado].nome)} ${ev.pts>0?'+':''}${ev.pts}</span><span class="muted">${ev.res[0]} × ${ev.res[1]}${ev.queda?' · queda':''}</span></li>`).join('');
+  return `
+  <p class="muted sm">${p.cfg.melhorDe>1?`Melhor de ${p.cfg.melhorDe} quedas`:'Queda única'} · vai a 12</p>
+  ${aviso}
+  <div class="duo">${lado(0)}${lado(1)}</div>
+  ${p.hist.length&&p.cfg.melhorDe>1?`<p class="muted sm" style="margin-top:10px">Quedas jogadas: ${p.hist.map(q=>`${q.placar[0]}×${q.placar[1]}`).join(' · ')}</p>`:''}
+  <div class="row"><button class="btn" data-act="tdesfazer" ${p.eventos.length?'':'disabled'}>Desfazer última</button></div>
+  ${log?`<h2>Últimas jogadas</h2><ul class="log">${log}</ul>`:''}`;
+}
+
+function vPoker(p){
+  const t=totais(p), fim=p.status==='encerrada';
+  const inv=p.pk.map(x=>r2(x.buy.reduce((a,b)=>a+b,0)));
+  const totInv=r2(inv.reduce((a,b)=>a+b,0)), totFin=r2(p.pk.reduce((a,x)=>a+(x.final||0),0));
+  const todos=p.pk.every(x=>x.final!=null), dif=r2(totFin-totInv);
+  const aviso=(!fim&&todos&&dif!==0)?`<div class="aviso">Os cash-outs somam <b>${totFin}</b>, mas o total investido foi <b>${totInv}</b> (diferença de ${dif}). Confira os valores.</div>`:'';
+  return `<p class="muted sm">${p.cfg.blinds?'Blinds '+h(p.cfg.blinds)+' · ':''}buy-in ${p.cfg.buyin||0} · total investido ${totInv}</p>${aviso}
+  ${p.lados.map((l,i)=>{const x=p.pk[i];return `<div class="card" style="margin-top:10px">
+    <div class="rowb"><b>${h(l.nome)}</b><span class="rkv">${x.final==null?'<span class="muted sm">em jogo</span>':sinal(t[i])}</span></div>
+    <p class="muted sm">Investido: ${x.buy.join(' + ')||0}${x.buy.length>1?' = '+inv[i]:''}${x.final!=null?' · Final: '+x.final:''}</p>
+    ${fim?'':`<div class="row" style="margin-top:8px"><button class="btn sm" data-act="pkrebuy" data-i="${i}">+ Recompra</button><button class="btn sm brass" data-act="pkcash" data-i="${i}">${x.final==null?'Cash-out':'Editar cash-out'}</button>${x.buy.length>1?`<button class="btn sm ghost" data-act="pkundo" data-i="${i}">Desfazer recompra</button>`:''}</div>`}</div>`;}).join('')}`;
+}
+function modalValorPoker(p,i,tipo){
+  const rb=tipo==='rebuy';
+  openModal(`<h3>${rb?'Recompra':'Cash-out'} · ${h(p.lados[i].nome)}</h3>
+   <p class="muted sm">${rb?'Valor que o jogador colocou na mesa.':'Valor total em fichas ao sair da mesa (0 se perdeu tudo).'}</p>
+   <form id="frm" onsubmit="return false"><input id="vNum" type="number" inputmode="decimal" step="any" min="0" value="${rb?(p.cfg.buyin||''):(p.pk[i].final??'')}"></form>
+   <div class="row"><button class="btn ghost" data-act="fechar">Cancelar</button><button class="btn brass" data-act="pkok" data-i="${i}" data-t="${tipo}">Salvar</button></div>`,'poker');
+}
+
+function tabela(p,cell,fmtTot=v=>v){
+  if(!p.rodadas.length)return `<p class="muted vazio">Nenhuma rodada lançada ainda.</p>`;
+  const t=totais(p), fim=p.status==='encerrada';
+  return `<div class="scroll"><table class="tb"><thead><tr><th>#</th>${p.lados.map(l=>`<th>${h(l.nome)}</th>`).join('')}<th></th></tr></thead>
+   <tbody>${p.rodadas.map((r,k)=>`<tr><td class="muted">${k+1}</td>${r.delta.map((d,i)=>`<td>${cell(r,i,d)}</td>`).join('')}<td>${fim?'':`<button class="x" data-act="delrod" data-i="${k}" aria-label="Apagar rodada ${k+1}">×</button>`}</td></tr>`).join('')}</tbody>
+   <tfoot><tr><td></td>${t.map(v=>`<td>${fmtTot(v)}</td>`).join('')}<td></td></tr></tfoot></table></div>`;
+}
+const btnRod=(p,rot)=>p.status!=='encerrada'?`<button class="btn brass block" data-act="novarod">${rot}</button>`:'';
+const sinal=v=>`<span class="${v>=0?'pos':'neg'}">${v>0?'+':''}${v}</span>`;
+
+function vRummikub(p){
+  const t=totais(p);
+  const ord=t.map((v,i)=>({i,v})).sort((a,b)=>b.v-a.v);
+  return `
+  <div class="rks">${ord.map((o,pos)=>`<div class="rk ${pos===0&&p.rodadas.length?'lead':''}"><span class="muted">${pos+1}º</span><b>${h(p.lados[o.i].nome)}</b><span class="rkv">${sinal(o.v)}</span></div>`).join('')}</div>
+  ${btnRod(p,'Nova rodada')}
+  ${tabela(p,(r,i,d)=>sinal(d)+(r.venc===i?' <span class="muted xs">fechou</span>':''),sinal)}`;
+}
+
+function vCacheta(p){
+  const t=totais(p), lim=p.cfg.limite||0;
+  const ord=t.map((v,i)=>({i,v})).sort((a,b)=>a.v-b.v);
+  return `
+  <p class="muted sm">Menor total vence${lim?` · estoura em ${lim}`:''}</p>
+  <div class="rks">${ord.map((o,pos)=>`<div class="rk ${pos===0&&p.rodadas.length?'lead':''}"><span class="muted">${pos+1}º</span><b>${h(p.lados[o.i].nome)}${lim&&o.v>=lim?'<em>estourou</em>':''}</b><span class="rkv">${o.v}</span></div>`).join('')}</div>
+  ${btnRod(p,'Nova rodada')}
+  ${tabela(p,(r,i,d)=>d+(r.bat===i?' ★':''))}`;
+}
+
+const resumoDet=d=>d?`${d.limpas}L · ${d.sujas}S${d.batida?' · bateu':''}${d.morto?' · sem morto':''}`:'';
+function vCanastra(p){
+  const t=totais(p), meta=p.cfg.meta||0;
+  const cards=p.lados.map((l,i)=>`<div class="lado ${t[i]>t[1-i]?'lead':''}"><h3>${h(l.nome)}</h3><div class="score md">${t[i]}</div>
+    ${meta?`<div class="barra"><i style="width:${Math.max(0,Math.min(100,t[i]/meta*100))}%"></i></div><div class="muted xs" style="margin-top:4px">meta ${meta}</div>`:''}</div>`).join('');
+  const aviso=(p.status!=='encerrada'&&meta&&t.some(v=>v>=meta))?`<div class="aviso">Meta de ${meta} atingida. Encerre a partida para registrar o vencedor.</div>`:'';
+  return `${aviso}<div class="duo">${cards}</div>${btnRod(p,'Nova mão')}
+   ${tabela(p,(r,i,d)=>`${d}<div class="muted xs">${resumoDet(r.det&&r.det[i])}</div>`)}`;
+}
+
+/* =========================================================
+   7) MODAIS
+   ========================================================= */
+function openModal(html,kind=''){
+  modal.innerHTML=`<div class="sheet" role="dialog" aria-modal="true">${html}</div>`;
+  modal.dataset.kind=kind; modal.hidden=false;
+  const f=$('input:not([type=radio]):not([type=checkbox]):not([type=date])',modal); if(f&&kind&&kind!=='regras'&&kind!=='confirma')setTimeout(()=>f.focus(),50);
+}
+function closeModal(){modal.hidden=true;modal.innerHTML='';modal.dataset.kind='';pendente=null;}
+let pendente=null;
+function confirmar(msg,rotulo,fn,perigo=false){
+  pendente=fn;
+  openModal(`<h3>Confirmar</h3><p>${msg}</p><div class="row"><button class="btn ghost" data-act="fechar">Cancelar</button><button class="btn ${perigo?'danger':'brass'}" data-act="ok">${rotulo}</button></div>`,'confirma');
+}
+
+function modalRegras(k){
+  const j=JOGOS[k], r=REGRAS[k];
+  openModal(`<h3>${j.glifo} ${j.nome}</h3>${r.html}
+   ${r.fontes.length?`<div class="fontes">Fontes consultadas:${r.fontes.map(([n,u])=>`<a href="${u}" target="_blank" rel="noopener">${h(n)}</a>`).join('')}</div>`:''}
+   <div class="row"><button class="btn" data-act="fechar">Fechar</button></div>`,'regras');
+}
+
+function modalNova(k){
+  const j=JOGOS[k];
+  const nomes=[...new Set(partidas.flatMap(p=>p.lados.flatMap(l=>membros(l.nome))))];
+  const locais=[...new Set(partidas.map(p=>p.local).filter(Boolean))];
+  let lados='';
+  if(j.tipo==='duplas'){
+    const [a,b]=k==='truco'?['Nós','Eles']:['Dupla 1','Dupla 2'];
+    lados=`<label>Dupla 1 (jogadores)</label><input class="pl" list="dlNomes" placeholder="Ex.: ${a}" autocomplete="off">
+           <label>Dupla 2 (jogadores)</label><input class="pl" list="dlNomes" placeholder="Ex.: ${b}" autocomplete="off">
+           <p class="muted xs">Separe os jogadores com "e" ou vírgula (Ana e Bia). O ranking conta cada um.</p>`;
+  }else{
+    lados=`<label>Jogadores (${j.min} a ${j.max})</label><div id="jogs">${Array.from({length:j.ini},()=>linhaJog()).join('')}</div>
+           <button class="btn sm ghost" style="margin-top:8px" data-act="addjog" data-max="${j.max}">+ Jogador</button>`;
+  }
+  let extra='';
+  if(k==='truco')extra=`<label>Formato</label><select id="cfgMelhor"><option value="1">Queda única (12 pontos)</option><option value="3">Melhor de 3 quedas</option><option value="5">Melhor de 5 quedas</option></select>`;
+  if(k==='tranca'||k==='buraco')extra=`<label>Meta de pontos</label><input id="cfgMeta" type="number" inputmode="numeric" value="3000">`;
+  if(k==='poker')extra=`<label>Buy-in inicial (valor por jogador)</label><input id="cfgBuy" type="number" inputmode="decimal" step="any" value="50"><label>Blinds (opcional)</label><input id="cfgBlinds" placeholder="Ex.: 1/2">`;
+  if(k==='cacheta')extra=`<label>Limite para estourar (0 = sem limite)</label><input id="cfgLim" type="number" inputmode="numeric" value="0">`;
+  openModal(`<h3>Nova partida · ${j.nome}</h3>
+   <form id="frm" onsubmit="return false">
+    <label>Data</label><input id="fData" type="date" value="${hoje()}">
+    <label>Local</label><input id="fLocal" list="dlLocais" placeholder="Ex.: sala, churrasqueira" autocomplete="off">
+    ${lados}${extra}
+    <datalist id="dlNomes">${nomes.map(n=>`<option value="${h(n)}">`).join('')}</datalist>
+    <datalist id="dlLocais">${locais.map(n=>`<option value="${h(n)}">`).join('')}</datalist>
+   </form>
+   <div class="row"><button class="btn ghost" data-act="fechar">Cancelar</button><button class="btn brass" data-act="criar" data-jogo="${k}">Começar</button></div>`,'nova');
+}
+const linhaJog=()=>`<div class="rowj"><input class="pl" list="dlNomes" placeholder="Nome" autocomplete="off"><button type="button" class="x" data-act="rmjog" aria-label="Remover jogador">×</button></div>`;
+
+function criarPartida(k){
+  const j=JOGOS[k];
+  const vals=$$('.pl',modal).map(i=>i.value.trim());
+  let lados;
+  if(j.tipo==='duplas'){
+    const pad=k==='truco'?['Nós','Eles']:['Dupla 1','Dupla 2'];
+    lados=[0,1].map(i=>({nome:vals[i]||pad[i]}));
+  }else{
+    const nomes=vals.filter(Boolean);
+    if(nomes.length<j.min){toast(`Informe pelo menos ${j.min} nomes`);return;}
+    lados=nomes.map(n=>({nome:n}));
+  }
+  const cfg={};
+  if(k==='truco')cfg.melhorDe=num($('#cfgMelhor').value)||1;
+  if(k==='tranca'||k==='buraco')cfg.meta=Math.max(0,num($('#cfgMeta').value));
+  if(k==='poker'){cfg.buyin=Math.max(0,dec($('#cfgBuy').value));cfg.blinds=$('#cfgBlinds').value.trim();}
+  if(k==='cacheta')cfg.limite=Math.max(0,num($('#cfgLim').value));
+  const p={id:uid(),jogo:k,data:$('#fData').value||hoje(),local:$('#fLocal').value.trim(),criadoEm:Date.now(),status:'andamento',lados,cfg,rodadas:[],vencedores:[]};
+  if(k==='poker')p.pk=lados.map(()=>({buy:cfg.buyin>0?[cfg.buyin]:[],final:null}));
+  if(k==='truco')Object.assign(p,{placar:[0,0],quedas:[0,0],hist:[],eventos:[]});
+  salvar(p);
+  closeModal();
+  location.hash='#/p/'+p.id;
+}
+
+/* ---- lançar rodada ---- */
+function modalRodada(p){
+  if(p.jogo==='rummikub'){
+    openModal(`<h3>Nova rodada · Rummikub</h3>
+     <p class="muted sm">Marque quem fechou e informe a soma das pedras que sobraram para cada perdedor (coringa vale 30).</p>
+     <form id="frm" onsubmit="return false">${p.lados.map((l,i)=>`<div class="linhaR"><label class="rad"><input type="radio" name="venc" value="${i}"><span>${h(l.nome)}</span></label><input type="number" inputmode="numeric" min="0" name="pt${i}" placeholder="pedras" aria-label="Pedras de ${h(l.nome)}"></div>`).join('')}</form>
+     <p id="prev" class="sm" style="min-height:22px;margin-top:10px"></p>
+     <div class="row"><button class="btn ghost" data-act="fechar">Cancelar</button><button class="btn brass" data-act="salvarrod">Salvar rodada</button></div>`,'rummikub');
+  }else if(p.jogo==='cacheta'){
+    openModal(`<h3>Nova rodada · Cacheta</h3>
+     <p class="muted sm">Informe os pontos que sobraram na mão de cada jogador. Quem bateu marca zero.</p>
+     <form id="frm" onsubmit="return false">
+      <label class="rad"><input type="radio" name="bat" value="-1" checked><span class="muted">Não informar quem bateu</span></label>
+      ${p.lados.map((l,i)=>`<div class="linhaR"><label class="rad"><input type="radio" name="bat" value="${i}"><span>${h(l.nome)} bateu</span></label><input type="number" inputmode="numeric" min="0" name="pt${i}" placeholder="pontos" aria-label="Pontos de ${h(l.nome)}"></div>`).join('')}
+     </form>
+     <div class="row"><button class="btn ghost" data-act="fechar">Cancelar</button><button class="btn brass" data-act="salvarrod">Salvar rodada</button></div>`,'cacheta');
+  }else{
+    const campos=i=>`<fieldset class="fs"><legend>${h(p.lados[i].nome)}</legend>
+      <div class="g2">
+       <div><label>Canastras limpas</label><input type="number" inputmode="numeric" min="0" name="l${i}" value="0"></div>
+       <div><label>Canastras sujas</label><input type="number" inputmode="numeric" min="0" name="s${i}" value="0"></div>
+       <div><label>Cartas na mesa (pts)</label><input type="number" inputmode="numeric" min="0" name="m${i}" value="0"></div>
+       <div><label>Cartas na mão (pts, −)</label><input type="number" inputmode="numeric" min="0" name="c${i}" value="0"></div>
+       <div><label>Extras (±)</label><input type="number" name="x${i}" value="0"></div>
+      </div>
+      <label class="chk"><input type="checkbox" name="b${i}"> Bateu (+${VAL.batida})</label>
+      <label class="chk"><input type="checkbox" name="d${i}"> Não pegou o morto (−${VAL.morto})</label>
+      <div class="tot" id="tot${i}">Total: 0</div></fieldset>`;
+    openModal(`<h3>Nova mão · ${JOGOS[p.jogo].nome}</h3>
+     <p class="muted sm">Canastra limpa vale ${VAL.limpa} e suja ${VAL.suja}. O total é calculado sozinho.</p>
+     <form id="frm" onsubmit="return false">${campos(0)}${campos(1)}</form>
+     <div class="row"><button class="btn ghost" data-act="fechar">Cancelar</button><button class="btn brass" data-act="salvarrod">Salvar mão</button></div>`,'canastra');
+  }
+}
+
+function onModalInput(){
+  const k=modal.dataset.kind, f=$('#frm',modal), p=atual();
+  if(!f||!p)return;
+  if(k==='rummikub'){
+    const sel=$('input[name=venc]:checked',f);
+    p.lados.forEach((_,i)=>{const inp=fe(f,'pt'+i);inp.disabled=!!sel&&+sel.value===i;if(inp.disabled)inp.value='';});
+    const prev=$('#prev',modal);
+    if(sel){
+      const w=+sel.value; const soma=p.lados.reduce((s,_,i)=>s+(i===w?0:Math.max(0,num(fe(f,'pt'+i).value))),0);
+      prev.innerHTML=`${h(p.lados[w].nome)} ganha <b class="pos">+${soma}</b>`;
+    }else prev.textContent='';
+  }
+  if(k==='cacheta'){
+    const sel=$('input[name=bat]:checked',f);
+    p.lados.forEach((_,i)=>{const inp=fe(f,'pt'+i);inp.disabled=!!sel&&+sel.value===i;if(inp.disabled)inp.value='';});
+  }
+  if(k==='canastra'){
+    p.lados.forEach((_,i)=>{$('#tot'+i,modal).textContent='Total: '+lerCanastra(f,i).total;});
+  }
+}
+modal.addEventListener('input',onModalInput);
+modal.addEventListener('change',onModalInput);
+
+function salvarRodada(){
+  const p=atual(), f=$('#frm',modal); if(!p||!f)return;
+  let r;
+  if(p.jogo==='rummikub'){
+    const sel=$('input[name=venc]:checked',f);
+    if(!sel){toast('Marque quem fechou a rodada');return;}
+    const w=+sel.value;
+    const pts=p.lados.map((_,i)=>i===w?0:Math.max(0,num(fe(f,'pt'+i).value)));
+    const soma=pts.reduce((a,b)=>a+b,0);
+    r={venc:w,pts,delta:pts.map((x,i)=>i===w?soma:-x)};
+  }else if(p.jogo==='cacheta'){
+    const sel=$('input[name=bat]:checked',f); const bat=sel?+sel.value:-1;
+    const pts=p.lados.map((_,i)=>i===bat?0:Math.max(0,num(fe(f,'pt'+i).value)));
+    r={bat,delta:pts};
+  }else{
+    const det=p.lados.map((_,i)=>lerCanastra(f,i));
+    r={det,delta:det.map(d=>d.total)};
+  }
+  closeModal();
+  mut(p.id,x=>{x.rodadas.push(r);});
+}
+
+function encerrarPartida(p){
+  if(p.jogo==='poker'){const f=p.pk.findIndex(x=>x.final==null);if(f>=0){toast('Falta o cash-out de '+p.lados[f].nome);return;}}
+  const v=calcVenc(p);
+  confirmar(v.length?`Encerrar a partida? Vencedor: <b>${h(nomesVenc(p,v))}</b>.`:'Encerrar a partida sem vencedor definido (empate ou sem rodadas)?','Encerrar',()=>{
+    mut(p.id,x=>{x.status='encerrada';x.vencedores=calcVenc(x);x.encerradaEm=Date.now();});
+  });
+}
+
+/* =========================================================
+   8) AÇÕES (delegação de eventos)
+   ========================================================= */
+const A={
+  nova:d=>modalNova(d.jogo),
+  regras:d=>modalRegras(d.jogo),
+  fechar:()=>closeModal(),
+  ok:()=>{const f=pendente;closeModal();if(f)f();},
+  criar:d=>criarPartida(d.jogo),
+  addjog:d=>{const box=$('#jogs',modal);if(box.children.length>=+d.max){toast('Máximo de '+d.max+' jogadores');return;}box.insertAdjacentHTML('beforeend',linhaJog());},
+  rmjog:(d,b)=>{const box=$('#jogs',modal);if(box.children.length<=2){toast('Mínimo de 2 jogadores');return;}b.closest('.rowj').remove();},
+  pkrebuy:d=>{const p=atual();if(p)modalValorPoker(p,+d.i,'rebuy');},
+  pkcash:d=>{const p=atual();if(p)modalValorPoker(p,+d.i,'cash');},
+  pkundo:d=>mut(rota().id,p=>{p.pk[+d.i].buy.pop();}),
+  pkok:d=>{const inp=$('#vNum',modal);if(!inp||inp.value.trim()===''){toast('Informe o valor');return;}
+    const v=dec(inp.value),i=+d.i,id=rota().id;
+    if(d.t==='rebuy'&&v<=0){toast('Informe um valor maior que zero');return;}
+    closeModal();mut(id,p=>{if(d.t==='rebuy')p.pk[i].buy.push(v);else p.pk[i].final=Math.max(0,v);});},
+  fh:d=>{ui.hist=d.j;render();},
+  expjson:()=>baixar('marcador-backup-'+hoje()+'.json',JSON.stringify(partidas,null,2),'application/json'),
+  expcsv:()=>baixar('marcador-partidas-'+hoje()+'.csv',csvPartidas(),'text/csv;charset=utf-8'),
+  fr:d=>{ui.rank=d.j;render();},
+  tp:d=>{
+    navigator.vibrate?.(12);
+    mut(rota().id,p=>{const m=trucoPonto(p,+d.lado,+d.pts);if(m)toast(m);});
+  },
+  tdesfazer:()=>mut(rota().id,trucoDesfazer),
+  novarod:()=>{const p=atual();if(p)modalRodada(p);},
+  salvarrod:()=>salvarRodada(),
+  delrod:d=>{const p=atual();if(!p)return;const i=+d.i;
+    confirmar(`Apagar a rodada ${i+1}? Os totais serão recalculados.`,'Apagar',()=>mut(p.id,x=>{x.rodadas.splice(i,1);}),true);},
+  encerrar:()=>{const p=atual();if(p)encerrarPartida(p);},
+  reabrir:()=>mut(rota().id,p=>{p.status='andamento';p.vencedores=[];delete p.encerradaEm;}),
+  excluir:()=>{const p=atual();if(!p)return;
+    confirmar('Excluir esta partida? Não dá para desfazer.','Excluir',async()=>{await excluir(p.id);location.hash='#/historico';render();},true);},
+  copiar:()=>{
+    const url=location.href;
+    (navigator.clipboard?navigator.clipboard.writeText(url):Promise.reject()).then(()=>toast('Link copiado')).catch(()=>{window.prompt('Copie o link:',url);});
+  }
+};
+document.addEventListener('click',e=>{
+  if(e.target===modal){closeModal();return;}
+  const b=e.target.closest('[data-act]'); if(!b)return;
+  const fn=A[b.dataset.act]; if(fn){e.preventDefault();fn(b.dataset,b);}
+});
+document.addEventListener('input',e=>{if(e.target.id==='busca'){ui.busca=e.target.value;$('#listaHist').innerHTML=listaHist(filtraHist());}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!modal.hidden)closeModal();});
+
+render();
+iniciarStore();
+</script>
+</body>
+</html>
