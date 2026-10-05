@@ -251,11 +251,13 @@ nav button[aria-pressed="true"] svg{stroke-width:2.4}
       <div><span>Rendimento</span><b class="num" id="iRend">—</b></div>
     </div>
     <div class="card">
+      <h2>Rendimento — fechamento diário<small id="rendDelta"></small></h2>
+      <div id="rendDiarioWrap" class="chart" style="height:130px"><canvas id="chartRend"></canvas></div>
+      <div id="rendDiarioMsg" class="empty" style="display:none"></div>
+    </div>
+    <div class="card">
       <h2>Panorama do mercado<small id="mktAtualizado"></small></h2>
       <div id="mktGrid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:8px">
-        <div class="mkt-item" data-k="selic"><span>Selic</span><b class="num">—</b><small></small></div>
-        <div class="mkt-item" data-k="cdi"><span>CDI</span><b class="num">—</b><small></small></div>
-        <div class="mkt-item" data-k="ipca"><span>IPCA 12m</span><b class="num">—</b><small></small></div>
         <div class="mkt-item" data-k="usd"><span>Dólar</span><b class="num">—</b><small></small></div>
         <div class="mkt-item" data-k="btc"><span>Bitcoin</span><b class="num">—</b><small></small></div>
       </div>
@@ -355,7 +357,7 @@ const SEED = {
 const IGNORAR = /PAGAMENTO EFETUADO|PAGAMENTO RECEBIDO|PGTO\.? DEBITO|PAGTO|SALDO ANTERIOR|SALDO FINAL|TOTAL DA FATURA|TOTAL FATURA|LIMITE (TOTAL|DISPON)|VENCIMENTO|FATURA ANTERIOR|CREDITO ROTATIVO|DEMAIS LANCAMENTOS/i;
 const MESES = {JAN:1,FEV:2,MAR:3,ABR:4,MAI:5,JUN:6,JUL:7,AGO:8,SET:9,OUT:10,NOV:11,DEZ:12};
 
-let dados = {lancamentos:{},metas:{},investimentos:{},limites:{},dicionario:{}};
+let dados = {lancamentos:{},metas:{},investimentos:{},limites:{},dicionario:{},snapshots:{}};
 let ref = new Date(); ref.setDate(1);
 let aba='dash', charts={}, token=null, revisao=[];
 
@@ -415,10 +417,23 @@ async function api(no,metodo='GET',corpo=null,id='',retry=true){
 }
 async function carregar(){
   try{
-    const [l,m,i,li,dic]=await Promise.all([api('lancamentos'),api('metas'),api('investimentos'),api('limites'),api('dicionario')]);
-    dados={lancamentos:l||{},metas:m||{},investimentos:i||{},limites:li||{},dicionario:dic||{}};
+    const [l,m,i,li,dic,sn]=await Promise.all([api('lancamentos'),api('metas'),api('investimentos'),api('limites'),api('dicionario'),api('snapshots')]);
+    dados={lancamentos:l||{},metas:m||{},investimentos:i||{},limites:li||{},dicionario:dic||{},snapshots:sn||{}};
     montarFiltro(); render();
+    salvarSnapshot().then(()=>{ if(aba==='inv') render(); });
   }catch(e){ toast('Não consegui carregar os dados. Confira a conexão.'); }
+}
+const hojeLocal=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;};
+/* grava o "fechamento" do dia: último valor visto de aplicado/hoje/rendimento */
+async function salvarSnapshot(){
+  const ivs=Object.values(dados.investimentos);
+  if(!ivs.length) return;
+  const r2=v=>Math.round(v*100)/100;
+  const apl=r2(ivs.reduce((s,i)=>s+(+i.aplicado||0),0)), atu=r2(ivs.reduce((s,i)=>s+(+i.atual||0),0));
+  const snap={aplicado:apl, atual:atu, rend:r2(atu-apl), pct:apl?r2((atu-apl)/apl*100):0};
+  const k=hojeLocal(), ant=dados.snapshots[k];
+  if(ant && ant.aplicado===snap.aplicado && ant.atual===snap.atual) return;
+  try{ await api('snapshots','PUT',snap,k); dados.snapshots[k]=snap; }catch(e){}
 }
 async function salvar(no,obj,id){
   try{
@@ -463,17 +478,6 @@ async function carregarIndicadores(){
     el.querySelector('b').textContent=val;
     el.querySelector('small').textContent=nota||'';
   };
-  const bcb=async cod=>{
-    const r=await fetch(`https://api.bcb.gov.br/dados/serie/bcdata.sgs.${cod}/dados/ultimos/1?formato=json`);
-    const d=await r.json();
-    return d && d[0] ? d[0] : null;
-  };
-  try{
-    const [selic,cdi,ipca]=await Promise.all([bcb(432),bcb(4392),bcb(13522)]);
-    if(selic) set('selic', selic.valor.replace('.',',')+'% a.a.', 'impacta Tesouro Selic e CDBs');
-    if(cdi)   set('cdi', cdi.valor.replace('.',',')+'% a.a.', 'impacta CDBs, LCI/LCA');
-    if(ipca)  set('ipca', ipca.valor.replace('.',',')+'%', 'impacta Tesouro IPCA+');
-  }catch(e){ /* segue sem travar o resto */ }
   try{
     const r=await fetch('https://economia.awesomeapi.com.br/last/USD-BRL,BTC-BRL');
     const d=await r.json();
@@ -635,6 +639,27 @@ function deposito(id,s){
   if(v===null) return;
   salvar('metas',{guardado:Math.max(0,(+dados.metas[id].guardado||0)+s*num(v))},id);
 }
+function renderRendDiario(){
+  const sn=Object.entries(dados.snapshots||{}).sort((a,b)=>a[0].localeCompare(b[0])).slice(-30);
+  const wrap=document.getElementById('rendDiarioWrap'), msg=document.getElementById('rendDiarioMsg'), delta=document.getElementById('rendDelta');
+  if(sn.length<2){
+    wrap.style.display='none'; msg.style.display='block'; delta.textContent='';
+    msg.innerHTML = sn.length? '<b>Histórico começou hoje</b>O gráfico aparece a partir do segundo dia de registro.'
+                             : '<b>Sem histórico ainda</b>O fechamento diário começa a ser gravado a partir de agora.';
+    if(charts.chartRend){ charts.chartRend.destroy(); delete charts.chartRend; }
+    return;
+  }
+  wrap.style.display='block'; msg.style.display='none';
+  const dv=sn[sn.length-1][1].rend-sn[sn.length-2][1].rend;
+  delta.innerHTML=`<span style="color:${dv>=0?'var(--in)':'var(--out)'};font-weight:700">${dv>=0?'+':'−'}${brlc(Math.abs(dv))}</span> vs dia anterior`;
+  desenhar('chartRend','line',{
+    labels:sn.map(([k])=>new Date(k+'T12:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})),
+    datasets:[{data:sn.map(([,s])=>s.rend),borderColor:'#0D7A62',backgroundColor:'rgba(13,122,98,.12)',fill:true,tension:.3,borderWidth:2,pointRadius:sn.length>15?0:3}]
+  },{
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>{const s=sn[c.dataIndex][1];return ` ${brl(c.raw)} (${s.pct>=0?'+':''}${String(s.pct).replace('.',',')}%)`;}}}},
+    scales:{x:{grid:{display:false},ticks:{font:{size:10},maxTicksLimit:6}},y:{ticks:{callback:v=>brlc(v),font:{size:10}},grid:{color:'#EBEFF4'}}}
+  });
+}
 function renderInv(){
   const ivs=Object.entries(dados.investimentos);
   const apl=ivs.reduce((s,[,i])=>s+(+i.aplicado||0),0), atu=ivs.reduce((s,[,i])=>s+(+i.atual||0),0);
@@ -644,6 +669,7 @@ function renderInv(){
   elR.textContent=(ganho>=0?'+':'')+brlc(ganho); elR.className='num '+(ganho>=0?'pos':'neg');
   const r=apl?(atu-apl)/apl*100:0, el=document.getElementById('iRend');
   el.textContent=(r>=0?'+':'')+r.toFixed(1)+'%'; el.className='num '+(r>=0?'pos':'neg');
+  renderRendDiario();
 
   const porTipo={}; ivs.forEach(([,i])=>porTipo[i.tipo]=(porTipo[i.tipo]||0)+(+i.atual||0));
   const ord=Object.entries(porTipo).sort((a,b)=>b[1]-a[1]);
