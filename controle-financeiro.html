@@ -259,6 +259,7 @@ nav button[aria-pressed="true"] svg{stroke-width:2.4}
       <h2>Panorama do mercado<small id="mktAtualizado"></small></h2>
       <div id="mktGrid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:8px">
         <div class="mkt-item" data-k="usd"><span>Dólar</span><b class="num">—</b><small></small></div>
+        <div class="mkt-item" data-k="eur"><span>Euro</span><b class="num">—</b><small></small></div>
         <div class="mkt-item" data-k="btc"><span>Bitcoin</span><b class="num">—</b><small></small></div>
       </div>
     </div>
@@ -479,10 +480,12 @@ async function carregarIndicadores(){
     el.querySelector('small').textContent=nota||'';
   };
   try{
-    const r=await fetch('https://economia.awesomeapi.com.br/last/USD-BRL,BTC-BRL');
+    const r=await fetch('https://economia.awesomeapi.com.br/last/USD-BRL,EUR-BRL,BTC-BRL');
     const d=await r.json();
     if(d.USDBRL) set('usd', 'R$ '+(+d.USDBRL.bid).toFixed(2).replace('.',','),
       (+d.USDBRL.pctChange>=0?'+':'')+(+d.USDBRL.pctChange).toFixed(2)+'% hoje');
+    if(d.EURBRL) set('eur', 'R$ '+(+d.EURBRL.bid).toFixed(2).replace('.',','),
+      (+d.EURBRL.pctChange>=0?'+':'')+(+d.EURBRL.pctChange).toFixed(2)+'% hoje');
     if(d.BTCBRL) set('btc', 'R$ '+Math.round(+d.BTCBRL.bid).toLocaleString('pt-BR'),
       (+d.BTCBRL.pctChange>=0?'+':'')+(+d.BTCBRL.pctChange).toFixed(2)+'% hoje');
   }catch(e){ /* segue sem travar o resto */ }
