@@ -255,6 +255,14 @@ nav button[aria-pressed="true"] svg{stroke-width:2.4}
       <div id="rendDiarioWrap" class="chart" style="height:130px"><canvas id="chartRend"></canvas></div>
       <div id="rendDiarioMsg" class="empty" style="display:none"></div>
     </div>
+    <div class="card" id="proventosCard" style="display:none">
+      <h2>Proventos recebidos<small>yield on cost</small></h2>
+      <div class="mini" style="grid-template-columns:repeat(2,1fr);margin-bottom:10px">
+        <div><span>Total recebido</span><b class="num pos" id="pvTotal">—</b></div>
+        <div><span>Yield on cost médio</span><b class="num" id="pvYield">—</b></div>
+      </div>
+      <table class="tbl" id="tabProventos"></table>
+    </div>
     <div class="card">
       <h2>Panorama do mercado<small id="mktAtualizado"></small></h2>
       <div id="mktGrid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:8px">
@@ -673,6 +681,7 @@ function renderInv(){
   const r=apl?(atu-apl)/apl*100:0, el=document.getElementById('iRend');
   el.textContent=(r>=0?'+':'')+r.toFixed(1)+'%'; el.className='num '+(r>=0?'pos':'neg');
   renderRendDiario();
+  renderProventos(ivs);
 
   const porTipo={}; ivs.forEach(([,i])=>porTipo[i.tipo]=(porTipo[i.tipo]||0)+(+i.atual||0));
   const ord=Object.entries(porTipo).sort((a,b)=>b[1]-a[1]);
@@ -700,11 +709,28 @@ function renderInv(){
     const dias=i.atualizadoEm? Math.floor((Date.now()-new Date(i.atualizadoEm+'T12:00'))/86400000) : null;
     const desatualizado = dias===null || dias>30;
     const dataTxt = i.atualizadoEm? new Date(i.atualizadoEm+'T12:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}) : 'nunca';
+    const yoc = i.proventos && i.aplicado ? (+i.proventos/+i.aplicado*100) : 0;
     return `<div class="item" onclick="abrir('inv','${id}')">
       <div class="ic" style="background:${COR_INV[i.tipo]||'#132B4C'}22">${ICONE_INV[i.tipo]||'📊'}</div><div class="txt"><b>${esc(i.nome)}</b><span>${i.tipo}${i.corretora?' · '+esc(i.corretora):''}
-        ${desatualizado?`<span class="tag" style="background:#FBF0E0;color:#8F5310">atualizar (${dataTxt})</span>`:`<span class="tag of">${dataTxt}</span>`}</span></div>
+        ${desatualizado?`<span class="tag" style="background:#FBF0E0;color:#8F5310">atualizar (${dataTxt})</span>`:`<span class="tag of">${dataTxt}</span>`}
+        ${i.proventos?`<span class="tag of" style="background:#E7F3EF;color:#0D7A62">proventos ${yoc.toFixed(1).replace('.',',')}%</span>`:''}</span></div>
       <div class="val">${brlc(i.atual)}<br><span class="${g>=0?'pos':'neg'}" style="font-size:10.5px">${g>=0?'+':''}${pc.toFixed(1)}%</span></div></div>`;
   }).join('') : '<div class="empty"><b>Nenhum ativo cadastrado</b>Adicione onde seu dinheiro está aplicado.</div>';
+}
+function renderProventos(ivs){
+  const comProv = ivs.filter(([,i])=>+i.proventos>0);
+  const card=document.getElementById('proventosCard');
+  if(!comProv.length){ card.style.display='none'; return; }
+  card.style.display='block';
+  const totalProv = comProv.reduce((s,[,i])=>s+(+i.proventos||0),0);
+  const totalApl = comProv.reduce((s,[,i])=>s+(+i.aplicado||0),0);
+  document.getElementById('pvTotal').textContent = brl(totalProv);
+  document.getElementById('pvYield').textContent = totalApl ? (totalProv/totalApl*100).toFixed(2).replace('.',',')+'%' : '—';
+  const ordenado=[...comProv].sort((a,b)=>(+b[1].proventos||0)-(+a[1].proventos||0));
+  document.getElementById('tabProventos').innerHTML = ordenado.map(([,i])=>{
+    const yoc = i.aplicado ? (+i.proventos/+i.aplicado*100) : 0;
+    return `<tr><td>${esc(i.nome)}</td><td class="v">${brl(i.proventos)}</td><td class="p">${yoc.toFixed(2).replace('.',',')}%</td></tr>`;
+  }).join('');
 }
 function renderLimites(mes){
   const gasto={}; mes.filter(l=>l.tipo==='despesa').forEach(l=>gasto[l.cat]=(gasto[l.cat]||0)+(+l.valor||0));
@@ -987,6 +1013,8 @@ function gravarMeta(id){
 function formInv(id){
   const i=id?dados.investimentos[id]:{};
   const hist=i.historico? Object.values(i.historico).sort((a,b)=>b.data.localeCompare(a.data)) : [];
+  const histProv=i.historicoProventos? Object.values(i.historicoProventos).sort((a,b)=>b.data.localeCompare(a.data)) : [];
+  const yoc = i.proventos && i.aplicado ? (+i.proventos/+i.aplicado*100) : 0;
   return `<h3>${id?'Editar ativo':'Novo ativo'}<button onclick="fechar()">×</button></h3>
   <div class="field"><label>Nome do ativo</label><input id="v_nome" placeholder="Ex.: CDB Nubank 110%" value="${esc(i.nome)}"></div>
   <div class="two">
@@ -1010,7 +1038,35 @@ function formInv(id){
     <div style="max-height:130px;overflow:auto">
       ${hist.map(h=>`<div class="blabel" style="margin:0 0 6px"><span>${new Date(h.data+'T12:00').toLocaleDateString('pt-BR')}</span><b class="num pos">+${brl(h.valor)}</b></div>`).join('')}
     </div>`:''}
+  <div class="field" style="margin-top:16px;padding-top:14px;border-top:1px solid var(--line)">
+    <label>Proventos recebidos (dividendos/rendimentos)</label>
+    <div class="blabel" style="margin:0 0 8px"><span>Acumulado até agora</span><b class="num pos">${brl(i.proventos||0)}</b></div>
+    ${i.aplicado?`<div class="blabel" style="margin:0 0 8px"><span>Yield on cost</span><b class="num">${yoc.toFixed(2).replace('.',',')}%</b></div>`:''}
+    <div class="two">
+      <input id="pv_valor" inputmode="decimal" placeholder="0,00">
+      <button class="btn ghost sm" style="flex:0 0 auto;padding:9px 16px" onclick="registrarProvento('${id}')">Registrar</button>
+    </div>
+    <div class="blabel" style="margin:6px 0 0"><span>Não altera o valor aplicado nem o valor hoje — só soma ao total recebido, para separar renda de dividendo da variação de preço da cota.</span></div>
+  </div>
+  ${histProv.length?`<div class="blabel" style="margin:14px 0 6px"><span>Histórico de proventos</span></div>
+    <div style="max-height:130px;overflow:auto">
+      ${histProv.map(h=>`<div class="blabel" style="margin:0 0 6px"><span>${new Date(h.data+'T12:00').toLocaleDateString('pt-BR')}</span><b class="num pos">+${brl(h.valor)}</b></div>`).join('')}
+    </div>`:''}
   <div style="text-align:center;margin-top:14px"><button class="del" onclick="excluir('investimentos','${id}')">Excluir ativo</button></div>`:''}`;
+}
+async function registrarProvento(id){
+  const v=num(document.getElementById('pv_valor').value);
+  if(!v){ toast('Informe o valor do provento'); return; }
+  const i=dados.investimentos[id];
+  try{
+    await api(`investimentos/${id}/historicoProventos`,'POST',{data:hoje(),valor:v});
+    await api('investimentos','PATCH',{
+      proventos:(+i.proventos||0)+v
+    },id);
+    await carregar();
+    toast('Provento registrado');
+    abrir('inv',id);
+  }catch(e){ toast('Não deu para registrar o provento.'); }
 }
 async function registrarAporte(id){
   const v=num(document.getElementById('ap_valor').value);
