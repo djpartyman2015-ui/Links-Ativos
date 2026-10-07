@@ -1013,7 +1013,7 @@ function gravarMeta(id){
 function formInv(id){
   const i=id?dados.investimentos[id]:{};
   const hist=i.historico? Object.values(i.historico).sort((a,b)=>b.data.localeCompare(a.data)) : [];
-  const histProv=i.historicoProventos? Object.values(i.historicoProventos).sort((a,b)=>b.data.localeCompare(a.data)) : [];
+  const histProv=i.historicoProventos? Object.entries(i.historicoProventos).map(([k,h])=>({k,...h})).sort((a,b)=>b.data.localeCompare(a.data)) : [];
   const yoc = i.proventos && i.aplicado ? (+i.proventos/+i.aplicado*100) : 0;
   return `<h3>${id?'Editar ativo':'Novo ativo'}<button onclick="fechar()">×</button></h3>
   <div class="field"><label>Nome do ativo</label><input id="v_nome" placeholder="Ex.: CDB Nubank 110%" value="${esc(i.nome)}"></div>
@@ -1044,22 +1044,53 @@ function formInv(id){
     ${i.aplicado?`<div class="blabel" style="margin:0 0 8px"><span>Yield on cost</span><b class="num">${yoc.toFixed(2).replace('.',',')}%</b></div>`:''}
     <div class="two">
       <input id="pv_valor" inputmode="decimal" placeholder="0,00">
+      <input id="pv_data" type="date" value="${hojeLocal()}">
       <button class="btn ghost sm" style="flex:0 0 auto;padding:9px 16px" onclick="registrarProvento('${id}')">Registrar</button>
     </div>
     <div class="blabel" style="margin:6px 0 0"><span>Não altera o valor aplicado nem o valor hoje — só soma ao total recebido, para separar renda de dividendo da variação de preço da cota.</span></div>
   </div>
   ${histProv.length?`<div class="blabel" style="margin:14px 0 6px"><span>Histórico de proventos</span></div>
-    <div style="max-height:130px;overflow:auto">
-      ${histProv.map(h=>`<div class="blabel" style="margin:0 0 6px"><span>${new Date(h.data+'T12:00').toLocaleDateString('pt-BR')}</span><b class="num pos">+${brl(h.valor)}</b></div>`).join('')}
-    </div>`:''}
+    <div style="max-height:240px;overflow:auto">
+      ${histProv.map(h=>`<div style="display:flex;gap:6px;align-items:center;margin:0 0 8px">
+        <input type="date" id="pvd_${h.k}" value="${h.data}" style="flex:1.3;padding:7px 8px;border:1px solid var(--line);border-radius:8px;font-size:12.5px;background:#FBFCFD">
+        <input id="pvv_${h.k}" inputmode="decimal" value="${String(h.valor).replace('.',',')}" style="flex:1;padding:7px 8px;border:1px solid var(--line);border-radius:8px;font-size:12.5px;text-align:right;background:#FBFCFD">
+        <button onclick="editarProvento('${id}','${h.k}')" title="Salvar" aria-label="Salvar" style="color:var(--in);font-size:18px;font-weight:700;padding:0 6px">✓</button>
+        <button onclick="excluirProvento('${id}','${h.k}')" title="Excluir" aria-label="Excluir" style="color:var(--out);font-size:20px;padding:0 4px">×</button>
+      </div>`).join('')}
+    </div>
+    <div class="blabel" style="margin:2px 0 0"><span>Altere a data ou o valor e toque em ✓ para salvar.</span></div>`:''}
   <div style="text-align:center;margin-top:14px"><button class="del" onclick="excluir('investimentos','${id}')">Excluir ativo</button></div>`:''}`;
+}
+async function editarProvento(id,k){
+  const i=dados.investimentos[id], antigo=i.historicoProventos&&i.historicoProventos[k];
+  if(!antigo) return;
+  const data=document.getElementById('pvd_'+k).value, v=num(document.getElementById('pvv_'+k).value);
+  if(!data||!v){ toast('Informe data e valor do provento'); return; }
+  try{
+    await api(`investimentos/${id}/historicoProventos`,'PATCH',{data,valor:v},k);
+    await api('investimentos','PATCH',{proventos:Math.max(0,(+i.proventos||0)-(+antigo.valor||0)+v)},id);
+    await carregar();
+    toast('Provento atualizado');
+    abrir('inv',id);
+  }catch(e){ toast('Não deu para atualizar o provento.'); }
+}
+async function excluirProvento(id,k){
+  const i=dados.investimentos[id], antigo=i.historicoProventos&&i.historicoProventos[k];
+  if(!antigo || !confirm('Excluir este provento?')) return;
+  try{
+    await api(`investimentos/${id}/historicoProventos`,'DELETE',null,k);
+    await api('investimentos','PATCH',{proventos:Math.max(0,(+i.proventos||0)-(+antigo.valor||0))},id);
+    await carregar();
+    toast('Provento excluído');
+    abrir('inv',id);
+  }catch(e){ toast('Não deu para excluir o provento.'); }
 }
 async function registrarProvento(id){
   const v=num(document.getElementById('pv_valor').value);
   if(!v){ toast('Informe o valor do provento'); return; }
   const i=dados.investimentos[id];
   try{
-    await api(`investimentos/${id}/historicoProventos`,'POST',{data:hoje(),valor:v});
+    await api(`investimentos/${id}/historicoProventos`,'POST',{data:(document.getElementById('pv_data').value||hojeLocal()),valor:v});
     await api('investimentos','PATCH',{
       proventos:(+i.proventos||0)+v
     },id);
