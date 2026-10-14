@@ -252,7 +252,7 @@ nav button[aria-pressed="true"] svg{stroke-width:2.4}
     </div>
     <div class="card">
       <h2>Rendimento — fechamento diário<small id="rendDelta"></small></h2>
-      <div id="rendDiarioWrap" class="chart" style="height:130px"><canvas id="chartRend"></canvas></div>
+      <div id="rendDiarioWrap" class="chart" style="height:170px"><canvas id="chartRend"></canvas></div>
       <div id="rendDiarioMsg" class="empty" style="display:none"></div>
     </div>
     <div class="card" id="proventosCard" style="display:none">
@@ -677,13 +677,31 @@ function renderRendDiario(){
   wrap.style.display='block'; msg.style.display='none';
   const dv=sn[sn.length-1][1].rend-sn[sn.length-2][1].rend;
   delta.innerHTML=`<span style="color:${dv>=0?'var(--in)':'var(--out)'};font-weight:700">${dv>=0?'+':'−'}${brlc(Math.abs(dv))}</span> vs dia anterior`;
+  const difs=sn.map(([,s],i)=>i? r2p(s.rend-sn[i-1][1].rend) : null);
+  // rótulo da variação diária sobre cada bolinha (do mais recente p/ trás; pula os que sobrepõem)
+  const plugDelta={ id:'deltaLabels', afterDatasetsDraw(chart){
+    const {ctx,chartArea}=chart, pts=chart.getDatasetMeta(0).data;
+    ctx.save(); ctx.font="600 10px Inter, sans-serif"; ctx.textAlign="center"; ctx.textBaseline="bottom";
+    let limite=Infinity;
+    for(let i=pts.length-1;i>=1;i--){
+      const d=difs[i]; if(d===null) continue;
+      const t=(d>=0?'+':'−')+brlc(Math.abs(d)), w=ctx.measureText(t).width, x=pts[i].x;
+      if(x+w/2>limite) continue;
+      if(x-w/2<chartArea.left-4) continue;
+      ctx.fillStyle=d>=0?'#0D7A62':'#BE4028';
+      ctx.fillText(t, Math.min(x,chartArea.right-w/2+10), Math.max(pts[i].y-6, 11));
+      limite=x-w/2-4;
+    }
+    ctx.restore();
+  }};
   desenhar('chartRend','line',{
     labels:sn.map(([k])=>new Date(k+'T12:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})),
-    datasets:[{data:sn.map(([,s])=>s.rend),borderColor:'#0D7A62',backgroundColor:'rgba(13,122,98,.12)',fill:true,tension:.3,borderWidth:2,pointRadius:sn.length>15?0:3}]
+    datasets:[{data:sn.map(([,s])=>s.rend),borderColor:'#0D7A62',backgroundColor:'rgba(13,122,98,.12)',fill:true,tension:.3,borderWidth:2,pointRadius:3,pointBackgroundColor:'#0D7A62'}]
   },{
-    plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>{const s=sn[c.dataIndex][1];return ` ${brl(c.raw)} (${s.pct>=0?'+':''}${String(s.pct).replace('.',',')}%)`;}}}},
+    layout:{padding:{top:14,right:14}},
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>{const s=sn[c.dataIndex][1],d=difs[c.dataIndex];return ` ${brl(c.raw)} (${s.pct>=0?'+':''}${String(s.pct).replace('.',',')}%)`+(d===null?'':` · dia: ${d>=0?'+':'−'}${brl(Math.abs(d))}`);}}}},
     scales:{x:{grid:{display:false},ticks:{font:{size:10},maxTicksLimit:6}},y:{ticks:{callback:v=>brlc(v),font:{size:10}},grid:{color:'#EBEFF4'}}}
-  });
+  },[plugDelta]);
 }
 function renderInv(){
   const ivs=Object.entries(dados.investimentos);
