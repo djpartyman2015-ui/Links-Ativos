@@ -676,7 +676,17 @@ function renderRendDiario(){
   }
   wrap.style.display='block'; msg.style.display='none';
   const dv=sn[sn.length-1][1].rend-sn[sn.length-2][1].rend;
-  delta.innerHTML=`<span style="color:${dv>=0?'var(--in)':'var(--out)'};font-weight:700">${dv>=0?'+':'−'}${brlc(Math.abs(dv))}</span> vs dia anterior`;
+  // subtotal do mês: do dia 01 até o último fechamento (base = último fechamento do mês anterior; se não houver, o 1º do mês)
+  const todos=Object.entries(dados.snapshots||{}).sort((a,b)=>a[0].localeCompare(b[0]));
+  const ult=todos[todos.length-1], mes=ult[0].slice(0,7);
+  const antes=todos.filter(([k])=>k.slice(0,7)<mes), doMes=todos.filter(([k])=>k.slice(0,7)===mes);
+  const base=antes.length?antes[antes.length-1]:doMes[0];
+  const dm=r2p(ult[1].rend-base[1].rend);
+  const nomeMes=new Date(mes+'-15T12:00').toLocaleDateString('pt-BR',{month:'long'});
+  const corV=v=>v>=0?'var(--in)':'var(--out)', fmt=v=>(v>=0?'+':'−')+brlc(Math.abs(v));
+  delta.style.textAlign='right';
+  delta.innerHTML=`<span style="color:${corV(dv)};font-weight:700">${fmt(dv)}</span> vs dia anterior`
+    +`<br><span style="color:${corV(dm)};font-weight:700">${fmt(dm)}</span> em ${nomeMes}`+(antes.length?'':` (desde ${base[0].slice(8)}/${base[0].slice(5,7)})`);
   const difs=sn.map(([,s],i)=>i? r2p(s.rend-sn[i-1][1].rend) : null);
   // rótulo da variação diária sobre cada bolinha (do mais recente p/ trás; pula os que sobrepõem)
   const plugDelta={ id:'deltaLabels', afterDatasetsDraw(chart){
