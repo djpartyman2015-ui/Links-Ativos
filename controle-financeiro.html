@@ -339,10 +339,10 @@ firebase.initializeApp(firebaseConfig);
 const authFB = firebase.auth();
 const DB_URL = firebaseConfig.databaseURL + '/financeiro';
 
-const CAT_OUT = ['Moradia','Alimentação','Mercado','Transporte','Saúde','Lazer','Educação','Assinaturas','Pet','Vestuário','Cartão','Viagens','Presentes','Compras Online','Eletrônicos','Bem-Estar','Impostos/Taxas','Encargos/Multas','Outros'].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+const CAT_OUT = ['Moradia','Alimentação','Mercado','Transporte','Saúde','Lazer','Educação','Assinaturas','Pet','Vestuário','Cartão','Viagens','Presentes','Compras Online','Eletrônicos','Bem-Estar','Impostos/Taxas','Encargos/Multas','Investimentos','Outros'].sort((a,b)=>a.localeCompare(b,'pt-BR'));
 const CAT_IN  = ['Salário','Freelance','Rendimentos','Reembolso','Resgate','Presente','Outros'].sort((a,b)=>a.localeCompare(b,'pt-BR'));
 const ICONE = {Moradia:'🏠',Alimentação:'🍽️',Mercado:'🛒',Transporte:'🚗',Saúde:'💊',Lazer:'🎬',Educação:'📚',
-  Assinaturas:'📺',Pet:'🐶',Vestuário:'👕',Cartão:'💳',Viagens:'✈️',Presentes:'🎁','Compras Online':'📦',Eletrônicos:'💻','Bem-Estar':'🧘','Impostos/Taxas':'🧾','Encargos/Multas':'⚠️',Outros:'•',Salário:'💼',Freelance:'🧾',Rendimentos:'📈',Reembolso:'↩️',Resgate:'💰',Presente:'🎁'};
+  Assinaturas:'📺',Pet:'🐶',Vestuário:'👕',Cartão:'💳',Viagens:'✈️',Presentes:'🎁','Compras Online':'📦',Eletrônicos:'💻','Bem-Estar':'🧘','Impostos/Taxas':'🧾','Encargos/Multas':'⚠️',Outros:'•',Salário:'💼',Freelance:'🧾',Rendimentos:'📈',Reembolso:'↩️',Resgate:'💰',Investimentos:'💹',Presente:'🎁'};
 const CORES = ['#132B4C','#0D7A62','#BE4028','#B0801F','#5B4B8A','#2E7DA8','#7A9E3F','#C46A9B','#8A6D3B','#4A5568','#D08B3C','#3C8B7E'];
 const TIPO_INV = ['Renda fixa','Ações','FIIs','Cripto','Tesouro','Fundos','Previdência','Moeda','Reserva'];
 const ICONE_INV = {'Renda fixa':'🏦','Ações':'📈','FIIs':'🏢','Cripto':'₿','Tesouro':'🏛️','Fundos':'🧺','Previdência':'🌳','Moeda':'💱','Reserva':'🛟'};
@@ -473,6 +473,7 @@ async function excluir(no,id){
 /* ==================== DADOS ==================== */
 const lancArray = () => Object.entries(dados.lancamentos).map(([id,v])=>({id,...v}));
 const doMes = (mk=chave(ref)) => lancArray().filter(l=>l.data&&l.data.slice(0,7)===mk).sort((a,b)=>b.data.localeCompare(a.data));
+const ehGasto = l=>l.tipo==='despesa'&&l.cat!=='Investimentos';
 const soma = (a,t) => a.filter(l=>l.tipo===t).reduce((s,l)=>s+(+l.valor||0),0);
 function filtrados(mes){
   const c=document.getElementById('fCat').value, t=document.getElementById('fTipo').value;
@@ -516,8 +517,8 @@ async function carregarIndicadores(){
 
 /* ==================== RENDER ==================== */
 function render(){
-  const mes=doMes(), ent=soma(mes,'receita'), sai=soma(mes,'despesa');
-  const pend=mes.filter(l=>l.pago===false&&l.tipo==='despesa').reduce((s,l)=>s+(+l.valor||0),0);
+  const mes=doMes(), ent=soma(mes,'receita'), sai=mes.filter(ehGasto).reduce((s,l)=>s+(+l.valor||0),0);
+  const pend=mes.filter(l=>l.pago===false&&ehGasto(l)).reduce((s,l)=>s+(+l.valor||0),0);
   const pat=Object.values(dados.investimentos).reduce((s,i)=>s+(+i.atual||0),0);
   document.getElementById('mesLabel').textContent=nomeMes(ref);
   document.getElementById('saldoMes').textContent=brl(ent-sai);
@@ -547,7 +548,7 @@ function renderDash(mes){
     : '<div class="empty"><b>Mês sem lançamentos</b>Toque no + para registrar o primeiro.</div>';
 
   const porCat={};
-  mes.filter(l=>l.tipo==='despesa').forEach(l=>porCat[l.cat]=(porCat[l.cat]||0)+(+l.valor||0));
+  mes.filter(ehGasto).forEach(l=>porCat[l.cat]=(porCat[l.cat]||0)+(+l.valor||0));
   const ord=Object.entries(porCat).sort((a,b)=>b[1]-a[1]);
   const tot=ord.reduce((s,[,v])=>s+v,0);
   document.getElementById('dashTot').textContent = tot?brlc(tot):'';
@@ -573,7 +574,7 @@ function renderDash(mes){
      scales:{x:{grid:{display:false},ticks:{font:{size:10}}},
              y:{ticks:{callback:v=>brlc(v),font:{size:10}},grid:{color:'#EBEFF4'}}}});
 
-  const gasto={}; mes.filter(l=>l.tipo==='despesa').forEach(l=>gasto[l.cat]=(gasto[l.cat]||0)+(+l.valor||0));
+  const gasto={}; mes.filter(ehGasto).forEach(l=>gasto[l.cat]=(gasto[l.cat]||0)+(+l.valor||0));
   const ls=Object.entries(dados.limites).sort((a,b)=>a[1].cat.localeCompare(b[1].cat,'pt-BR'));
   const totLimD=ls.reduce((s,[,l])=>s+(+l.valor||0),0);
   const totGastoD=ls.reduce((s,[,l])=>s+(gasto[l.cat]||0),0);
@@ -597,7 +598,7 @@ function renderDash(mes){
 }
 function renderAno(){
   const ano=ref.getFullYear();
-  const anual=lancArray().filter(l=>l.tipo==='despesa'&&l.data&&l.data.slice(0,4)===String(ano));
+  const anual=lancArray().filter(l=>ehGasto(l)&&l.data&&l.data.slice(0,4)===String(ano));
   const porCat={};
   anual.forEach(l=>porCat[l.cat]=(porCat[l.cat]||0)+(+l.valor||0));
   const ord=Object.entries(porCat).sort((a,b)=>b[1]-a[1]);
@@ -775,7 +776,7 @@ function renderProventos(ivs){
   }).join('');
 }
 function renderLimites(mes){
-  const gasto={}; mes.filter(l=>l.tipo==='despesa').forEach(l=>gasto[l.cat]=(gasto[l.cat]||0)+(+l.valor||0));
+  const gasto={}; mes.filter(ehGasto).forEach(l=>gasto[l.cat]=(gasto[l.cat]||0)+(+l.valor||0));
   const ls=Object.entries(dados.limites).sort((a,b)=>a[1].cat.localeCompare(b[1].cat,'pt-BR'));
 
   const totLim=ls.reduce((s,[,l])=>s+(+l.valor||0),0);
@@ -1152,6 +1153,8 @@ async function registrarAporte(id){
       atual:(+i.atual||0)+v,
       atualizadoEm:hoje()
     },id);
+    await api('lancamentos','POST',{tipo:'despesa',valor:v,desc:'Aporte — '+i.nome,cat:'Investimentos',
+      data:hojeLocal(),conta:i.corretora||'',pago:true,origem:'aporte'});
     await carregar();
     toast('Aporte registrado');
     abrir('inv',id);
