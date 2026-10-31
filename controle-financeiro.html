@@ -1164,61 +1164,101 @@ async function registrarAporte(id){
 /* ==================== EXPORTAR EXCEL ==================== */
 function carregarXLSX(){
   return new Promise((ok,erro)=>{
-    if(window.XLSX) return ok();
+    if(window.ExcelJS) return ok();
     const s=document.createElement('script');
-    s.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
-    s.onload=ok; s.onerror=()=>erro(new Error('xlsx')); document.head.appendChild(s);
+    s.src='https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js';
+    s.onload=ok; s.onerror=()=>erro(new Error('exceljs')); document.head.appendChild(s);
   });
 }
 async function exportarExcel(){
-  const ivs=Object.values(dados.investimentos||{});
-  if(!ivs.length){ toast('Nenhum ativo para exportar'); return; }
+  const lista=Object.values(dados.investimentos||{}).slice().sort((a,b)=>(+b.atual||0)-(+a.atual||0));
+  if(!lista.length){ toast('Nenhum ativo para exportar'); return; }
   toast('Gerando Excel…');
   try{ await carregarXLSX(); }catch(e){ toast('Não consegui carregar o gerador de Excel.'); return; }
-  const dt=s=>s?new Date(s+'T12:00'):null;
-  const hojeD=dt(hojeLocal()), R='"R$" #,##0.00', P='0.00%', D='dd/mm/yyyy';
-  const c=(v,z,f)=>{ const o={}; if(typeof v==='number'){o.t='n';o.v=v;} else if(v instanceof Date){o.t='d';o.v=v;} else {o.t='s';o.v=v==null?'':String(v);} if(z)o.z=z; if(f)o.f=f; return o; };
-  const lista=Object.values(dados.investimentos).slice().sort((a,b)=>(+b.atual||0)-(+a.atual||0));
 
-  /* --- aba Ativos --- */
-  const cab=['Ativo','Tipo','Corretora','Início','Dias investido','Aplicado','Valor hoje','Rendimento R$','Rendimento %','Proventos','Rend. c/ proventos R$','Rend. c/ proventos %','Rend. % ao mês (aprox.)','Atualizado em','Observação'];
-  const ws={}, n=lista.length;
-  cab.forEach((t,k)=>ws[XLSX.utils.encode_cell({r:0,c:k})]=c(t));
+  const NAVY='FF132B4C', VERDE='FF0D7A62', VERM='FFBE4028', AZUL='FFE3ECF7', ZEBRA='FFF6F8FB', LINHA='FFDDE3EC', CINZA='FF6B7686';
+  const R='"R$" #,##0.00;-"R$" #,##0.00', P='0.00%', DT='dd/mm/yyyy';
+  const dt=s=>{ if(!s) return null; const [y,m,d]=s.split('-').map(Number); return new Date(Date.UTC(y,m-1,d)); };
+  const hojeD=dt(hojeLocal());
+  const fill=a=>({type:'pattern',pattern:'solid',fgColor:{argb:a}});
+  const borda={bottom:{style:'thin',color:{argb:LINHA}}};
+  const cabec=(row,centro,esq)=>{ row.height=34; row.eachCell((c,k)=>{
+    c.font={bold:true,color:{argb:'FFFFFFFF'},size:11}; c.fill=fill(NAVY);
+    c.alignment={vertical:'middle',horizontal:centro.includes(k)?'center':(esq.includes(k)?'left':'right'),wrapText:true}; }); };
+  const corRegras=(ws,ref)=>ws.addConditionalFormatting({ref,rules:[
+    {type:'cellIs',operator:'lessThan',formulae:[0],style:{font:{color:{argb:VERM}}}},
+    {type:'cellIs',operator:'greaterThan',formulae:[0],style:{font:{color:{argb:VERDE}}}}]});
+
+  const wb=new ExcelJS.Workbook(); wb.creator='Controle Financeiro'; wb.created=new Date();
+
+  /* ---------- aba Ativos ---------- */
+  const ws=wb.addWorksheet('Ativos',{views:[{state:'frozen',xSplit:1,ySplit:1,showGridLines:false}],
+    properties:{tabColor:{argb:NAVY}},pageSetup:{orientation:'landscape',fitToPage:true,fitToWidth:1,fitToHeight:0}});
+  ws.columns=[44,13,14,12,10,16,16,16,13,14,18,16,16,13,36].map(width=>({width}));
+  const fmts=[null,null,null,DT,'0',R,R,R,P,R,R,P,P,DT,null];
+  const centros=[4,5,14];
+  cabec(ws.addRow(['Ativo','Tipo','Corretora','Início','Dias investido','Aplicado','Valor hoje','Rendimento R$','Rendimento %','Proventos','Rend. c/ proventos R$','Rend. c/ proventos %','Rend. % ao mês (aprox.)','Atualizado em','Observação']),centros,[1,2,3,15]);
+
+  const n=lista.length;
   lista.forEach((i,k)=>{
     const r=k+2, apl=+i.aplicado||0, atu=+i.atual||0, prov=+i.proventos||0;
     const aportes=i.historico?Object.values(i.historico).map(h=>h.data).filter(Boolean).sort():[];
-    const ini=i.inicio||aportes[0]||'', obs=i.inicio?'':(aportes[0]?'Início = 1º aporte registrado':'Sem data de início — informe no app');
-    const di=dt(ini), dias=di?Math.max(0,Math.round((hojeD-di)/864e5)):'';
-    const rend=atu-apl, pct=apl?rend/apl:0, rt=rend+prov, pt=apl?rt/apl:0;
-    const am=(di&&dias>0&&apl>0&&atu>0)?Math.pow(atu/apl,30/dias)-1:'';
-    const L=(col)=>col+r;
-    const lin=[
-      c(i.nome||''), c(i.tipo||''), c(i.corretora||''),
-      di?c(di,D):c(''),
-      di?c(dias,'0',`TODAY()-D${r}`):c(''),
-      c(apl,R), c(atu,R),
-      c(rend,R,`G${r}-F${r}`), c(pct,P,`IF(F${r}=0,0,H${r}/F${r})`),
-      c(prov,R), c(rt,R,`H${r}+J${r}`), c(pt,P,`IF(F${r}=0,0,K${r}/F${r})`),
-      am===''?c(''):c(am,P,`IFERROR((G${r}/F${r})^(30/E${r})-1,"")`),
-      i.atualizadoEm?c(dt(i.atualizadoEm),D):c(''),
-      c(obs)
-    ];
-    lin.forEach((cel,col)=>ws[XLSX.utils.encode_cell({r:r-1,c:col})]=cel);
+    const ini=i.inicio||aportes[0]||'', di=dt(ini);
+    const obs=i.inicio?'':(aportes[0]?'Início = 1º aporte registrado':'Sem data de início — informe no app');
+    const dias=di?Math.max(0,Math.round((hojeD-di)/864e5)):null;
+    const rend=atu-apl, rt=rend+prov;
+    const am=(di&&dias>0&&apl>0&&atu>0)?Math.pow(atu/apl,30/dias)-1:null;
+    const row=ws.addRow([
+      i.nome||'', i.tipo||'', i.corretora||'', di, dias===null?null:{formula:`TODAY()-D${r}`,result:dias},
+      apl, atu, {formula:`G${r}-F${r}`,result:rend}, {formula:`IF(F${r}=0,0,H${r}/F${r})`,result:apl?rend/apl:0},
+      prov, {formula:`H${r}+J${r}`,result:rt}, {formula:`IF(F${r}=0,0,K${r}/F${r})`,result:apl?rt/apl:0},
+      am===null?null:{formula:`IFERROR((G${r}/F${r})^(30/E${r})-1,"")`,result:am},
+      dt(i.atualizadoEm), obs]);
+    row.height=20;
+    row.eachCell({includeEmpty:true},(c,col)=>{
+      c.border=borda; c.alignment={vertical:'middle',horizontal:centros.includes(col)?'center':(fmts[col-1]&&!centros.includes(col)?'right':'left')};
+      if(fmts[col-1]) c.numFmt=fmts[col-1];
+      if(k%2) c.fill=fill(ZEBRA);
+    });
+    row.getCell(1).font={bold:true,color:{argb:NAVY}};
+    row.getCell(15).font={italic:true,color:{argb:CINZA},size:10};
   });
-  const t=n+3, a=lista.reduce((s,i)=>s+(+i.aplicado||0),0), u=lista.reduce((s,i)=>s+(+i.atual||0),0), pv=lista.reduce((s,i)=>s+(+i.proventos||0),0);
-  ws['A'+t]=c('TOTAL');
-  ws['F'+t]=c(a,R,`SUM(F2:F${n+1})`); ws['G'+t]=c(u,R,`SUM(G2:G${n+1})`);
-  ws['H'+t]=c(u-a,R,`G${t}-F${t}`);   ws['I'+t]=c(a?(u-a)/a:0,P,`IF(F${t}=0,0,H${t}/F${t})`);
-  ws['J'+t]=c(pv,R,`SUM(J2:J${n+1})`); ws['K'+t]=c(u-a+pv,R,`H${t}+J${t}`);
-  ws['L'+t]=c(a?(u-a+pv)/a:0,P,`IF(F${t}=0,0,K${t}/F${t})`);
-  ws['A'+(t+2)]=c('Rendimento % ao mês é uma estimativa composta desde o início (com vários aportes em datas diferentes, é aproximado). Valores de "hoje" são os que você atualizou no app.');
-  ws['!ref']=`A1:O${t+2}`; ws['!autofilter']={ref:`A1:O${n+1}`};
-  ws['!cols']=[34,13,14,12,10,15,15,15,12,13,17,16,16,13,34].map(w=>({wch:w}));
+  ws.autoFilter=`A1:O${n+1}`;
+  corRegras(ws,`H2:I${n+1}`); corRegras(ws,`K2:M${n+1}`);
 
-  /* --- abas auxiliares --- */
-  const aba=(cabecalho,linhas,larg)=>{
-    const s=XLSX.utils.aoa_to_sheet([cabecalho,...linhas],{cellDates:true});
-    s['!cols']=larg.map(w=>({wch:w})); return s;
+  // linhas de soma
+  const soma=(r,rotulo,fn,fundo,fonte)=>{
+    const a=lista.reduce((s,i)=>s+(+i.aplicado||0),0), u=lista.reduce((s,i)=>s+(+i.atual||0),0), pv=lista.reduce((s,i)=>s+(+i.proventos||0),0);
+    const rg=c=>fn(c,`${c}2:${c}${n+1}`);
+    const row=ws.addRow([rotulo,null,null,null,null,
+      {formula:rg('F'),result:a},{formula:rg('G'),result:u},{formula:`G${r}-F${r}`,result:u-a},
+      {formula:`IF(F${r}=0,0,H${r}/F${r})`,result:a?(u-a)/a:0},
+      {formula:rg('J'),result:pv},{formula:`H${r}+J${r}`,result:u-a+pv},{formula:`IF(F${r}=0,0,K${r}/F${r})`,result:a?(u-a+pv)/a:0}]);
+    row.height=26;
+    for(let col=1;col<=15;col++){ const c=row.getCell(col); c.fill=fill(fundo); c.font={bold:true,color:{argb:fonte},size:11};
+      c.alignment={vertical:'middle',horizontal:col===1?'left':'right'}; if(fmts[col-1]&&col!==4&&col!==5&&col!==14) c.numFmt=fmts[col-1]; }
+    return row;
+  };
+  const rs=soma(n+2,'SUBTOTAL (soma só o que está filtrado)',(c,ref)=>`SUBTOTAL(109,${ref})`,AZUL,NAVY);
+  rs.eachCell(c=>{ c.border={top:{style:'medium',color:{argb:NAVY}}}; });
+  corRegras(ws,`H${n+2}:I${n+2}`); corRegras(ws,`K${n+2}:L${n+2}`);
+  soma(n+3,'TOTAL GERAL (todos os ativos)',(c,ref)=>`SUM(${ref})`,NAVY,'FFFFFFFF');
+  const nota=ws.addRow([]); ws.addRow(['O SUBTOTAL muda quando você filtra as colunas; o TOTAL GERAL soma sempre todos os ativos.']);
+  ws.addRow(['Rendimento % ao mês é uma estimativa composta desde o início (com aportes em datas diferentes é aproximado). "Valor hoje" é o que você atualizou no app.']);
+  [n+5,n+6].forEach(r=>{ ws.getRow(r).getCell(1).font={italic:true,color:{argb:CINZA},size:10}; });
+
+  /* ---------- abas auxiliares ---------- */
+  const listaSimples=(nome,cab,linhas,larg,cor)=>{
+    const s=wb.addWorksheet(nome,{views:[{state:'frozen',ySplit:1,showGridLines:false}],properties:{tabColor:{argb:cor}}});
+    s.columns=larg.map(width=>({width})); cabec(s.addRow(cab),[2],[1]);
+    linhas.forEach((l,k)=>{ const row=s.addRow(l); row.height=19;
+      row.eachCell({includeEmpty:true},(c,col)=>{ c.border=borda; if(k%2) c.fill=fill(ZEBRA);
+        c.alignment={vertical:'middle',horizontal:col===1?'left':(col===2?'center':'right')};
+        if(col===2) c.numFmt=DT; if(col===3) c.numFmt=R; }); });
+    const tot=s.addRow(['TOTAL',null,{formula:`SUM(C2:C${linhas.length+1})`,result:linhas.reduce((a,l)=>a+l[2],0)}]);
+    tot.height=24; for(let col=1;col<=3;col++){ const c=tot.getCell(col); c.fill=fill(NAVY); c.font={bold:true,color:{argb:'FFFFFFFF'}}; c.alignment={vertical:'middle',horizontal:col===1?'left':'right'}; if(col===3) c.numFmt=R; }
+    s.autoFilter=`A1:C${linhas.length+1}`;
+    return s;
   };
   const aportes=[], proventos=[];
   lista.forEach(i=>{
@@ -1227,21 +1267,34 @@ async function exportarExcel(){
   });
   const ord=(x,y)=>x[1]-y[1]||String(x[0]).localeCompare(y[0]);
   aportes.sort(ord); proventos.sort(ord);
-  const fmtCol=(s,col,z)=>{ const rg=XLSX.utils.decode_range(s['!ref']); for(let r=1;r<=rg.e.r;r++){ const k=XLSX.utils.encode_cell({r,c:col}); if(s[k]) s[k].z=z; } };
-  const wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,ws,'Ativos');
-  if(aportes.length){ const s=aba(['Ativo','Data','Valor'],aportes,[34,12,15]); fmtCol(s,1,D); fmtCol(s,2,R); XLSX.utils.book_append_sheet(wb,s,'Aportes'); }
-  if(proventos.length){ const s=aba(['Ativo','Data','Valor'],proventos,[34,12,15]); fmtCol(s,1,D); fmtCol(s,2,R); XLSX.utils.book_append_sheet(wb,s,'Proventos'); }
+  if(aportes.length) listaSimples('Aportes',['Ativo','Data','Valor'],aportes,[36,13,16],VERDE);
+  if(proventos.length) listaSimples('Proventos',['Ativo','Data','Valor'],proventos,[36,13,16],'FFC98A1B');
+
   const sn=Object.entries(dados.snapshots||{}).sort((x,y)=>x[0].localeCompare(y[0]));
   if(sn.length){
-    const s=aba(['Data','Aplicado','Valor total','Rendimento R$','Rendimento %','Variação no dia'],
-      sn.map(([k,v],j)=>[dt(k),+v.aplicado||0,+v.atual||0,+v.rend||0,(+v.pct||0)/100,j?(+v.rend||0)-(+sn[j-1][1].rend||0):'']),[12,15,15,15,13,15]);
-    fmtCol(s,0,D); [1,2,3,5].forEach(k=>fmtCol(s,k,R)); fmtCol(s,4,P);
-    for(let j=0;j<sn.length;j++){ const r=j+2; s['D'+r].f=`C${r}-B${r}`; s['E'+r].f=`IF(B${r}=0,0,D${r}/B${r})`; if(j) s['F'+r].f=`D${r}-D${r-1}`; }
-    XLSX.utils.book_append_sheet(wb,s,'Evolução');
+    const s=wb.addWorksheet('Evolução',{views:[{state:'frozen',ySplit:1,showGridLines:false}],properties:{tabColor:{argb:'FF2F6FB5'}}});
+    s.columns=[13,16,16,16,14,16].map(width=>({width}));
+    cabec(s.addRow(['Data','Aplicado','Valor total','Rendimento R$','Rendimento %','Variação no dia']),[1],[]);
+    sn.forEach(([k,v],j)=>{
+      const r=j+2, rend=(+v.atual||0)-(+v.aplicado||0), ap=+v.aplicado||0;
+      const row=s.addRow([dt(k),ap,+v.atual||0,{formula:`C${r}-B${r}`,result:rend},{formula:`IF(B${r}=0,0,D${r}/B${r})`,result:ap?rend/ap:0},
+        j?{formula:`D${r}-D${r-1}`,result:rend-((+sn[j-1][1].atual||0)-(+sn[j-1][1].aplicado||0))}:null]);
+      row.height=19;
+      row.eachCell({includeEmpty:true},(c,col)=>{ c.border=borda; if(j%2) c.fill=fill(ZEBRA);
+        c.alignment={vertical:'middle',horizontal:col===1?'center':'right'}; c.numFmt=col===1?DT:(col===5?P:R); });
+    });
+    corRegras(s,`D2:F${sn.length+1}`);
+    s.autoFilter=`A1:F${sn.length+1}`;
   }
-  XLSX.writeFile(wb,`investimentos-${hojeLocal()}.xlsx`,{cellDates:true});
-  toast('Excel gerado');
+
+  /* ---------- download ---------- */
+  try{
+    const buf=await wb.xlsx.writeBuffer();
+    const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`investimentos-${hojeLocal()}.xlsx`;
+    document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },4000);
+    toast('Excel gerado');
+  }catch(e){ toast('Não deu para gerar o Excel.'); }
 }
 function gravarInv(id){
   const nome=document.getElementById('v_nome').value.trim();
