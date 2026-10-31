@@ -278,7 +278,7 @@ nav button[aria-pressed="true"] svg{stroke-width:2.4}
         <table class="tbl" id="tabInv"></table>
       </div>
       <div class="card">
-        <h2>Ativos<button onclick="abrir('inv')">novo</button></h2>
+        <h2>Ativos<span><button onclick="exportarExcel()">Excel</button><button onclick="abrir('inv')" style="margin-left:14px">novo</button></span></h2>
         <select id="ordInv" onchange="render()" style="width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:9px;background:#FBFCFD;color:var(--ink);margin-bottom:10px;font-size:12.5px">
           <option value="valor_desc">Maior valor primeiro</option>
           <option value="valor_asc">Menor valor primeiro</option>
@@ -1066,6 +1066,7 @@ function formInv(id){
   <div class="two">
     <div class="field"><label>Valor aplicado</label><input id="v_apl" inputmode="decimal" placeholder="0,00" value="${i.aplicado?String(i.aplicado).replace('.',','):''}"></div>
     <div class="field"><label>Valor hoje</label><input id="v_atu" inputmode="decimal" placeholder="0,00" value="${i.atual?String(i.atual).replace('.',','):''}"></div></div>
+  <div class="field"><label>Data do investimento (início)</label><input id="v_ini" type="date" value="${i.inicio||(id?'':hojeLocal())}"></div>
   ${i.atualizadoEm?`<div class="blabel" style="margin:-2px 0 10px"><span>Atualizado pela última vez em ${new Date(i.atualizadoEm+'T12:00').toLocaleDateString('pt-BR')}</span></div>`:''}
   <button class="btn" onclick="gravarInv('${id||''}')">${id?'Salvar alterações':'Adicionar ativo'}</button>
   ${id?`
@@ -1160,6 +1161,88 @@ async function registrarAporte(id){
     abrir('inv',id);
   }catch(e){ toast('Não deu para registrar o aporte.'); }
 }
+/* ==================== EXPORTAR EXCEL ==================== */
+function carregarXLSX(){
+  return new Promise((ok,erro)=>{
+    if(window.XLSX) return ok();
+    const s=document.createElement('script');
+    s.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    s.onload=ok; s.onerror=()=>erro(new Error('xlsx')); document.head.appendChild(s);
+  });
+}
+async function exportarExcel(){
+  const ivs=Object.values(dados.investimentos||{});
+  if(!ivs.length){ toast('Nenhum ativo para exportar'); return; }
+  toast('Gerando Excel…');
+  try{ await carregarXLSX(); }catch(e){ toast('Não consegui carregar o gerador de Excel.'); return; }
+  const dt=s=>s?new Date(s+'T12:00'):null;
+  const hojeD=dt(hojeLocal()), R='"R$" #,##0.00', P='0.00%', D='dd/mm/yyyy';
+  const c=(v,z,f)=>{ const o={}; if(typeof v==='number'){o.t='n';o.v=v;} else if(v instanceof Date){o.t='d';o.v=v;} else {o.t='s';o.v=v==null?'':String(v);} if(z)o.z=z; if(f)o.f=f; return o; };
+  const lista=Object.values(dados.investimentos).slice().sort((a,b)=>(+b.atual||0)-(+a.atual||0));
+
+  /* --- aba Ativos --- */
+  const cab=['Ativo','Tipo','Corretora','Início','Dias investido','Aplicado','Valor hoje','Rendimento R$','Rendimento %','Proventos','Rend. c/ proventos R$','Rend. c/ proventos %','Rend. % ao mês (aprox.)','Atualizado em','Observação'];
+  const ws={}, n=lista.length;
+  cab.forEach((t,k)=>ws[XLSX.utils.encode_cell({r:0,c:k})]=c(t));
+  lista.forEach((i,k)=>{
+    const r=k+2, apl=+i.aplicado||0, atu=+i.atual||0, prov=+i.proventos||0;
+    const aportes=i.historico?Object.values(i.historico).map(h=>h.data).filter(Boolean).sort():[];
+    const ini=i.inicio||aportes[0]||'', obs=i.inicio?'':(aportes[0]?'Início = 1º aporte registrado':'Sem data de início — informe no app');
+    const di=dt(ini), dias=di?Math.max(0,Math.round((hojeD-di)/864e5)):'';
+    const rend=atu-apl, pct=apl?rend/apl:0, rt=rend+prov, pt=apl?rt/apl:0;
+    const am=(di&&dias>0&&apl>0&&atu>0)?Math.pow(atu/apl,30/dias)-1:'';
+    const L=(col)=>col+r;
+    const lin=[
+      c(i.nome||''), c(i.tipo||''), c(i.corretora||''),
+      di?c(di,D):c(''),
+      di?c(dias,'0',`TODAY()-D${r}`):c(''),
+      c(apl,R), c(atu,R),
+      c(rend,R,`G${r}-F${r}`), c(pct,P,`IF(F${r}=0,0,H${r}/F${r})`),
+      c(prov,R), c(rt,R,`H${r}+J${r}`), c(pt,P,`IF(F${r}=0,0,K${r}/F${r})`),
+      am===''?c(''):c(am,P,`IFERROR((G${r}/F${r})^(30/E${r})-1,"")`),
+      i.atualizadoEm?c(dt(i.atualizadoEm),D):c(''),
+      c(obs)
+    ];
+    lin.forEach((cel,col)=>ws[XLSX.utils.encode_cell({r:r-1,c:col})]=cel);
+  });
+  const t=n+3, a=lista.reduce((s,i)=>s+(+i.aplicado||0),0), u=lista.reduce((s,i)=>s+(+i.atual||0),0), pv=lista.reduce((s,i)=>s+(+i.proventos||0),0);
+  ws['A'+t]=c('TOTAL');
+  ws['F'+t]=c(a,R,`SUM(F2:F${n+1})`); ws['G'+t]=c(u,R,`SUM(G2:G${n+1})`);
+  ws['H'+t]=c(u-a,R,`G${t}-F${t}`);   ws['I'+t]=c(a?(u-a)/a:0,P,`IF(F${t}=0,0,H${t}/F${t})`);
+  ws['J'+t]=c(pv,R,`SUM(J2:J${n+1})`); ws['K'+t]=c(u-a+pv,R,`H${t}+J${t}`);
+  ws['L'+t]=c(a?(u-a+pv)/a:0,P,`IF(F${t}=0,0,K${t}/F${t})`);
+  ws['A'+(t+2)]=c('Rendimento % ao mês é uma estimativa composta desde o início (com vários aportes em datas diferentes, é aproximado). Valores de "hoje" são os que você atualizou no app.');
+  ws['!ref']=`A1:O${t+2}`; ws['!autofilter']={ref:`A1:O${n+1}`};
+  ws['!cols']=[34,13,14,12,10,15,15,15,12,13,17,16,16,13,34].map(w=>({wch:w}));
+
+  /* --- abas auxiliares --- */
+  const aba=(cabecalho,linhas,larg)=>{
+    const s=XLSX.utils.aoa_to_sheet([cabecalho,...linhas],{cellDates:true});
+    s['!cols']=larg.map(w=>({wch:w})); return s;
+  };
+  const aportes=[], proventos=[];
+  lista.forEach(i=>{
+    Object.values(i.historico||{}).forEach(h=>aportes.push([i.nome||'',dt(h.data),+h.valor||0]));
+    Object.values(i.historicoProventos||{}).forEach(h=>proventos.push([i.nome||'',dt(h.data),+h.valor||0]));
+  });
+  const ord=(x,y)=>x[1]-y[1]||String(x[0]).localeCompare(y[0]);
+  aportes.sort(ord); proventos.sort(ord);
+  const fmtCol=(s,col,z)=>{ const rg=XLSX.utils.decode_range(s['!ref']); for(let r=1;r<=rg.e.r;r++){ const k=XLSX.utils.encode_cell({r,c:col}); if(s[k]) s[k].z=z; } };
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Ativos');
+  if(aportes.length){ const s=aba(['Ativo','Data','Valor'],aportes,[34,12,15]); fmtCol(s,1,D); fmtCol(s,2,R); XLSX.utils.book_append_sheet(wb,s,'Aportes'); }
+  if(proventos.length){ const s=aba(['Ativo','Data','Valor'],proventos,[34,12,15]); fmtCol(s,1,D); fmtCol(s,2,R); XLSX.utils.book_append_sheet(wb,s,'Proventos'); }
+  const sn=Object.entries(dados.snapshots||{}).sort((x,y)=>x[0].localeCompare(y[0]));
+  if(sn.length){
+    const s=aba(['Data','Aplicado','Valor total','Rendimento R$','Rendimento %','Variação no dia'],
+      sn.map(([k,v],j)=>[dt(k),+v.aplicado||0,+v.atual||0,+v.rend||0,(+v.pct||0)/100,j?(+v.rend||0)-(+sn[j-1][1].rend||0):'']),[12,15,15,15,13,15]);
+    fmtCol(s,0,D); [1,2,3,5].forEach(k=>fmtCol(s,k,R)); fmtCol(s,4,P);
+    for(let j=0;j<sn.length;j++){ const r=j+2; s['D'+r].f=`C${r}-B${r}`; s['E'+r].f=`IF(B${r}=0,0,D${r}/B${r})`; if(j) s['F'+r].f=`D${r}-D${r-1}`; }
+    XLSX.utils.book_append_sheet(wb,s,'Evolução');
+  }
+  XLSX.writeFile(wb,`investimentos-${hojeLocal()}.xlsx`,{cellDates:true});
+  toast('Excel gerado');
+}
 function gravarInv(id){
   const nome=document.getElementById('v_nome').value.trim();
   if(!nome){ toast('Informe o nome do ativo'); return; }
@@ -1167,6 +1250,7 @@ function gravarInv(id){
     corretora:document.getElementById('v_corretora').value.trim(),
     aplicado:num(document.getElementById('v_apl').value),
     atual:num(document.getElementById('v_atu').value),
+    inicio:document.getElementById('v_ini').value||null,
     atualizadoEm:hoje()}, id||null);
   fechar();
 }
