@@ -186,6 +186,29 @@
   .check input{width:16px; height:16px;}
   .modal-actions{display:flex; justify-content:space-between; margin-top:20px; gap:10px;}
 
+  .btn-icon{position:relative;}
+  .btn-icon .fdot{position:absolute; top:3px; right:3px; width:7px; height:7px; border-radius:50%; background:var(--accent); border:1.5px solid var(--panel);}
+  .fotos-modal{max-width:600px;}
+  .fotos-head{display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:6px;}
+  .fotos-head h2{margin:0; font-size:18px; line-height:1.3;}
+  .fotos-sub{font-size:12.5px; color:var(--muted); margin:0 0 16px;}
+  .fotos-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:10px; margin-bottom:18px; min-height:60px;}
+  .fotos-grid .thumb{aspect-ratio:3/4; border-radius:8px; overflow:hidden; border:1px solid var(--border); background:var(--panel-alt); cursor:pointer;}
+  .fotos-grid .thumb img{width:100%; height:100%; object-fit:cover; display:block;}
+  .fotos-msg{grid-column:1/-1; text-align:center; color:var(--muted); font-size:13px; padding:22px 8px; line-height:1.5;}
+  .fotos-actions{display:flex; gap:10px; align-items:center; flex-wrap:wrap;}
+  .fotos-status{font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:var(--muted);}
+  .viewer{position:fixed; inset:0; background:rgba(5,7,10,.95); z-index:40; display:none; flex-direction:column;}
+  .viewer.open{display:flex;}
+  .viewer-bar{display:flex; justify-content:space-between; align-items:center; padding:max(14px, env(safe-area-inset-top)) 16px 10px; color:var(--text);}
+  .viewer-bar .vcount{font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--muted);}
+  .viewer-bar button{background:var(--panel-alt); border:1px solid var(--border); color:var(--text); border-radius:8px; padding:8px 14px; font-size:14px; cursor:pointer; font-family:'Inter',sans-serif;}
+  .viewer-bar button.danger{color:var(--danger); border-color:var(--danger-dim);}
+  .viewer-img{flex:1; min-height:0; display:flex; align-items:center; justify-content:center; padding:0 8px 16px;}
+  .viewer-img img{max-width:100%; max-height:100%; object-fit:contain; border-radius:6px;}
+  .viewer-nav{display:flex; justify-content:center; gap:14px; padding:0 16px max(18px, env(safe-area-inset-bottom));}
+  .viewer-nav button{background:var(--panel-alt); border:1px solid var(--border); color:var(--text); border-radius:8px; padding:9px 22px; font-size:15px; cursor:pointer;}
+
   @media(max-width:560px){
     header{padding:32px 18px 26px;} main{padding:20px 16px 60px;}
     .flagtag{width:42px; font-size:16px;} .countdown{min-width:100px;} .countdown .cd-num{font-size:17px;} .countdown .cd-clock{font-size:13px;}
@@ -242,6 +265,35 @@
 
   <div id="list"></div>
 </main>
+
+<div class="overlay" id="fotosOverlay">
+  <div class="modal fotos-modal">
+    <div class="fotos-head">
+      <h2 id="fotosTitle">Fotos</h2>
+      <button class="btn btn-ghost" id="fotosClose" style="padding:6px 12px;">Fechar</button>
+    </div>
+    <p class="fotos-sub">Anexe o convite, print do ingresso, endereço, reservas...</p>
+    <div class="fotos-grid" id="fotosGrid"></div>
+    <div class="fotos-actions">
+      <button class="btn btn-primary" id="fotosAdd">📷 Adicionar foto</button>
+      <span class="fotos-status" id="fotosStatus"></span>
+    </div>
+    <input type="file" id="fotosInput" accept="image/*" multiple style="display:none">
+  </div>
+</div>
+
+<div class="viewer" id="viewer">
+  <div class="viewer-bar">
+    <button id="viewerClose">✕ Fechar</button>
+    <span class="vcount" id="viewerCount"></span>
+    <button class="danger" id="viewerDel">🗑 Excluir</button>
+  </div>
+  <div class="viewer-img"><img id="viewerImg" alt="Foto do evento"></div>
+  <div class="viewer-nav" id="viewerNav">
+    <button id="viewerPrev">‹ Anterior</button>
+    <button id="viewerNext">Próxima ›</button>
+  </div>
+</div>
 
 <div class="overlay" id="overlay">
   <div class="modal">
@@ -312,6 +364,7 @@ async function load(initial=false){
     }
     setSync('ok','sincronizado agora');
     render();
+    loadFotosIds();
   }catch(e){
     setSync('busy','erro de conexão — tentando de novo');
   }
@@ -519,6 +572,7 @@ function render(){
           ${countdownBadge(e)}
           <div class="actions">
             ${e.notas ? `<button class="btn-icon" onclick="toggleNotas('${e.id}')" title="Ver notas"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16M4 12h16M4 18h10"/></svg></button>` : ''}
+            <button class="btn-icon" onclick="openFotos('${e.id}')" title="Fotos / convite"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1Z"/><circle cx="12" cy="13" r="3.5"/></svg>${fotosIds[e.id] ? '<span class="fdot"></span>' : ''}</button>
             <button class="btn-icon" onclick="openEdit('${e.id}')" title="Editar"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
           </div>
         </div>
@@ -528,6 +582,175 @@ function render(){
   });
   list.innerHTML = html;
 }
+
+const FOTOS_BASE = "https://medicos-andrey-default-rtdb.firebaseio.com/agenda_fotos";
+let fotosIds = {};
+let curFotoEvent = null;
+let curFotos = [];
+let viewerIdx = 0;
+
+async function loadFotosIds(){
+  try{
+    const res = await fetch(FOTOS_BASE + '.json?shallow=true');
+    if(!res.ok) return;
+    const d = await res.json();
+    fotosIds = (d && typeof d === 'object') ? d : {};
+    render();
+  }catch(e){}
+}
+
+function compressImage(file, maxDim, quality){
+  maxDim = maxDim || 1800; quality = quality || 0.82;
+  return new Promise((resolve, reject)=>{
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = ()=>{
+      let w = img.naturalWidth, h = img.naturalHeight;
+      const s = Math.min(1, maxDim / Math.max(w, h));
+      w = Math.round(w*s); h = Math.round(h*s);
+      const c = document.createElement('canvas');
+      c.width = w; c.height = h;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, w, h);
+      ctx.drawImage(img, 0, 0, w, h);
+      URL.revokeObjectURL(url);
+      resolve(c.toDataURL('image/jpeg', quality));
+    };
+    img.onerror = ()=>{ URL.revokeObjectURL(url); reject(new Error('imagem inválida')); };
+    img.src = url;
+  });
+}
+
+function fotosMsg(txt){
+  document.getElementById('fotosGrid').innerHTML = '<div class="fotos-msg">'+txt+'</div>';
+}
+
+function renderFotos(){
+  const grid = document.getElementById('fotosGrid');
+  if(!curFotos.length){
+    fotosMsg('Nenhuma foto ainda.<br>Toque em <b>Adicionar foto</b> para anexar o convite.');
+    return;
+  }
+  grid.innerHTML = curFotos.map((f,i)=>
+    '<div class="thumb" onclick="openViewer('+i+')"><img src="'+f.url+'" alt="Foto '+(i+1)+'"></div>'
+  ).join('');
+}
+
+async function loadFotos(){
+  fotosMsg('carregando...');
+  try{
+    const res = await fetch(FOTOS_BASE + '/' + curFotoEvent + '.json');
+    if(res.status === 401 || res.status === 403){
+      fotosMsg('Sem permissão no Firebase.<br>Falta a regra <b>agenda_fotos</b> em Realtime Database → Regras.');
+      return;
+    }
+    const d = await res.json();
+    curFotos = (d && typeof d === 'object')
+      ? Object.entries(d).filter(([k,v])=>typeof v === 'string').sort((a,b)=>a[0].localeCompare(b[0])).map(([id,url])=>({id,url}))
+      : [];
+    if(curFotos.length) fotosIds[curFotoEvent] = true; else delete fotosIds[curFotoEvent];
+    renderFotos();
+  }catch(e){
+    fotosMsg('Erro de conexão ao carregar as fotos.');
+  }
+}
+
+function openFotos(id){
+  curFotoEvent = id;
+  curFotos = [];
+  document.getElementById('fotosTitle').textContent = (items[id] && items[id].titulo) || 'Fotos';
+  document.getElementById('fotosStatus').textContent = '';
+  document.getElementById('fotosOverlay').classList.add('open');
+  loadFotos();
+}
+
+function closeFotos(){
+  document.getElementById('fotosOverlay').classList.remove('open');
+  closeViewer();
+  render();
+}
+
+async function addFotos(files){
+  files = Array.from(files || []);
+  if(!files.length) return;
+  const st = document.getElementById('fotosStatus');
+  const btn = document.getElementById('fotosAdd');
+  btn.disabled = true;
+  let ok = 0, falhas = 0;
+  for(let i = 0; i < files.length; i++){
+    st.textContent = 'enviando ' + (i+1) + '/' + files.length + '...';
+    try{
+      const dataUrl = await compressImage(files[i]);
+      const pid = 'p' + Date.now() + Math.random().toString(36).slice(2,6);
+      const res = await fetch(FOTOS_BASE + '/' + curFotoEvent + '/' + pid + '.json', {
+        method:'PUT', body: JSON.stringify(dataUrl)
+      });
+      if(!res.ok) throw new Error('HTTP ' + res.status);
+      ok++;
+    }catch(e){
+      falhas++;
+      if(String(e.message).indexOf('401') >= 0 || String(e.message).indexOf('403') >= 0){
+        st.textContent = 'sem permissão — falta a regra agenda_fotos no Firebase';
+        btn.disabled = false;
+        document.getElementById('fotosInput').value = '';
+        return;
+      }
+    }
+  }
+  btn.disabled = false;
+  document.getElementById('fotosInput').value = '';
+  st.textContent = falhas ? (ok + ' enviada(s), ' + falhas + ' falhou(aram)') : (ok + ' foto(s) salva(s)');
+  await loadFotos();
+}
+
+function openViewer(i){
+  if(!curFotos.length) return;
+  viewerIdx = Math.max(0, Math.min(i, curFotos.length - 1));
+  showViewer();
+  document.getElementById('viewer').classList.add('open');
+}
+
+function showViewer(){
+  const f = curFotos[viewerIdx];
+  document.getElementById('viewerImg').src = f.url;
+  document.getElementById('viewerCount').textContent = (viewerIdx+1) + ' / ' + curFotos.length;
+  document.getElementById('viewerNav').style.display = curFotos.length > 1 ? 'flex' : 'none';
+}
+
+function closeViewer(){
+  document.getElementById('viewer').classList.remove('open');
+  document.getElementById('viewerImg').src = '';
+}
+
+function viewerStep(d){
+  if(curFotos.length < 2) return;
+  viewerIdx = (viewerIdx + d + curFotos.length) % curFotos.length;
+  showViewer();
+}
+
+async function deleteFoto(){
+  const f = curFotos[viewerIdx];
+  if(!f) return;
+  if(!confirm('Excluir esta foto?')) return;
+  try{
+    const res = await fetch(FOTOS_BASE + '/' + curFotoEvent + '/' + f.id + '.json', {method:'DELETE'});
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+  }catch(e){
+    alert('Não foi possível excluir. Verifique a conexão.');
+    return;
+  }
+  closeViewer();
+  await loadFotos();
+}
+
+document.getElementById('fotosAdd').onclick = ()=>document.getElementById('fotosInput').click();
+document.getElementById('fotosInput').onchange = function(){ addFotos(this.files); };
+document.getElementById('fotosClose').onclick = closeFotos;
+document.getElementById('fotosOverlay').onclick = (ev)=>{ if(ev.target.id === 'fotosOverlay') closeFotos(); };
+document.getElementById('viewerClose').onclick = closeViewer;
+document.getElementById('viewerDel').onclick = deleteFoto;
+document.getElementById('viewerPrev').onclick = ()=>viewerStep(-1);
+document.getElementById('viewerNext').onclick = ()=>viewerStep(1);
 
 function toggleNotas(id){
   document.getElementById('notas_'+id).classList.toggle('open');
@@ -603,6 +826,8 @@ async function save(){
 async function del(){
   if(!editingId) return;
   if(!confirm('Excluir este evento da agenda?')) return;
+  if(fotosIds[editingId]) fetch(FOTOS_BASE + '/' + editingId + '.json', {method:'DELETE'}).catch(()=>{});
+  delete fotosIds[editingId];
   delete items[editingId];
   closeModal();
   render();
