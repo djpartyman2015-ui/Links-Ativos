@@ -538,6 +538,7 @@ function linha(l){
     <div class="ic">${ICONE[l.cat]||'•'}</div>
     <div class="txt"><b>${esc(truncar(l.desc||l.cat,32))}</b>
       <span>${new Date(l.data+'T12:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})} · ${esc(l.cat)}${l.conta?' · '+esc(l.conta):''}
+      ${l.dataCompra&&l.dataCompra!==l.data?`<span class="tag">compra ${new Date(l.dataCompra+'T12:00').toLocaleDateString('pt-BR',l.dataCompra.slice(0,4)===l.data.slice(0,4)?{day:'2-digit',month:'2-digit'}:{day:'2-digit',month:'2-digit',year:'2-digit'})}</span>`:''}
       ${l.pago===false?'<span class="tag">a pagar</span>':''}${l.origem==='fatura'?'<span class="tag of">fatura</span>':''}</span></div>
     <div class="val ${l.tipo==='receita'?'pos':'neg'}">${l.tipo==='receita'?'+':'−'} ${brl(l.valor).replace('R$ ','')}</div>
   </div>`;
@@ -872,8 +873,10 @@ function parsear(texto,vencimento){
     }
     if(!dia||!mes||mes>12||dia>31) continue;
     let ano=anoRef;
-    if(mes-mesRef>6) ano--; else if(mesRef-mes>6) ano++;
-    const dataCompra=`${ano}-${String(mes).padStart(2,'0')}-${String(dia).padStart(2,'0')}`;
+    const mm=String(mes).padStart(2,'0'), dd=String(dia).padStart(2,'0');
+    if(vencimento){ ano=+vencimento.slice(0,4); if(`${ano}-${mm}-${dd}`>vencimento) ano--; }   /* compra nunca é depois do vencimento */
+    else if(mes-mesRef>6) ano--; else if(mesRef-mes>6) ano++;
+    const dataCompra=`${ano}-${mm}-${dd}`;
     const data = vencimento || dataCompra;
 
     let desc=l.replace(/^(\d{1,2}[\/\.]\d{1,2}([\/\.]\d{2,4})?|\d{1,2}\s*[A-Za-z]{3})/,'')
@@ -900,12 +903,13 @@ function abrirFatura(){
     </div>
     <div class="field"><label>Cole aqui as linhas da fatura</label>
       <textarea id="fx_txt" placeholder="05/09  IFOOD*RESTAURANTE      89,90&#10;07/09  POSTO IPIRANGA        220,00&#10;08/09  DROGARIA SP 03/06      54,30"></textarea></div>
+    <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;margin:-2px 0 10px;cursor:pointer"><input type="checkbox" id="fx_so" style="width:auto;margin:0"> Só preencher a data da compra nos lançamentos que já importei</label>
     <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;margin:-2px 0 10px;cursor:pointer"><input type="checkbox" id="fx_cada" style="width:auto;margin:0"> Não é fatura (vale-refeição, débito…): usar a data de cada compra</label>
     <div class="blabel" style="margin:-4px 0 10px"><span>Os lançamentos entram com a data de vencimento acima, não a data de cada compra — ajuste linha a linha se algum precisar de outra data.</span></div>
     <button class="btn" onclick="analisar()">Analisar fatura</button>`;
   document.getElementById('sheet').classList.add('on');
 }
-function analisar(){
+async function analisar(){
   const txt=document.getElementById('fx_txt').value;
   const conta=document.getElementById('fx_conta').value.trim();
   const venc=document.getElementById('fx_venc').value||hoje();
@@ -917,10 +921,28 @@ function analisar(){
     toast('Nenhuma linha reconhecida. Confira se data e valor estão na mesma linha.');
     return;
   }
+  if(document.getElementById('fx_so').checked){ await preencherDatasCompra(revisao,venc); return; }
   /* marca possíveis duplicadas */
   const existentes=new Set(lancArray().map(l=>`${l.data}|${(+l.valor).toFixed(2)}`));
   revisao.forEach(r=>{ if(existentes.has(`${r.data}|${r.valor.toFixed(2)}`)){ r.dup=true; r.incluir=false; } });
   renderRevisao(conta);
+}
+const _tok=s=>new Set(String(s||'').toUpperCase().replace(/R/g,'').replace(/[^A-Z0-9 ]/g,' ').split(/\s+/).filter(t=>t.length>=2));   /* sem "R": nomes antigos importados perderam essa letra */
+async function preencherDatasCompra(linhas,venc){
+  const pool=lancArray().filter(l=>l.data===venc&&!l.dataCompra);
+  const rs=linhas.filter(r=>!r.ignorada), pares=[];
+  rs.forEach((r,ri)=>{ const tr=_tok(r.desc);
+    pool.forEach((l,li)=>{ if(l.tipo!==r.tipo||Math.abs((+l.valor)-r.valor)>0.005) return;
+      let s=0; _tok(l.desc).forEach(t=>{ if(tr.has(t)) s++; }); pares.push([s,ri,li]); }); });
+  pares.sort((x,y)=>y[0]-x[0]);                       /* melhores encaixes primeiro */
+  const usadoR=new Set(), usadoL=new Set(), casados=[];
+  for(const [s,ri,li] of pares){ if(usadoR.has(ri)||usadoL.has(li)) continue; usadoR.add(ri); usadoL.add(li); casados.push([rs[ri],pool[li]]); }
+  const sem=rs.length-casados.length; let n=0;
+  try{
+    for(const [r,l] of casados){ if(r.dataCompra!==l.data){ await api('lancamentos','PATCH',{dataCompra:r.dataCompra},l.id); n++; } }
+    fechar(); await carregar();
+    toast(`${n} data${n===1?'':'s'} de compra preenchida${n===1?'':'s'}`+(sem?` · ${sem} sem correspondência`:''));
+  }catch(e){ toast('Não deu para preencher todas. Tente de novo.'); }
 }
 function renderRevisao(conta){
   const novos=revisao.filter(r=>r.novo).length;
@@ -977,7 +999,7 @@ async function importarFatura(conta){
     const aprender={};
     for(const r of sel){
       await api('lancamentos','POST',{tipo:r.tipo,valor:r.valor,desc:r.desc,cat:r.cat,
-        data:r.data,conta,pago:true,origem:'fatura'});
+        data:r.data,conta,pago:true,origem:'fatura',...(r.dataCompra&&r.dataCompra!==r.data?{dataCompra:r.dataCompra}:{})});
       if(r.tipo==='despesa') aprender[chaveDic(r.desc)]=r.cat;
     }
     if(Object.keys(aprender).length) await api('dicionario','PATCH',aprender);
@@ -1018,6 +1040,7 @@ function formLanc(id){
   <div class="two">
     <div class="field"><label>Valor</label><input id="f_valor" inputmode="decimal" placeholder="0,00" value="${l.valor?String(l.valor).replace('.',','):''}"></div>
     <div class="field"><label>Data</label><input type="date" id="f_data" value="${l.data||hoje()}"></div></div>
+  <div class="field"><label>Data da compra (opcional)</label><input type="date" id="f_dc" value="${l.dataCompra||''}"></div>
   <div class="field"><label>Descrição</label><input id="f_desc" placeholder="Ex.: mercado da semana" value="${esc(l.desc)}"></div>
   <div class="two">
     <div class="field"><label>Categoria</label><select id="f_cat">${opts(l.cat)}</select></div>
@@ -1039,7 +1062,7 @@ function gravarLanc(id){
   salvar('lancamentos',{tipo:document.getElementById('f_tipo').value,valor:v,
     desc:document.getElementById('f_desc').value.trim(),cat:document.getElementById('f_cat').value,
     data:document.getElementById('f_data').value,conta:document.getElementById('f_conta').value.trim(),
-    pago:document.getElementById('f_pago').value==='1'}, id||null);
+    pago:document.getElementById('f_pago').value==='1',dataCompra:document.getElementById('f_dc').value||null}, id||null);
   fechar();
 }
 function formMeta(id){
