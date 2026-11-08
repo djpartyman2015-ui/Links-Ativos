@@ -429,7 +429,7 @@ async function carregar(){
     const [l,m,i,li,dic,sn]=await Promise.all([api('lancamentos'),api('metas'),api('investimentos'),api('limites'),api('dicionario'),api('snapshots')]);
     dados={lancamentos:l||{},metas:m||{},investimentos:i||{},limites:li||{},dicionario:dic||{},snapshots:sn||{}};
     await sincronizarProventos();
-    montarFiltro(); render();
+    montarFiltro(); render(); migrarDatasCompra();
     salvarSnapshot().then(()=>{ if(aba==='inv') render(); });
   }catch(e){ toast('Não consegui carregar os dados. Confira a conexão.'); }
 }
@@ -928,7 +928,7 @@ async function analisar(){
   renderRevisao(conta);
 }
 const _tok=s=>new Set(String(s||'').toUpperCase().replace(/R/g,'').replace(/[^A-Z0-9 ]/g,' ').split(/\s+/).filter(t=>t.length>=2));   /* sem "R": nomes antigos importados perderam essa letra */
-async function preencherDatasCompra(linhas,venc){
+async function preencherDatasCompra(linhas,venc,silencioso){
   const pool=lancArray().filter(l=>l.data===venc&&!l.dataCompra);
   const rs=linhas.filter(r=>!r.ignorada), pares=[];
   rs.forEach((r,ri)=>{ const tr=_tok(r.desc);
@@ -940,9 +940,86 @@ async function preencherDatasCompra(linhas,venc){
   const sem=rs.length-casados.length; let n=0;
   try{
     for(const [r,l] of casados){ if(r.dataCompra!==l.data){ await api('lancamentos','PATCH',{dataCompra:r.dataCompra},l.id); n++; } }
+    if(silencioso) return n;
     fechar(); await carregar();
     toast(`${n} data${n===1?'':'s'} de compra preenchida${n===1?'':'s'}`+(sem?` · ${sem} sem correspondência`:''));
-  }catch(e){ toast('Não deu para preencher todas. Tente de novo.'); }
+  }catch(e){ if(silencioso) throw e; toast('Não deu para preencher todas. Tente de novo.'); }
+}
+/* preenchimento único das datas de compra das faturas já importadas (roda uma vez por aparelho; não cria nem apaga nada) */
+const MIG_DC=[
+ {venc:'2026-11-10',txt:`25/08 MP*SAMSUNG 14/18 200,55
+19/09 IPHONE PRA SEM 13/21 285,70
+26/11 ITAUSHOP 11/21 45,42
+17/01 MERCADOLIVRE*M 09/12 26,61
+14/05 COPA AIRL94893 06/06 417,50
+08/06 DECOLAR BARUERI 05/06 24,42
+29/06 RD SAUDE ONLIN 05/05 201,39
+07/07 SHOPEE *Dasala 04/04 63,95
+04/10 99Food 66,44
+04/10 99Food 79,95
+05/10 BANDEIRA INDAIATUBA 74,66
+06/10 PARC RD SAUDE 01/05 271,62
+18/10 DL*Spotify 23,90
+31/10 SHOPEE *ENXOVA 01/12 10,46
+31/10 SHOPEE *CASACO 01/12 14,99
+31/10 SHOPEE *Supern 01/02 37,04`},
+ {venc:'2026-11-15',txt:`28/07 RD SAUDE ONLIN 04/05 279,80
+27/08 PHONE EXPRESSI 03/10 33,00
+30/08 parc NUITEE D 03/04 929,75
+30/08 LOJAS RIACHUEL 03/03 31,29
+31/08 SR BOUTIQUE 03/06 418,60
+05/09 RD SAUDE ONLIN 03/03 165,99
+18/09 HUBLA*MILHAS 02/12 30,18
+18/09 HUBLA*MILHAS 02/12 5,07
+22/09 parc BOTECO C 02/02 79,40
+24/09 INTI *TOMORR 02/03 235,66
+28/09 parc AyaComer 02/02 123,35
+28/09 parc REDE P5 02/02 66,86
+30/09 parc ANTHROPI 02/02 60,94
+06/10 parc M H CH 02/02 55,53
+06/10 parc REDE P5 02/02 57,10
+06/10 parc BARBEARI 02/02 51,90
+07/10 APPLE.COM/BILL 66,90
+07/10 BANDEIRA CASA DE CARNE 34,17
+08/10 Diego Fernando 38,00
+08/10 MP*ATODOVAPOR 30,00
+08/10 SABOR NATURAL 20,00
+10/10 REDE P5 ESPLANADA 50,00
+10/10 EBN*TIKTOK SH 89,79
+10/10 EBN*TIKTOK SH 27,99
+14/10 Drogal Indaiatuba 22,12
+17/10 PG *TOUR INDAI 01/02 64,95
+17/10 JIM.COM 16,00
+17/10 LUCIANO FREITAS 29,80
+17/10 Camila Soares 20,00
+18/10 99Food 65,77
+19/10 parc MERCADOL 01/02 105,52
+19/10 parc 99Food 9 01/02 66,34
+25/10 Eco Ville 21,36
+25/10 REDE P5 LAGOS XANADU 50,00
+28/10 Wellhub Andrey Cappa 60,00
+28/10 parc MERCADOL 01/02 64,14
+28/10 parc ANTHROPI 01/02 61,30
+30/10 99Food 52,29
+31/10 MP*EMMASLEEPOS 01/12 35,75
+31/10 SONDA INDAIATU 01/02 218,53
+31/10 Drogal Indaiatuba 5,88
+01/11 RAIA DROGASIL 01/05 165,22
+02/11 parc BARBEARI 01/02 52,24
+05/11 99Food 49,99
+06/11 Denise Restaurante 84,59
+21/10 IOF ANTHROPIC 4,08`}];
+let _migrando=false;
+async function migrarDatasCompra(){
+  if(_migrando||localStorage.getItem('fin_mig_dc1')) return;
+  _migrando=true;
+  try{
+    let total=0;
+    for(const m of MIG_DC) total+=await preencherDatasCompra(parsear(m.txt,m.venc),m.venc,true);
+    localStorage.setItem('fin_mig_dc1','1');
+    if(total){ await carregar(); toast(`${total} datas de compra preenchidas nas faturas`); }
+  }catch(e){ /* tenta de novo no próximo carregamento */ }
+  _migrando=false;
 }
 function renderRevisao(conta){
   const novos=revisao.filter(r=>r.novo).length;
@@ -1039,7 +1116,7 @@ function formLanc(id){
   <input type="hidden" id="f_tipo" value="${l.tipo}">
   <div class="two">
     <div class="field"><label>Valor</label><input id="f_valor" inputmode="decimal" placeholder="0,00" value="${l.valor?String(l.valor).replace('.',','):''}"></div>
-    <div class="field"><label>Data</label><input type="date" id="f_data" value="${l.data||hoje()}"></div></div>
+    <div class="field"><label>Data de vencimento</label><input type="date" id="f_data" value="${l.data||hoje()}"></div></div>
   <div class="field"><label>Data da compra (opcional)</label><input type="date" id="f_dc" value="${l.dataCompra||''}"></div>
   <div class="field"><label>Descrição</label><input id="f_desc" placeholder="Ex.: mercado da semana" value="${esc(l.desc)}"></div>
   <div class="two">
