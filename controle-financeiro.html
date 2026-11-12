@@ -1163,13 +1163,15 @@ function gravarMeta(id){
 }
 function formInv(id){
   const i=id?dados.investimentos[id]:{};
-  const hist=i.historico? Object.values(i.historico).sort((a,b)=>b.data.localeCompare(a.data)) : [];
+  const hist=i.historico? Object.entries(i.historico).map(([k,h])=>({k,...h})).sort((a,b)=>b.data.localeCompare(a.data)) : [];
+  const cripto=i.tipo==='Cripto';
+  const cq=hist.filter(h=>+h.qtd>0), totQ=cq.reduce((s,h)=>s+(+h.qtd),0), totV=cq.reduce((s,h)=>s+(+h.valor||0),0);
   const histProv=i.historicoProventos? Object.entries(i.historicoProventos).map(([k,h])=>({k,...h})).sort((a,b)=>b.data.localeCompare(a.data)) : [];
   const yoc = i.proventos && i.aplicado ? (+i.proventos/+i.aplicado*100) : 0;
   return `<h3>${id?'Editar ativo':'Novo ativo'}<button onclick="fechar()">×</button></h3>
   <div class="field"><label>Nome do ativo</label><input id="v_nome" placeholder="Ex.: CDB Nubank 110%" value="${esc(i.nome)}"></div>
   <div class="two">
-    <div class="field"><label>Tipo</label><select id="v_tipo">${TIPO_INV.map(t=>`<option ${t===i.tipo?'selected':''}>${t}</option>`).join('')}</select></div>
+    <div class="field"><label>Tipo</label><select id="v_tipo" onchange="const c=document.getElementById('ap_cripto'); if(c) c.style.display=this.value==='Cripto'?'':'none'">${TIPO_INV.map(t=>`<option ${t===i.tipo?'selected':''}>${t}</option>`).join('')}</select></div>
     <div class="field"><label>Corretora ou plataforma</label><input id="v_corretora" placeholder="Ex.: Rico, XP, C6" value="${esc(i.corretora)}"></div></div>
   <div class="two">
     <div class="field"><label>Valor aplicado</label><input id="v_apl" inputmode="decimal" placeholder="0,00" value="${i.aplicado?String(i.aplicado).replace('.',','):''}"></div>
@@ -1181,15 +1183,28 @@ function formInv(id){
   <div class="field" style="margin-top:16px;padding-top:14px;border-top:1px solid var(--line)">
     <label>Registrar novo aporte neste ativo</label>
     <div class="two">
-      <input id="ap_valor" inputmode="decimal" placeholder="0,00">
+      <input id="ap_valor" inputmode="decimal" placeholder="Valor (R$)" oninput="calcQtdAporte()">
       <button class="btn ghost sm" style="flex:0 0 auto;padding:9px 16px" onclick="registrarAporte('${id}')">Aportar</button>
+    </div>
+    <div class="two" id="ap_cripto" style="margin-top:6px;${cripto?'':'display:none'}">
+      <input id="ap_cot" inputmode="decimal" placeholder="Cotação do dia (R$)" oninput="calcQtdAporte()">
+      <input id="ap_qtd" inputmode="decimal" placeholder="Quantidade" oninput="this.dataset.manual='1'">
     </div>
     <div class="blabel" style="margin:6px 0 0"><span>Soma ao aplicado e ao valor hoje na mesma hora — o rendimento não é distorcido.</span></div>
   </div>
   ${hist.length?`<div class="blabel" style="margin:14px 0 6px"><span>Histórico de aportes</span></div>
-    <div style="max-height:130px;overflow:auto">
-      ${hist.map(h=>`<div class="blabel" style="margin:0 0 6px"><span>${new Date(h.data+'T12:00').toLocaleDateString('pt-BR')}</span><b class="num pos">+${brl(h.valor)}</b></div>`).join('')}
-    </div>`:''}
+    ${cripto&&totQ?`<div class="blabel" style="margin:0 0 6px"><span>Comprado: <b>${fmtQtd(totQ)}</b> · preço médio <b>${brl(totV/totQ)}</b></span></div>`:''}
+    <div style="max-height:${cripto?'260':'130'}px;overflow:auto">
+      ${hist.map(h=>cripto?`<div style="margin:0 0 10px">
+        <div class="blabel" style="margin:0 0 4px"><span>${new Date(h.data+'T12:00').toLocaleDateString('pt-BR')}</span><b class="num pos">+${brl(h.valor)}</b></div>
+        <div style="display:flex;gap:6px;align-items:center">
+          <input id="apc_${h.k}" inputmode="decimal" placeholder="Cotação (R$)" value="${h.cotacao?String(h.cotacao).replace('.',','):''}" style="flex:1;min-width:0;padding:7px 8px;border:1px solid var(--line);border-radius:8px;font-size:12.5px;text-align:right;background:#FBFCFD">
+          <input id="apq_${h.k}" inputmode="decimal" placeholder="Quantidade" value="${h.qtd?fmtQtd(h.qtd):''}" style="flex:1;min-width:0;padding:7px 8px;border:1px solid var(--line);border-radius:8px;font-size:12.5px;text-align:right;background:#FBFCFD">
+          <button onclick="editarAporte('${id}','${h.k}')" title="Salvar" aria-label="Salvar" style="color:var(--in);font-size:18px;font-weight:700;padding:0 6px">✓</button>
+        </div></div>`
+        :`<div class="blabel" style="margin:0 0 6px"><span>${new Date(h.data+'T12:00').toLocaleDateString('pt-BR')}</span><b class="num pos">+${brl(h.valor)}</b></div>`).join('')}
+    </div>
+    ${cripto?'<div class="blabel" style="margin:2px 0 0"><span>Preencha cotação e/ou quantidade e toque em ✓. Se faltar uma, o app calcula pela outra.</span></div>':''}`:''}
   <div class="field" style="margin-top:16px;padding-top:14px;border-top:1px solid var(--line)">
     <label>Proventos recebidos (dividendos/rendimentos)</label>
     <div class="blabel" style="margin:0 0 8px"><span>Acumulado até agora</span><b class="num pos">${brl(i.proventos||0)}</b></div>
@@ -1251,12 +1266,31 @@ async function registrarProvento(id){
     abrir('inv',id);
   }catch(e){ toast('Não deu para registrar o provento.'); }
 }
+const fmtQtd=v=>(+v).toFixed(8).replace(/0+$/,'').replace(/\.$/,'').replace('.',',');
+function calcQtdAporte(){
+  const q=document.getElementById('ap_qtd'); if(!q||q.dataset.manual==='1') return;
+  const v=num(document.getElementById('ap_valor').value), c=num(document.getElementById('ap_cot').value);
+  q.value=(v&&c)?fmtQtd(v/c):'';
+}
+async function editarAporte(id,k){
+  const i=dados.investimentos[id], h=i.historico&&i.historico[k]; if(!h) return;
+  let cot=num(document.getElementById('apc_'+k).value), qtd=num(document.getElementById('apq_'+k).value);
+  if(!cot&&!qtd){ toast('Informe a cotação ou a quantidade'); return; }
+  if(cot&&!qtd) qtd=+((+h.valor)/cot).toFixed(8); else if(qtd&&!cot) cot=r2p((+h.valor)/qtd);
+  try{
+    await api(`investimentos/${id}/historico`,'PATCH',{cotacao:cot,qtd},k);
+    await carregar(); toast('Aporte atualizado'); abrir('inv',id);
+  }catch(e){ toast('Não deu para salvar.'); }
+}
 async function registrarAporte(id){
   const v=num(document.getElementById('ap_valor').value);
   if(!v){ toast('Informe o valor do aporte'); return; }
   const i=dados.investimentos[id];
+  const cotEl=document.getElementById('ap_cot'), qtdEl=document.getElementById('ap_qtd');
+  let cot=cotEl&&i.tipo==='Cripto'?num(cotEl.value):0, qtd=qtdEl&&i.tipo==='Cripto'?num(qtdEl.value):0;
+  if(cot&&!qtd) qtd=+(v/cot).toFixed(8); else if(qtd&&!cot) cot=r2p(v/qtd);
   try{
-    await api(`investimentos/${id}/historico`,'POST',{data:hoje(),valor:v});
+    await api(`investimentos/${id}/historico`,'POST',{data:hojeLocal(),valor:v,...(cot?{cotacao:cot}:{}),...(qtd?{qtd}:{})});
     await api('investimentos','PATCH',{
       aplicado:(+i.aplicado||0)+v,
       atual:(+i.atual||0)+v,
