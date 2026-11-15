@@ -1312,6 +1312,328 @@ function carregarXLSX(){
     s.onload=ok; s.onerror=()=>erro(new Error('exceljs')); document.head.appendChild(s);
   });
 }
+/* ==================== ABAS DE ANÁLISE (Excel) ==================== */
+function analisesExcel(wb,X){
+  const {lista,n,res,fill,borda,cabec,corRegras,R,P,DT,dt,hojeD,NAVY,VERDE,VERM,AZUL,ZEBRA,CINZA}=X;
+  const AMBAR='FFB45309', CLARO='FFF2F6FB', AMARELO='FFFFF6D6', BLUE='FF1F4FD8';
+  const PAL=['#132B4C','#2F6FB5','#0D7A62','#C98A1B','#BE4028','#7A5AA6','#5BA8A0','#8A94A6','#D98E73','#3E8E41'];
+  const FONT='Segoe UI, Calibri, Arial, sans-serif', TX='#132B4C', G='#0D7A62', RD='#BE4028';
+  const v0=v=>+v||0;
+  const fR=v=>(v<0?'-':'')+'R$ '+Math.abs(v).toLocaleString('pt-BR',{maximumFractionDigits:0});
+  const fS=v=>(v>=0?'+':'')+(v*100).toFixed(1).replace('.',',')+'%';
+  const fU=v=>(v*100).toFixed(1).replace('.',',')+'%';
+  const fd=s=>s.slice(8,10)+'/'+s.slice(5,7);
+  const rg=(col,a,b)=>`Ativos!$${col}$${a}:$${col}$${b}`;
+
+  /* ---------- gráficos como imagem (ExcelJS não cria gráfico nativo) ---------- */
+  const bgp={id:'bgb',beforeDraw(c){ const x=c.ctx; x.save(); x.globalCompositeOperation='destination-over'; x.fillStyle='#ffffff'; x.fillRect(0,0,c.width,c.height); x.restore(); }};
+  const IMG=(cfg,w,h)=>{
+    const c=document.createElement('canvas'); c.width=w; c.height=h;
+    cfg.options=Object.assign({responsive:false,animation:false,devicePixelRatio:2,font:{family:FONT},layout:{padding:10}},cfg.options||{});
+    cfg.plugins=(cfg.plugins||[]).concat([bgp]);
+    const ch=new Chart(c,cfg); const u=c.toDataURL('image/png'); ch.destroy();
+    return wb.addImage({base64:u.split(',')[1],extension:'png'});
+  };
+  const colocar=(ws,id,col,row,w,h)=>ws.addImage(id,{tl:{col,row},ext:{width:w,height:h}});
+  const tit=t=>({display:true,text:t,font:{size:15,weight:'bold'},color:TX,padding:{bottom:8}});
+  const eR={ticks:{callback:v=>fR(v),maxRotation:0,autoSkip:true,maxTicksLimit:7},grid:{color:'#E6EBF2'}};
+  const eP={ticks:{callback:v=>(v*100).toFixed(0)+'%'},grid:{color:'#E6EBF2'}};
+  const rosca=(rot,vals,w,h,titulo)=>{
+    const tot=vals.reduce((a,b)=>a+b,0)||1;
+    return IMG({type:'doughnut',data:{labels:rot.map((r,k)=>`${r}  ${fU(vals[k]/tot)}`),datasets:[{data:vals,backgroundColor:rot.map((_,k)=>PAL[k%PAL.length]),borderColor:'#fff',borderWidth:2}]},
+      options:{cutout:'55%',plugins:{title:tit(titulo),legend:{position:'right',labels:{boxWidth:14,font:{size:12}}}}}},w,h);
+  };
+  const barrasH=(rot,vals,w,h,titulo,pct)=>IMG({type:'bar',data:{labels:rot,datasets:[{data:vals,backgroundColor:vals.map(v=>v>=0?G:RD),borderRadius:3}]},
+    options:{indexAxis:'y',plugins:{title:tit(titulo),legend:{display:false}},scales:{x:pct?eP:eR,y:{grid:{display:false},ticks:{font:{size:11}}}}}},w,h);
+  const barrasV=(rot,vals,w,h,titulo,cor)=>IMG({type:'bar',data:{labels:rot,datasets:[{data:vals,backgroundColor:cor?vals.map(()=>cor):vals.map(v=>v>=0?G:RD),borderRadius:3}]},
+    options:{plugins:{title:tit(titulo),legend:{display:false}},scales:{y:eR,x:{grid:{display:false},ticks:{maxRotation:60,autoSkip:true,font:{size:10}}}}}},w,h);
+
+  /* ---------- helpers de planilha ---------- */
+  const titulo=(ws,t,sub,ate)=>{
+    ws.mergeCells(1,1,1,ate); const c=ws.getCell(1,1); c.value=t; c.font={bold:true,size:18,color:{argb:NAVY}}; c.alignment={vertical:'middle'}; ws.getRow(1).height=34;
+    ws.mergeCells(2,1,2,ate); const d=ws.getCell(2,1); d.value=sub; d.font={italic:true,size:10,color:{argb:CINZA}}; ws.getRow(2).height=18;
+  };
+  const tab=(ws,r0,cab,linhas,fmts,o={})=>{
+    const centros=o.centros||[], esq=o.esq||[1];
+    const hr=ws.getRow(r0); cab.forEach((t,k)=>{ hr.getCell(k+1).value=t; }); cabec(hr,centros,esq);
+    linhas.forEach((l,j)=>{ const row=ws.getRow(r0+1+j); row.height=20;
+      l.forEach((v,k)=>{ const c=row.getCell(k+1); if(v!==undefined&&v!==null) c.value=v; if(fmts[k]) c.numFmt=fmts[k];
+        c.border=borda; if(j%2) c.fill=fill(ZEBRA);
+        c.alignment={vertical:'middle',horizontal:esq.includes(k+1)?'left':(centros.includes(k+1)?'center':'right')}; }); });
+    return r0+linhas.length;
+  };
+  const totalRow=(ws,r,vals,fmts)=>{ const row=ws.getRow(r); row.height=24;
+    vals.forEach((v,k)=>{ const c=row.getCell(k+1); if(v!==undefined&&v!==null) c.value=v; if(fmts[k]) c.numFmt=fmts[k];
+      c.fill=fill(NAVY); c.font={bold:true,color:{argb:'FFFFFFFF'}}; c.alignment={vertical:'middle',horizontal:k===0?'left':'right'}; }); };
+  const barra=(ws,ref,cor)=>ws.addConditionalFormatting({ref,rules:[{type:'dataBar',cfvo:[{type:'num',value:0},{type:'max'}],color:{argb:cor},gradient:false,showValue:true}]});
+  const nota=(ws,r,txt,ate)=>{ ws.mergeCells(r,1,r,ate); const c=ws.getCell(r,1); c.value=txt; c.font={italic:true,size:10,color:{argb:CINZA}}; c.alignment={wrapText:true,vertical:'top'}; };
+  const novaAba=(nome,cor,larg,congela)=>{ const ws=wb.addWorksheet(nome,{views:[{showGridLines:false}],properties:{tabColor:{argb:cor}},pageSetup:{orientation:'landscape',fitToPage:true,fitToWidth:1,fitToHeight:0}}); ws.columns=larg.map(width=>({width})); return ws; };
+
+  /* ---------- dados ---------- */
+  const A=lista.reduce((s,i)=>s+v0(i.aplicado),0), U=lista.reduce((s,i)=>s+v0(i.atual),0), PV=lista.reduce((s,i)=>s+v0(i.proventos),0);
+  const itens=lista.map((i,k)=>({i,row:k+2,nome:i.nome||'',tipo:i.tipo||'Outros',apl:v0(i.aplicado),atu:v0(i.atual),prov:v0(i.proventos)}));
+  itens.forEach(o=>{ o.rend=o.atu-o.apl; o.pct=o.apl?o.rend/o.apl:0; o.peso=U?o.atu/U:0;
+    const ini=o.i.inicio||(o.i.historico?Object.values(o.i.historico).map(h=>h.data).filter(Boolean).sort()[0]:'');
+    const di=dt(ini); o.dias=di?Math.max(0,Math.round((hojeD-di)/864e5)):0;
+    o.mes=(o.dias>0&&o.apl>0&&o.atu>0)?Math.pow(o.atu/o.apl,30/o.dias)-1:null;
+    o.stale=o.i.atualizadoEm?Math.round((hojeD-dt(o.i.atualizadoEm))/864e5):null; });
+  const pt={}; itens.forEach(o=>{ const t=pt[o.tipo]=pt[o.tipo]||{tipo:o.tipo,atu:0,apl:0,prov:0}; t.atu+=o.atu; t.apl+=o.apl; t.prov+=o.prov; });
+  const tipos=Object.values(pt).sort((a,b)=>b.atu-a.atu);
+  const sn=Object.entries(dados.snapshots||{}).sort((x,y)=>x[0].localeCompare(y[0])).map(([k,v])=>({k,ap:v0(v.aplicado),at:v0(v.atual)}));
+  sn.forEach((s,j)=>{ s.rend=s.at-s.ap; s.d=j?s.rend-sn[j-1].rend:null; const a=sn.slice(Math.max(0,j-6),j+1); s.mm=a.reduce((x,y)=>x+y.at,0)/a.length; });
+  const imgSn=()=>IMG({type:'line',data:{labels:sn.map(s=>fd(s.k)),datasets:[
+      {label:'Valor total',data:sn.map(s=>s.at),borderColor:'#2F6FB5',backgroundColor:'rgba(47,111,181,.12)',fill:true,tension:.25,pointRadius:2,borderWidth:2.5},
+      {label:'Aplicado',data:sn.map(s=>s.ap),borderColor:'#8A94A6',borderDash:[6,4],pointRadius:0,borderWidth:2},
+      {label:'Média móvel 7 dias',data:sn.map(s=>s.mm),borderColor:'#C98A1B',pointRadius:0,borderWidth:2,tension:.25}]},
+    options:{plugins:{title:tit('Evolução do patrimônio'),legend:{position:'bottom'}},scales:{y:eR,x:{grid:{display:false},ticks:{autoSkip:true,maxRotation:0,font:{size:10}}}}}},1300,320);
+  const gerado=hojeD.toLocaleDateString('pt-BR',{timeZone:'UTC'});
+  const ordPct=itens.filter(o=>o.apl>0).sort((a,b)=>b.pct-a.pct);
+
+  /* =============== RESUMO =============== */
+  {
+    const ws=res; ws.columns=[2,...Array(12).fill(15)].map(width=>({width}));
+    ws.mergeCells('B1:M1'); const t=ws.getCell('B1'); t.value='Resumo da carteira'; t.font={bold:true,size:20,color:{argb:NAVY}}; t.alignment={vertical:'middle'}; ws.getRow(1).height=38;
+    ws.mergeCells('B2:M2'); const sb=ws.getCell('B2'); sb.value=`Gerado em ${gerado} · valores conforme a última atualização de cada ativo no app`; sb.font={italic:true,size:10,color:{argb:CINZA}};
+    const T=n+4;
+    const cards=[
+      ['APLICADO',{formula:`Ativos!F${T}`,result:A},R,'total investido'],
+      ['VALOR HOJE',{formula:`Ativos!G${T}`,result:U},R,`${n} ativo${n>1?'s':''}`],
+      ['RENDIMENTO R$',{formula:`Ativos!H${T}`,result:U-A},R,'valor hoje − aplicado'],
+      ['RENDIMENTO %',{formula:`Ativos!I${T}`,result:A?(U-A)/A:0},P,'sobre o aplicado'],
+      ['PROVENTOS',{formula:`Ativos!J${T}`,result:PV},R,'recebidos no total'],
+      ['RENDIMENTO C/ PROVENTOS',{formula:`Ativos!L${T}`,result:A?(U-A+PV)/A:0},P,'inclui proventos']];
+    cards.forEach(([lab,val,fmt,sub],k)=>{
+      const c1=2+k*2, c2=c1+1;
+      [4,5,6].forEach(r=>ws.mergeCells(r,c1,r,c2));
+      for(let r=4;r<=6;r++) for(let c=c1;c<=c2;c++){ const x=ws.getCell(r,c); x.fill=fill(CLARO);
+        x.border={left:c===c1?{style:'medium',color:{argb:'FFFFFFFF'}}:undefined,right:c===c2?{style:'medium',color:{argb:'FFFFFFFF'}}:undefined,top:r===4?{style:'medium',color:{argb:k===2||k===3||k===5?(U-A>=0?VERDE:VERM):NAVY}}:undefined}; }
+      const a=ws.getCell(4,c1); a.value=lab; a.font={bold:true,size:9,color:{argb:CINZA}}; a.alignment={horizontal:'center',vertical:'middle',wrapText:true};
+      const b=ws.getCell(5,c1); b.value=val; b.numFmt=fmt; b.font={bold:true,size:18,color:{argb:(k===2||k===3||k===5)?(U-A+(k===5?PV:0)>=0?VERDE:VERM):NAVY}}; b.alignment={horizontal:'center',vertical:'middle'};
+      const s=ws.getCell(6,c1); s.value=sub; s.font={size:9,color:{argb:CINZA}}; s.alignment={horizontal:'center',vertical:'middle'};
+    });
+    ws.getRow(4).height=24; ws.getRow(5).height=40; ws.getRow(6).height=20;
+
+    // alertas
+    const al=[];
+    const maior=itens.slice().sort((a,b)=>b.peso-a.peso)[0];
+    if(maior) al.push(maior.peso>0.3?['w',`Concentração: ${maior.nome} é ${fU(maior.peso)} da carteira (acima de 30%). Veja a aba Alocação.`]:['i',`Maior posição: ${maior.nome} (${fU(maior.peso)} da carteira).`]);
+    if(tipos[0]&&U&&tipos[0].atu/U>0.6) al.push(['w',`Tipo dominante: ${tipos[0].tipo} representa ${fU(tipos[0].atu/U)} da carteira. Veja a aba Rebalancear.`]);
+    if(ordPct.length>1){ const b=ordPct[0], p=ordPct[ordPct.length-1];
+      al.push(['g',`▲ Melhor rendimento: ${b.nome} (${fS(b.pct)} · ${fR(b.rend)}).`]); al.push([p.pct<0?'w':'i',`▼ Pior rendimento: ${p.nome} (${fS(p.pct)} · ${fR(p.rend)}).`]); }
+    const neg=itens.filter(o=>o.apl>0&&o.rend<0); if(neg.length) al.push(['w',`${neg.length} ativo${neg.length>1?'s':''} no negativo: ${neg.map(o=>o.nome).slice(0,5).join(', ')}${neg.length>5?'…':''}.`]);
+    const velhos=itens.filter(o=>o.stale!==null&&o.stale>7); if(velhos.length) al.push(['w',`${velhos.length} ativo${velhos.length>1?'s':''} sem atualização há mais de 7 dias: ${velhos.map(o=>o.nome).slice(0,4).join(', ')}${velhos.length>4?'…':''}. Os números podem estar defasados.`]);
+    if(sn.length>2){ const ult=sn[sn.length-1], lim=dt(ult.k)-30*864e5; const ref=sn.find(s=>dt(s.k)>=lim)||sn[0];
+      if(ref!==ult){ const d=ult.rend-ref.rend; al.push([d>=0?'g':'w',`Últimos ${Math.round((dt(ult.k)-dt(ref.k))/864e5)} dias: rendimento ${d>=0?'subiu':'caiu'} ${fR(Math.abs(d))} (sem contar novos aportes).`]); } }
+    if(PV>0&&A) al.push(['i',`Proventos acumulados: ${fR(PV)} (${fU(PV/A)} sobre o aplicado).`]);
+    if(!al.length) al.push(['i','Sem alertas no momento.']);
+    ws.mergeCells('B8:M8'); const h=ws.getCell('B8'); h.value='PONTOS DE ATENÇÃO'; h.font={bold:true,color:{argb:'FFFFFFFF'},size:11}; h.fill=fill(NAVY); h.alignment={vertical:'middle',indent:1}; ws.getRow(8).height=24;
+    al.forEach(([tp,txt],k)=>{ const r=9+k; ws.mergeCells(r,2,r,13); const c=ws.getCell(r,2); c.value=txt;
+      c.font={size:11,bold:tp==='w',color:{argb:tp==='w'?AMBAR:(tp==='g'?VERDE:NAVY)}}; c.alignment={vertical:'middle',indent:1,wrapText:true}; c.border={bottom:{style:'thin',color:{argb:'FFDDE3EC'}}}; ws.getRow(r).height=24; });
+    let r0=9+al.length+1;
+    ws.mergeCells(r0,2,r0,13); const g=ws.getCell(r0,2); g.value='Gráficos são imagens do momento da exportação; as tabelas das outras abas têm fórmulas.'; g.font={italic:true,size:9,color:{argb:CINZA}};
+    r0++;
+    colocar(ws,rosca(tipos.map(x=>x.tipo),tipos.map(x=>x.atu),640,330,'Alocação por tipo'),1,r0,640,330);
+    colocar(ws,barrasH(ordPct.map(o=>o.nome.length>26?o.nome.slice(0,25)+'…':o.nome),ordPct.map(o=>o.pct),640,330,'Rendimento % por ativo',true),7,r0,640,330);
+    if(sn.length>1) colocar(ws,imgSn(),1,r0+17,1300,320);
+  }
+
+  /* =============== ALOCAÇÃO =============== */
+  {
+    const ws=novaAba('Alocação','FF2F6FB5',[34,18,14,16,16,14]);
+    titulo(ws,'Alocação da carteira','Quanto da carteira está em cada tipo e em cada ativo. Valores puxados da aba Ativos.',6);
+    const nt=tipos.length, ult=n+1;
+    const l1=tipos.map((x,k)=>{ const r=5+k; return [x.tipo,
+      {formula:`SUMIF(${rg('B',2,ult)},A${r},${rg('G',2,ult)})`,result:x.atu},
+      {formula:`IF(B$${5+nt}=0,0,B${r}/B$${5+nt})`,result:U?x.atu/U:0},
+      {formula:`SUMIF(${rg('B',2,ult)},A${r},${rg('F',2,ult)})`,result:x.apl},
+      {formula:`B${r}-D${r}`,result:x.atu-x.apl},
+      {formula:`IF(D${r}=0,0,E${r}/D${r})`,result:x.apl?(x.atu-x.apl)/x.apl:0}]; });
+    ws.getCell(3,1).value='Por tipo de ativo'; ws.getCell(3,1).font={bold:true,size:12,color:{argb:NAVY}};
+    const f1=[null,R,P,R,R,P];
+    tab(ws,4,['Tipo','Valor hoje','% da carteira','Aplicado','Rendimento R$','Rendimento %'],l1,f1);
+    totalRow(ws,5+nt,['TOTAL',{formula:`SUM(B5:B${4+nt})`,result:U},{formula:`SUM(C5:C${4+nt})`,result:U?1:0},{formula:`SUM(D5:D${4+nt})`,result:A},{formula:`B${5+nt}-D${5+nt}`,result:U-A},{formula:`IF(D${5+nt}=0,0,E${5+nt}/D${5+nt})`,result:A?(U-A)/A:0}],f1);
+    barra(ws,`C5:C${4+nt}`,'FF8FB4E3'); corRegras(ws,`E5:F${4+nt}`);
+
+    const r2=nt+9;
+    ws.getCell(r2-1,1).value='Por ativo'; ws.getCell(r2-1,1).font={bold:true,size:12,color:{argb:NAVY}};
+    const ordA=itens.slice().sort((a,b)=>b.atu-a.atu);
+    const l2=ordA.map((o,k)=>{ const r=r2+1+k; return [{formula:`Ativos!A${o.row}`,result:o.nome},{formula:`Ativos!B${o.row}`,result:o.tipo},
+      {formula:`Ativos!G${o.row}`,result:o.atu},{formula:`IF(Ativos!$G$${n+4}=0,0,C${r}/Ativos!$G$${n+4})`,result:o.peso},
+      {formula:`IF(D${r}>0.3,"Alta",IF(D${r}>0.15,"Média","Ok"))`,result:o.peso>0.3?'Alta':(o.peso>0.15?'Média':'Ok')}]; });
+    const f2=[null,null,R,P,null];
+    tab(ws,r2,['Ativo','Tipo','Valor hoje','% da carteira','Concentração'],l2,f2,{centros:[5],esq:[1,2]});
+    const fim=r2+ordA.length;
+    barra(ws,`D${r2+1}:D${fim}`,'FF8FB4E3');
+    ws.addConditionalFormatting({ref:`E${r2+1}:E${fim}`,rules:[
+      {type:'expression',formulae:[`E${r2+1}="Alta"`],style:{font:{bold:true,color:{argb:'FF9B2C1B'}},fill:{type:'pattern',pattern:'solid',bgColor:{argb:'FFFBE1DB'}}}},
+      {type:'expression',formulae:[`E${r2+1}="Média"`],style:{font:{color:{argb:AMBAR}},fill:{type:'pattern',pattern:'solid',bgColor:{argb:'FFFFF1D6'}}}}]});
+    nota(ws,fim+2,'Concentração: "Alta" = mais de 30% da carteira em um único ativo; "Média" = entre 15% e 30%. São limites de referência, ajuste ao seu perfil.',6);
+    colocar(ws,rosca(tipos.map(x=>x.tipo),tipos.map(x=>x.atu),560,330,'Alocação por tipo'),7,3,560,330);
+    const top=ordA.slice(0,12);
+    const hT=Math.max(260,top.length*30+70), nmT=o=>o.nome.length>26?o.nome.slice(0,25)+'…':o.nome;
+    colocar(ws,barrasH(top.map(nmT),top.map(o=>o.peso),560,hT,'% da carteira por ativo (top 12)',true),7,21,560,hT);
+  }
+
+  /* =============== RANKING =============== */
+  {
+    const ws=novaAba('Ranking','FF0D7A62',[6,34,14,16,16,16,14,14,16]);
+    titulo(ws,'Ranking de ativos','Do melhor ao pior rendimento %. "Contribuição" mostra quanto cada ativo responde pelo rendimento total da carteira.',9);
+    const L=ordPct, m=L.length, totRend=U-A;
+    const lin=L.map((o,k)=>{ const r=5+k; return [k+1,o.nome,o.tipo,o.apl,o.atu,{formula:`E${r}-D${r}`,result:o.rend},{formula:`IF(D${r}=0,0,F${r}/D${r})`,result:o.pct},o.mes===null?null:o.mes,
+      {formula:`IF(SUM(F$5:F$${4+m})=0,0,F${r}/SUM(F$5:F$${4+m}))`,result:totRend?o.rend/L.reduce((s,x)=>s+x.rend,0):0}]; });
+    const fm=['0',null,null,R,R,R,P,P,P];
+    tab(ws,4,['#','Ativo','Tipo','Aplicado','Valor hoje','Rendimento R$','Rendimento %','% ao mês (aprox.)','Contribuição ao rendimento'],lin,fm,{centros:[1],esq:[2,3]});
+    corRegras(ws,`F5:H${4+m}`); barra(ws,`I5:I${4+m}`,'FF8FB4E3');
+    totalRow(ws,5+m,['','TOTAL','',{formula:`SUM(D5:D${4+m})`,result:L.reduce((s,x)=>s+x.apl,0)},{formula:`SUM(E5:E${4+m})`,result:L.reduce((s,x)=>s+x.atu,0)},{formula:`E${5+m}-D${5+m}`,result:L.reduce((s,x)=>s+x.rend,0)},{formula:`IF(D${5+m}=0,0,F${5+m}/D${5+m})`,result:(()=>{const a=L.reduce((s,x)=>s+x.apl,0);return a?L.reduce((s,x)=>s+x.rend,0)/a:0;})()},null,null],fm);
+    nota(ws,m+7,'Ativos sem valor aplicado ficam de fora do ranking. "% ao mês" é uma estimativa composta desde o início do ativo.',9);
+    const nm=o=>o.nome.length>26?o.nome.slice(0,25)+'…':o.nome, h=Math.max(300,m*28+80);
+    colocar(ws,barrasH(L.map(nm),L.map(o=>o.pct),620,h,'Rendimento % por ativo',true),10,3,620,h);
+    const L2=L.slice().sort((a,b)=>b.rend-a.rend);
+    colocar(ws,barrasH(L2.map(nm),L2.map(o=>o.rend),620,h,'Rendimento em R$ por ativo',false),10,3+Math.ceil(h/20)+1,620,h);
+  }
+
+  /* =============== TENDÊNCIA =============== */
+  if(sn.length>1){
+    const ws=novaAba('Tendência','FF2F6FB5',[14,16,16,16,14,18,18]);
+    titulo(ws,'Tendência e evolução','Baseada nos registros diários do app (aba Evolução). Variação = mudança no rendimento (não conta novos aportes).',7);
+    const meses={}; sn.forEach(s=>{ meses[s.k.slice(0,7)]=s; });
+    const first={}; sn.forEach(s=>{ if(!first[s.k.slice(0,7)]) first[s.k.slice(0,7)]=s; });
+    const chaves=Object.keys(meses).sort();
+    const lin=chaves.map((mk,j)=>{ const f=meses[mk], r=5+j, ant=j?meses[chaves[j-1]]:first[mk]; const dd=f.rend-ant.rend;
+      return [dt(mk+'-01'),f.ap,f.at,{formula:`C${r}-B${r}`,result:f.rend},{formula:`IF(B${r}=0,0,D${r}/B${r})`,result:f.ap?f.rend/f.ap:0},
+        j?{formula:`D${r}-D${r-1}`,result:dd}:{formula:`D${r}-${ant.rend.toFixed(2)}`,result:dd},
+        j?{formula:`B${r}-B${r-1}`,result:f.ap-ant.ap}:{formula:`B${r}-${ant.ap.toFixed(2)}`,result:f.ap-ant.ap}]; });
+    const fm=['mmm/yyyy',R,R,R,P,R,R];
+    tab(ws,4,['Mês','Aplicado (fim)','Valor total (fim)','Rendimento R$','Rendimento %','Variação do rendimento no mês','Aportes líquidos no mês'],lin,fm,{centros:[1],esq:[]});
+    corRegras(ws,`D5:F${4+lin.length}`);
+    const ds=sn.filter(s=>s.d!==null), pos=ds.filter(s=>s.d>0).length;
+    const best=ds.reduce((a,b)=>b.d>a.d?b:a), worst=ds.reduce((a,b)=>b.d<a.d?b:a), med=ds.reduce((a,b)=>a+b.d,0)/ds.length;
+    const r2=lin.length+8;
+    ws.getCell(r2-1,1).value='Estatísticas diárias'; ws.getCell(r2-1,1).font={bold:true,size:12,color:{argb:NAVY}};
+    const est=[['Dias analisados',ds.length,'0'],['Dias com alta',`${pos} (${fU(pos/ds.length)})`,null],['Variação média por dia',med,R],['Melhor dia',`${fR(best.d)} em ${dt(best.k).toLocaleDateString('pt-BR',{timeZone:'UTC'})}`,null],['Pior dia',`${fR(worst.d)} em ${dt(worst.k).toLocaleDateString('pt-BR',{timeZone:'UTC'})}`,null]];
+    est.forEach((e,k)=>{ const r=r2+k; ws.mergeCells(r,1,r,2); const a=ws.getCell(r,1); a.value=e[0]; a.font={bold:true,color:{argb:NAVY}}; a.border=borda;
+      ws.mergeCells(r,3,r,5); const b=ws.getCell(r,3); b.value=e[1]; if(e[2]) b.numFmt=e[2]; b.alignment={horizontal:'left'}; b.border=borda; ws.getRow(r).height=20; });
+    corRegras(ws,`C${r2+2}`);
+    const ult=Math.max(0,ds.length-60), dd=ds.slice(ult);
+    colocar(ws,imgSn(),8,3,1000,250);
+    colocar(ws,barrasV(dd.map(s=>fd(s.k)),dd.map(s=>s.d),1000,300,'Variação diária do rendimento (últimos 60 dias)'),8,15,1000,300);
+    colocar(ws,barrasV(lin.map((_,j)=>chaves[j].slice(5)+'/'+chaves[j].slice(2,4)),lin.map(l=>l[5].result),1000,300,'Variação do rendimento por mês'),8,31,1000,300);
+  }
+
+  /* =============== REBALANCEAR =============== */
+  {
+    const ws=novaAba('Rebalancear','FFC98A1B',[30,18,14,14,18,18,14,22,18]);
+    titulo(ws,'Rebalanceamento da carteira','Defina o % alvo por tipo nas células amarelas. A tabela mostra quanto aportar (ou deixar de aportar) para chegar lá.',9);
+    const nt=tipos.length, r0=8, rt=r0+nt, ult=n+1;
+    const inp=(addr,v,fmt)=>{ const c=ws.getCell(addr); c.value=v; c.numFmt=fmt; c.fill=fill(AMARELO); c.font={bold:true,color:{argb:BLUE},size:12}; c.border={top:{style:'thin'},left:{style:'thin'},bottom:{style:'thin'},right:{style:'thin'}}; c.alignment={horizontal:'right',vertical:'middle'}; };
+    const rot=(addr,t)=>{ const c=ws.getCell(addr); c.value=t; c.font={bold:true,color:{argb:NAVY}}; c.alignment={vertical:'middle'}; };
+    rot('A4','Novo aporte disponível (R$)'); inp('B4',1000,R);
+    rot('A5','Tolerância (± pontos %)'); inp('B5',0.02,'0.0%');
+    rot('A6','Soma dos alvos'); const s6=ws.getCell('B6'); s6.value={formula:`SUM(D${r0+1}:D${rt})`,result:1}; s6.numFmt='0.0%'; s6.font={bold:true}; s6.alignment={horizontal:'right'};
+    const c6=ws.getCell('C6'); c6.value={formula:`IF(ABS(B6-1)<0.0005,"OK","Ajuste: os alvos devem somar 100%")`,result:'OK'}; c6.font={bold:true,color:{argb:VERDE}};
+    ws.addConditionalFormatting({ref:'C6',rules:[{type:'expression',formulae:['C6<>"OK"'],style:{font:{bold:true,color:{argb:'FF9B2C1B'}}}}]});
+    // alvos padrão = alocação atual arredondada
+    let alvo=tipos.map(x=>U?Math.round(x.atu/U*100):0); const dif=100-alvo.reduce((a,b)=>a+b,0); if(alvo.length) alvo[0]+=dif;
+    const dfs=tipos.map((x,k)=>alvo[k]/100*(U+1000)-x.atu), sdp=dfs.filter(d=>d>0).reduce((a,b)=>a+b,0);
+    const lin=tipos.map((x,k)=>{ const r=r0+1+k; return [x.tipo,
+      {formula:`SUMIF(${rg('B',2,ult)},A${r},${rg('G',2,ult)})`,result:x.atu},
+      {formula:`IF(B$${rt+1}=0,0,B${r}/B$${rt+1})`,result:U?x.atu/U:0},
+      alvo[k]/100,
+      {formula:`D${r}*(B$${rt+1}+$B$4)`,result:alvo[k]/100*(U+1000)},
+      {formula:`E${r}-B${r}`,result:alvo[k]/100*(U+1000)-x.atu},
+      {formula:`C${r}-D${r}`,result:(U?x.atu/U:0)-alvo[k]/100},
+      {formula:`IF(ABS(G${r})<=$B$5,"Manter",IF(G${r}<0,"Aportar","Reduzir / não aportar"))`,result:Math.abs((U?x.atu/U:0)-alvo[k]/100)<=0.02?'Manter':((U?x.atu/U:0)<alvo[k]/100?'Aportar':'Reduzir / não aportar')},
+      {formula:`IFERROR(IF(F${r}>0,$B$4*F${r}/SUMIF(F$${r0+1}:F$${rt},">0"),0),0)`,result:(dfs[k]>0&&sdp)?1000*dfs[k]/sdp:0}]; });
+    const fm=[null,R,P,'0.0%',R,R,'0.0%',null,R];
+    tab(ws,r0,['Tipo','Valor hoje','% atual','% alvo','Alvo em R$ (carteira + aporte)','Diferença R$ (+ comprar / − reduzir)','Desvio (pp)','Ação','Aporte sugerido'],lin,fm,{centros:[8],esq:[1]});
+    for(let k=0;k<nt;k++){ const c=ws.getCell(r0+1+k,4); c.fill=fill(AMARELO); c.font={bold:true,color:{argb:BLUE}}; }
+    totalRow(ws,rt+1,['TOTAL',{formula:`SUM(B${r0+1}:B${rt})`,result:U},{formula:`SUM(C${r0+1}:C${rt})`,result:U?1:0},{formula:`SUM(D${r0+1}:D${rt})`,result:1},{formula:`SUM(E${r0+1}:E${rt})`,result:U+1000},{formula:`SUM(F${r0+1}:F${rt})`,result:1000},null,null,{formula:`SUM(I${r0+1}:I${rt})`,result:sdp?1000:0}],fm);
+    ws.getRow(r0).height=48;
+    corRegras(ws,`F${r0+1}:G${rt}`);
+    ws.addConditionalFormatting({ref:`H${r0+1}:H${rt}`,rules:[
+      {type:'expression',formulae:[`H${r0+1}="Aportar"`],style:{font:{bold:true,color:{argb:VERDE}}}},
+      {type:'expression',formulae:[`LEFT(H${r0+1},7)="Reduzir"`],style:{font:{bold:true,color:{argb:VERM}}}}]});
+    nota(ws,rt+3,'Como usar: (1) edite o % alvo de cada tipo (as células amarelas já vêm preenchidas com a alocação atual — troque pelo seu plano); (2) informe o novo aporte; (3) a coluna "Aporte sugerido" divide o aporte entre os tipos que estão abaixo do alvo, proporcional à falta de cada um. "Reduzir / não aportar" indica tipos acima do alvo: não precisa vender, basta não aportar neles. Não é recomendação de investimento.',9);
+    ws.getRow(rt+3).height=64;
+  }
+
+  /* =============== ANÁLISE PROVENTOS =============== */
+  {
+    const ws=novaAba('Análise Proventos','FFC98A1B',[34,14,16,16,14,18,16,16]);
+    titulo(ws,'Proventos e yield','Quanto cada ativo pagou em relação ao valor aplicado.',8);
+    const hist=[]; itens.forEach(o=>Object.values(o.i.historicoProventos||{}).forEach(h=>{ if(h.data) hist.push({nome:o.nome,d:h.data,v:v0(h.valor)}); }));
+    const lim=new Date(hojeD.getTime()-365*864e5), lim12=lim.toISOString().slice(0,10);
+    const L=itens.filter(o=>o.apl>0).sort((a,b)=>b.prov-a.prov);
+    const m12=o=>hist.filter(h=>h.nome===o.nome&&h.d>=lim12).reduce((s,h)=>s+h.v,0);
+    const lin=L.map((o,k)=>{ const r=5+k, p12=m12(o); return [{formula:`Ativos!A${o.row}`,result:o.nome},o.tipo,{formula:`Ativos!F${o.row}`,result:o.apl},{formula:`Ativos!J${o.row}`,result:o.prov},
+      {formula:`IF(C${r}=0,0,D${r}/C${r})`,result:o.apl?o.prov/o.apl:0},p12,{formula:`IF(C${r}=0,0,F${r}/C${r})`,result:o.apl?p12/o.apl:0},{formula:`F${r}/12`,result:p12/12}]; });
+    const fm=[null,null,R,R,P,R,P,R], m=L.length;
+    tab(ws,4,['Ativo','Tipo','Aplicado','Proventos (total)','Yield acumulado','Últimos 12 meses','Yield 12 meses','Média mensal (12m)'],lin,fm,{esq:[1,2]});
+    const tp=L.reduce((s,o)=>s+o.prov,0), t12=L.reduce((s,o)=>s+m12(o),0), ta=L.reduce((s,o)=>s+o.apl,0);
+    totalRow(ws,5+m,['TOTAL','',{formula:`SUM(C5:C${4+m})`,result:ta},{formula:`SUM(D5:D${4+m})`,result:tp},{formula:`IF(C${5+m}=0,0,D${5+m}/C${5+m})`,result:ta?tp/ta:0},{formula:`SUM(F5:F${4+m})`,result:t12},{formula:`IF(C${5+m}=0,0,F${5+m}/C${5+m})`,result:ta?t12/ta:0},{formula:`F${5+m}/12`,result:t12/12}],fm);
+    barra(ws,`E5:E${4+m}`,'FFF0CE80');
+    const por={}; hist.forEach(h=>{ const k=h.d.slice(0,7); por[k]=(por[k]||0)+h.v; });
+    const ms=Object.keys(por).sort(); let r2=m+9;
+    ws.getCell(r2-1,1).value='Proventos por mês'; ws.getCell(r2-1,1).font={bold:true,size:12,color:{argb:NAVY}};
+    if(ms.length){
+      const l2=ms.map((k,j)=>{ const r=r2+1+j; return [dt(k+'-01'),por[k],{formula:j?`C${r-1}+B${r}`:`B${r}`,result:ms.slice(0,j+1).reduce((s,x)=>s+por[x],0)}]; });
+      tab(ws,r2,['Mês','Recebido','Acumulado'],l2,['mmm/yyyy',R,R],{centros:[1],esq:[]});
+      colocar(ws,barrasV(ms.map(k=>k.slice(5)+'/'+k.slice(2,4)),ms.map(k=>por[k]),620,300,'Proventos recebidos por mês','#C98A1B'),9,3,620,300);
+    }else nota(ws,r2,'Nenhum provento com data registrado no histórico. Registre pelo app (ativo → Proventos) para ver a evolução mensal.',8);
+    const t=L.filter(o=>o.prov>0).slice(0,12);
+    if(t.length) colocar(ws,barrasH(t.map(o=>o.nome.length>26?o.nome.slice(0,25)+'…':o.nome),t.map(o=>o.apl?o.prov/o.apl:0),620,Math.max(260,t.length*30+70),'Yield acumulado por ativo',true),9,20,620,Math.max(260,t.length*30+70));
+    nota(ws,Math.max(r2+ms.length+3,r2+4),'Yield = proventos ÷ valor aplicado. O total acumulado vem do campo "Proventos" de cada ativo; a visão mensal e dos últimos 12 meses usa as datas do histórico de proventos.',8);
+  }
+
+  /* =============== CRIPTO =============== */
+  const crip=itens.filter(o=>o.tipo==='Cripto');
+  if(crip.length){
+    const ws=novaAba('Cripto','FFC98A1B',[30,16,16,16,18,16,16,14,14]);
+    titulo(ws,'Criptoativos: preço médio e resultado','Usa a cotação e a quantidade registradas em cada aporte. Digite a cotação atual nas células amarelas.',9);
+    const compras=[]; crip.forEach(o=>Object.values(o.i.historico||{}).forEach(h=>{ if(v0(h.qtd)>0) compras.push({nome:o.nome,d:h.data,v:v0(h.valor),c:v0(h.cotacao)||(v0(h.valor)/v0(h.qtd)),q:v0(h.qtd)}); }));
+    compras.sort((a,b)=>a.d.localeCompare(b.d)||a.nome.localeCompare(b.nome));
+    const nc=crip.length, rs=5, rc=rs+nc+4, c1=rc+1, cN=rc+compras.length;
+    const cr=(col)=>`$${col}$${c1}:$${col}$${Math.max(cN,c1)}`;
+    const sm=crip.map(o=>{ const cs=compras.filter(c=>c.nome===o.nome); return {o,q:cs.reduce((s,c)=>s+c.q,0),inv:cs.reduce((s,c)=>s+c.v,0)}; });
+    const lin=sm.map((x,k)=>{ const r=rs+1+k, cob=x.o.apl?x.inv/x.o.apl:0, imp=(cob>=0.95&&x.q>0)?x.o.atu/x.q:null;
+      return [{formula:`Ativos!A${x.o.row}`,result:x.o.nome},
+        {formula:`SUMIF(${cr('A')},A${r},${cr('E')})`,result:x.q},
+        {formula:`SUMIF(${cr('A')},A${r},${cr('C')})`,result:x.inv},
+        {formula:`IF(B${r}=0,"",C${r}/B${r})`,result:x.q?x.inv/x.q:''},
+        imp,
+        {formula:`IF(OR(B${r}=0,E${r}=""),"",B${r}*E${r})`,result:imp?x.q*imp:''},
+        {formula:`IF(F${r}="","",F${r}-C${r})`,result:imp?x.q*imp-x.inv:''},
+        {formula:`IF(OR(F${r}="",C${r}=0),"",G${r}/C${r})`,result:(imp&&x.inv)?(x.q*imp-x.inv)/x.inv:''},
+        {formula:`IF(Ativos!F${x.o.row}=0,0,C${r}/Ativos!F${x.o.row})`,result:cob}]; });
+    const fm=[null,'0.00000000',R,R,R,R,R,P,'0%'];
+    tab(ws,rs,['Ativo','Quantidade total','Investido (aportes com cotação)','Preço médio','Cotação atual (edite)','Valor de mercado','Resultado R$','Resultado %','Cobertura do aplicado'],lin,fm,{esq:[1]});
+    ws.getRow(rs).height=48;
+    for(let k=0;k<nc;k++){ const c=ws.getCell(rs+1+k,5); c.fill=fill(AMARELO); c.font={bold:true,color:{argb:BLUE}}; }
+    corRegras(ws,`G${rs+1}:H${rs+nc}`);
+    nota(ws,rs+nc+1,'Cotação atual inicial = valor hoje do app ÷ quantidade (só quando os aportes com cotação cobrem ≥95% do aplicado). Troque pela cotação do dia. "Cobertura" abaixo de 100% = há aportes antigos sem cotação/quantidade; edite-os no app (ativo → histórico de aportes).',9);
+    ws.getRow(rs+nc+1).height=44;
+    ws.getCell(rc-1,1).value='Compras registradas'; ws.getCell(rc-1,1).font={bold:true,size:12,color:{argb:NAVY}};
+    if(compras.length){
+      const l2=compras.map((c,k)=>{ const r=c1+k; return [c.nome,dt(c.d),c.v,c.c,c.q,
+        {formula:`IFERROR(INDEX($E$${rs+1}:$E$${rs+nc},MATCH(A${r},$A$${rs+1}:$A$${rs+nc},0)),"")`,result:''},
+        {formula:`IF(OR(F${r}="",D${r}=0),"",F${r}/D${r}-1)`,result:''},
+        {formula:`IF(F${r}="","",E${r}*F${r}-C${r})`,result:''}]; });
+      tab(ws,rc,['Ativo','Data','Valor (R$)','Cotação de compra','Quantidade','Cotação atual','Variação vs. compra','Resultado R$'],l2,[null,DT,R,R,'0.00000000',R,P,R],{centros:[2],esq:[1]});
+      corRegras(ws,`G${c1}:H${cN}`);
+      let rowImg=rc;
+      sm.forEach(x=>{ const cs=compras.filter(c=>c.nome===x.o.nome); if(cs.length<2) return;
+        const pm=x.inv/x.q;
+        const id=IMG({type:'line',data:{labels:cs.map(c=>fd(c.d)),datasets:[{label:'Cotação de compra',data:cs.map(c=>c.c),borderColor:'#2F6FB5',backgroundColor:'#2F6FB5',pointRadius:4,borderWidth:2.5,tension:.2},
+          {label:'Preço médio',data:cs.map(()=>pm),borderColor:'#C98A1B',borderDash:[6,4],pointRadius:0,borderWidth:2}]},
+          options:{plugins:{title:tit(`${x.o.nome}: cotação de compra vs. preço médio`),legend:{position:'bottom'}},scales:{y:eR,x:{grid:{display:false}}}}},700,300);
+        colocar(ws,id,10,rowImg-1,700,300); rowImg+=16; });
+    }else{
+      nota(ws,rc,'Nenhum aporte com quantidade registrada ainda. No app: ativo Cripto → "Registrar novo aporte" → informe cotação do dia e quantidade (ou edite aportes antigos no histórico).',9);
+      ws.getRow(rc).height=36;
+    }
+  }
+}
+
 async function exportarExcel(){
   const lista=Object.values(dados.investimentos||{}).slice().sort((a,b)=>(+b.atual||0)-(+a.atual||0));
   if(!lista.length){ toast('Nenhum ativo para exportar'); return; }
@@ -1331,7 +1653,8 @@ async function exportarExcel(){
     {type:'cellIs',operator:'lessThan',formulae:[0],style:{font:{color:{argb:VERM}}}},
     {type:'cellIs',operator:'greaterThan',formulae:[0],style:{font:{color:{argb:VERDE}}}}]});
 
-  const wb=new ExcelJS.Workbook(); wb.creator='Controle Financeiro'; wb.created=new Date();
+  const wb=new ExcelJS.Workbook(); wb.creator='Controle Financeiro'; wb.created=new Date(); wb.calcProperties={fullCalcOnLoad:true};
+  const wsRes=wb.addWorksheet('Resumo',{views:[{showGridLines:false}],properties:{tabColor:{argb:'FF0D7A62'}},pageSetup:{orientation:'landscape',fitToPage:true,fitToWidth:1,fitToHeight:0}});
 
   /* ---------- aba Ativos ---------- */
   const ws=wb.addWorksheet('Ativos',{views:[{state:'frozen',xSplit:1,ySplit:1,showGridLines:false}],
@@ -1351,7 +1674,7 @@ async function exportarExcel(){
     const rend=atu-apl, rt=rend+prov;
     const am=(di&&dias>0&&apl>0&&atu>0)?Math.pow(atu/apl,30/dias)-1:null;
     const row=ws.addRow([
-      i.nome||'', i.tipo||'', i.corretora||'', di, dias===null?null:{formula:`TODAY()-D${r}`,result:dias},
+      i.nome||'', i.tipo||'Outros', i.corretora||'', di, dias===null?null:{formula:`TODAY()-D${r}`,result:dias},
       apl, atu, {formula:`G${r}-F${r}`,result:rend}, {formula:`IF(F${r}=0,0,H${r}/F${r})`,result:apl?rend/apl:0},
       prov, {formula:`H${r}+J${r}`,result:rt}, {formula:`IF(F${r}=0,0,K${r}/F${r})`,result:apl?rt/apl:0},
       am===null?null:{formula:`IFERROR((G${r}/F${r})^(30/E${r})-1,"")`,result:am},
@@ -1381,13 +1704,17 @@ async function exportarExcel(){
       c.alignment={vertical:'middle',horizontal:col===1?'left':'right'}; if(fmts[col-1]&&col!==4&&col!==5&&col!==14) c.numFmt=fmts[col-1]; }
     return row;
   };
-  const rs=soma(n+2,'SUBTOTAL (soma só o que está filtrado)',(c,ref)=>`SUBTOTAL(109,${ref})`,AZUL,NAVY);
+  ws.addRow([]).height=8;   /* linha em branco: impede que ordenar/filtrar inclua os totais */
+  const rs=soma(n+3,'SUBTOTAL (soma só o que está filtrado)',(c,ref)=>`SUBTOTAL(109,${ref})`,AZUL,NAVY);
   rs.eachCell(c=>{ c.border={top:{style:'medium',color:{argb:NAVY}}}; });
-  corRegras(ws,`H${n+2}:I${n+2}`); corRegras(ws,`K${n+2}:L${n+2}`);
-  soma(n+3,'TOTAL GERAL (todos os ativos)',(c,ref)=>`SUM(${ref})`,NAVY,'FFFFFFFF');
+  corRegras(ws,`H${n+3}:I${n+3}`); corRegras(ws,`K${n+3}:L${n+3}`);
+  soma(n+4,'TOTAL GERAL (todos os ativos)',(c,ref)=>`SUM(${ref})`,NAVY,'FFFFFFFF');
   const nota=ws.addRow([]); ws.addRow(['O SUBTOTAL muda quando você filtra as colunas; o TOTAL GERAL soma sempre todos os ativos.']);
   ws.addRow(['Rendimento % ao mês é uma estimativa composta desde o início (com aportes em datas diferentes é aproximado). "Valor hoje" é o que você atualizou no app.']);
-  [n+5,n+6].forEach(r=>{ ws.getRow(r).getCell(1).font={italic:true,color:{argb:CINZA},size:10}; });
+  [n+6,n+7].forEach(r=>{ ws.getRow(r).getCell(1).font={italic:true,color:{argb:CINZA},size:10}; });
+
+  try{ analisesExcel(wb,{lista,n,res:wsRes,fill,borda,cabec,corRegras,R,P,DT,dt,hojeD,NAVY,VERDE,VERM,AZUL,ZEBRA,CINZA}); }
+  catch(e){ console.error(e); toast('Abas de análise falharam; gerando o restante…'); }
 
   /* ---------- abas auxiliares ---------- */
   const listaSimples=(nome,cab,linhas,larg,cor)=>{
