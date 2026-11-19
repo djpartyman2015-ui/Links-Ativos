@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Roleta Viagem">
+<title>Roleta da Caixinha de Viagem</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;500;700&family=Manrope:wght@700;800&display=swap" rel="stylesheet">
+<style>
+/* Design: Snowflake (Texta/Lato, snowflake-blue #249edc, pill 45px + cards 8px) */
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{--pri:#249edc;--pri-l:#76d0f1;--pri-p:#c6edf1;--pri-s:#ecf1f5;--navy:#11567f;--navy-d:#042130;--tx:#000;--mut:#666;--bd:#a0bbcc;--hl:#ccc;--red:#c62828;
+--gold:#249edc;--acc:#249edc;--grn:#249edc;--disp:Texta,Manrope,Inter,sans-serif}
+body{margin:0;min-height:100vh;font-family:Lato,sans-serif;font-size:16px;line-height:1.5;color:#000;background:#fff;padding:env(safe-area-inset-top) 0 90px}
+.wrap{max-width:560px;margin:0 auto;padding:16px}
+header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin:8px 0 20px}
+.eyebrow,h3{font-family:var(--disp);font-weight:800;font-size:13px;letter-spacing:.4px;text-transform:uppercase;color:var(--pri)}
+h1{font-family:var(--disp);font-weight:800;font-size:clamp(38px,12vw,60px);line-height:.95;margin:6px 0 10px;text-transform:uppercase;letter-spacing:0}
+h1 small{display:block;font-family:Lato,sans-serif;font-size:16px;font-weight:400;color:var(--mut);text-transform:none;line-height:1.4;margin-top:10px}
+.hero-art{width:112px;flex:none;margin-top:-4px}
+#sync{font-size:11px;color:var(--mut);display:flex;align-items:center;gap:5px;font-weight:500;white-space:nowrap}
+#sync i{width:8px;height:8px;border-radius:50%;background:#bbb;display:inline-block}
+#sync.ok i{background:var(--pri)}#sync.err i{background:var(--red)}
+.card{background:#fff;border:1px solid var(--bd);border-radius:8px;padding:24px 20px;margin-bottom:16px}
+.card.dark{background:var(--navy);border-color:var(--navy);color:#fff}
+.card.dark h3{color:var(--pri-l)}
+.card.dark .sub{color:#d6e9f3}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{text-align:center;padding:14px 4px;border-radius:8px;background:var(--pri-s)}
+.stat b{display:block;font-family:var(--disp);font-weight:800;font-size:18px}.stat span{font-size:12px;color:var(--mut);font-weight:500}
+.bar{height:10px;background:var(--pri-s);border-radius:99px;overflow:hidden;margin-top:14px;display:flex}
+.bar div{height:100%;transition:width .6s}
+.legend{display:flex;justify-content:space-between;font-size:12px;color:var(--mut);margin-top:8px;flex-wrap:wrap;gap:4px;font-weight:500}
+.who{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.who button{height:42px;border-radius:45px;border:1px solid var(--pri);background:#fff;color:var(--pri);font-size:14px;font-weight:700}
+.who button.on{background:var(--pri);color:#fff}
+.stage{position:relative;width:min(84vw,340px);aspect-ratio:1;margin:10px auto 8px}
+canvas#wheel{width:100%;height:100%;display:block;filter:drop-shadow(0 12px 12px rgba(152,162,179,.55))}
+.ptr{position:absolute;left:50%;top:-8px;transform:translateX(-50%);width:0;height:0;border-left:13px solid transparent;border-right:13px solid transparent;border-top:28px solid #000;z-index:3}
+.hub{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:34%;aspect-ratio:1;border-radius:50%;background:#fff;border:3px solid var(--navy);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:2}
+.hub b{font-family:var(--disp);font-weight:800;font-size:clamp(20px,7vw,30px);line-height:1}.hub span{font-size:11px;color:var(--mut);font-weight:500}
+.hub.win{animation:pop .5s}
+@keyframes pop{0%{transform:translate(-50%,-50%) scale(.8)}60%{transform:translate(-50%,-50%) scale(1.2)}100%{transform:translate(-50%,-50%) scale(1)}}
+.spin{width:100%;height:52px;border:0;border-radius:45px;font-family:var(--disp);font-size:16px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:#fff;background:var(--pri);margin-top:10px}
+.spin:active{background:var(--navy)}
+.spin:disabled{opacity:.45}
+.res{text-align:center;margin-top:14px;min-height:46px;font-size:15px;color:var(--mut)}
+.res b{color:#000}.res strong{font-family:var(--disp);font-weight:800;color:var(--pri);font-size:28px}
+nav{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:center;gap:2px;padding:0 8px env(safe-area-inset-bottom);background:#fff;border-top:1px solid var(--bd);z-index:10}
+nav button{flex:1;max-width:150px;padding:9px 4px 8px;border:0;border-top:3px solid transparent;background:transparent;color:#000;font-size:12px;font-weight:500;font-family:Lato,sans-serif}
+nav button.on{color:var(--pri);border-top-color:var(--pri);font-weight:700}nav button span{display:block;font-size:19px}
+.tab{display:none}.tab.on{display:block}
+input,button{font-family:inherit}
+input[type=number],input[type=text],input[type=month],input[type=date]{background:#fff;border:1px solid var(--hl);border-radius:2px;color:#000;padding:0 14px;height:44px;font-size:14px;width:100%;min-width:0}
+input:focus{outline:2px solid var(--pri);outline-offset:-1px;border-color:var(--pri)}
+.row{display:flex;gap:8px;margin-bottom:8px;align-items:center}
+.btn{height:38px;padding:0 16px;border-radius:45px;border:1px solid var(--pri);background:#fff;color:var(--pri);font-size:14px;font-weight:700;white-space:nowrap}
+.btn.p{background:var(--pri);color:#fff}
+.btn.d{border-color:var(--red);color:var(--red)}
+.dark .btn.p{background:#fff;color:var(--navy);border-color:#fff}
+h3{margin:0 0 12px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;max-height:210px;overflow:auto;padding:2px}
+.chip{padding:4px 12px;border-radius:45px;background:var(--pri-s);font-size:13px;font-weight:700;border:1px solid transparent;color:#000}
+.log{display:flex;align-items:center;gap:10px;padding:12px 2px;border-bottom:1px solid var(--pri-s)}
+.log:last-child{border:0}
+.log .v{font-family:var(--disp);font-weight:800;font-size:20px;min-width:74px}
+.log .m{flex:1;font-size:12px;color:var(--mut);line-height:1.4}
+.log .m b{color:#000;font-size:14px}
+.pay{height:34px;padding:0 14px;border-radius:45px;border:1px solid #000;background:#fff;color:#000;font-size:12px;font-weight:700}
+.pay.ok{background:var(--pri);border-color:var(--pri);color:#fff}
+.x{background:none;border:0;color:var(--mut);font-size:16px;padding:4px}
+.seg{display:flex;gap:6px;margin-bottom:8px}
+.seg button{flex:1}.seg .btn:not(.on){background:#fff;color:var(--pri)}.seg .btn.on{background:var(--pri);color:#fff}
+.empty{text-align:center;color:var(--mut);padding:18px;font-size:14px}
+.day{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:14px 0 2px;padding:10px 12px;border-radius:8px;background:var(--pri-s);font-size:12px}
+#cf{position:fixed;inset:0;pointer-events:none;z-index:50}
+.toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:var(--navy-d);color:#fff;padding:10px 18px;border-radius:45px;font-size:13px;z-index:60;opacity:0;transition:opacity .3s;pointer-events:none}
+.toast.on{opacity:1}
+</style>
+</head>
+<body>
+<canvas id="cf"></canvas>
+<div class="wrap">
+<header>
+  <div>
+    <div class="eyebrow">Caixinha de viagem</div>
+    <h1>Roleta<small>Cada giro vira um depósito no cofrinho da nossa viagem.</small></h1>
+    <div id="sync"><i></i><span>local</span></div>
+  </div>
+  <svg class="hero-art" viewBox="0 0 120 120" fill="none" stroke="#249edc" stroke-width="1" stroke-linejoin="round"><rect width="120" height="120" rx="8" fill="#c6edf1" stroke="none"/><g><path d="M60 22l22 12v24L60 70 38 58V34z"/><path d="M38 34l22 12 22-12M60 46v24"/><path d="M22 70l16 9v18l-16-9zM22 70l16-9 16 9-16 9M38 79v18"/><path d="M70 82l14 8v14l-14-8zM70 82l14-8 14 8-14 8M84 90v14"/><path d="M12 96h96M30 108h60" stroke="#76d0f1"/></g><g stroke-width="1.4"><path d="M96 20v16M88 28h16M90 22l12 12M102 22L90 34"/></g></svg>
+</header>
+
+<div class="card">
+  <div class="stats">
+    <div class="stat"><b id="sTot">R$ 0</b><span>Sorteado</span></div>
+    <div class="stat"><b id="sPaid" style="color:var(--pri)">R$ 0</b><span>Depositado</span></div>
+    <div class="stat"><b id="sPend">R$ 0</b><span>A depositar</span></div>
+  </div>
+  <div class="bar"><div id="bPaid" style="background:var(--pri);width:0"></div><div id="bPend" style="background:var(--navy);width:0"></div></div>
+  <div class="legend"><span id="lGoal"></span><span id="lLeft"></span></div>
+</div>
+
+<!-- ROLETA -->
+<section class="tab on" id="t-roleta">
+  <div class="card">
+    <div class="who" id="who"></div>
+    <div class="stage">
+      <div class="ptr"></div>
+      <canvas id="wheel"></canvas>
+      <div class="hub" id="hub"><b id="hubV">?</b><span id="hubS">gire!</span></div>
+    </div>
+    <button class="spin" id="spinBtn">🎰 GIRAR ROLETA</button>
+    <div class="res" id="res"></div>
+  </div>
+</section>
+
+<!-- HISTÓRICO -->
+<section class="tab" id="t-hist">
+  <div class="card dark" id="pendCard">
+    <h3>💸 Depositar agora</h3>
+    <div id="pendVal" style="font-family:var(--disp);font-size:42px;font-weight:800;line-height:1.1">R$ 0</div>
+    <div id="pendInfo" class="sub" style="font-size:13px;margin:4px 0 14px"></div>
+    <button class="btn p" id="payAll" style="width:100%;height:46px;font-size:15px">✅ Marcar tudo como depositado</button>
+  </div>
+  <div class="card">
+    <h3>Por pessoa</h3>
+    <div id="perPerson"></div>
+  </div>
+  <div class="card">
+    <div class="row" style="justify-content:space-between"><h3 style="margin:0">Sorteios & pagamentos</h3>
+      <div class="seg" style="margin:0"><button class="btn on" data-f="all">Todos</button><button class="btn" data-f="pend">Pendentes</button></div></div>
+    <div id="logs"></div>
+    <div class="row" style="margin-top:10px"><button class="btn" id="undo">↩︎ Desfazer último</button></div>
+  </div>
+</section>
+
+<!-- FATURA -->
+<section class="tab" id="t-fatura">
+  <div class="card dark">
+    <h3>🐷 Saldo do cofrinho</h3>
+    <div id="fSaldo" style="font-family:var(--disp);font-size:42px;font-weight:800;line-height:1.1">R$ 0</div>
+    <div id="fInfo" class="sub" style="font-size:13px;margin-top:4px"></div>
+  </div>
+  <div class="card" id="fNext"></div>
+  <div class="card">
+    <h3>Nova fatura</h3>
+    <div class="row"><input type="month" id="bMes"><input type="number" id="bVal" placeholder="Valor R$" inputmode="decimal"></div>
+    <div class="row"><input type="date" id="bDue"><button class="btn p" id="bAdd">Adicionar</button></div>
+  </div>
+  <div class="card"><h3>Faturas</h3><div id="bills"></div></div>
+</section>
+
+<!-- VALORES -->
+<section class="tab" id="t-vals">
+  <div class="card">
+    <h3>Meta da viagem</h3>
+    <div class="row"><input type="number" id="goal" placeholder="Meta em R$ (opcional)" inputmode="numeric"><button class="btn p" id="saveGoal">Salvar</button></div>
+    <h3 style="margin-top:14px">Nomes</h3>
+    <div class="row"><input type="text" id="n0"><input type="text" id="n1"><button class="btn p" id="saveNames">OK</button></div>
+  </div>
+  <div class="card">
+    <h3>Adicionar valor</h3>
+    <div class="row"><input type="number" id="addOne" placeholder="Ex: 150" inputmode="numeric"><button class="btn p" id="addOneBtn">Adicionar</button></div>
+    <h3 style="margin-top:14px">Adicionar faixa</h3>
+    <div class="row"><input type="number" id="rFrom" placeholder="De" inputmode="numeric"><input type="number" id="rTo" placeholder="Até" inputmode="numeric"><input type="number" id="rStep" placeholder="Passo" value="1" inputmode="numeric"></div>
+    <div class="row"><button class="btn p" id="addRange" style="flex:1">Adicionar faixa</button></div>
+    <div class="row"><button class="btn" id="reset" style="flex:1">Recarregar 1–200</button><button class="btn d" id="clearPool" style="flex:1">Esvaziar roleta</button></div>
+  </div>
+  <div class="card">
+    <h3>Na roleta agora: <span id="cnt">0</span></h3>
+    <div style="font-size:11px;color:var(--mut);margin-bottom:8px">Toque num valor para removê-lo da roleta.</div>
+    <div class="chips" id="chips"></div>
+  </div>
+  <div class="card">
+    <h3>Backup</h3>
+    <div class="row"><button class="btn" id="exp" style="flex:1">⬇︎ Exportar</button><button class="btn" id="imp" style="flex:1">⬆︎ Importar</button><input type="file" id="file" accept=".json" hidden></div>
+  </div>
+</section>
+</div>
+
+<nav>
+  <button class="on" data-t="roleta"><span>🎡</span>Roleta</button>
+  <button data-t="hist"><span>💰</span>Pagamentos</button>
+  <button data-t="fatura"><span>💳</span>Fatura</button>
+  <button data-t="vals"><span>⚙️</span>Valores</button>
+</nav>
+<div class="toast" id="toast"></div>
+
+<script>
+const DB='https://medicos-andrey-default-rtdb.firebaseio.com/caixinha_viagem.json';
+const LS='roleta_caixinha_v1';
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const brl=n=>'R$ '+Number(n).toLocaleString('pt-BR');
+const fmtD=t=>new Date(t).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+const range=(a,b,s=1)=>{const r=[];for(let v=a;v<=b;v+=s)r.push(v);return r};
+function shuffle(a){for(let i=a.length-1;i>0;i--){const u=new Uint32Array(1);crypto.getRandomValues(u);const j=u[0]%(i+1);[a[i],a[j]]=[a[j],a[i]]}return a}
+const isSorted=a=>a.every((v,i)=>!i||a[i-1]<=v);
+const arr=x=>!x?[]:Array.isArray(x)?x.filter(v=>v!=null):Object.values(x);
+
+let S={pool:shuffle(range(1,200)),log:[],bills:[],goal:0,names:['Andrey','Tiago'],updatedAt:0};
+let who=0,spinning=false,rot=0,filter='all',lastWin=null;
+
+function norm(d){
+  return {pool:(p=>p.length>2&&isSorted(p)?shuffle(p):p)(arr(d.pool).map(Number)),log:arr(d.log),bills:arr(d.bills),goal:+d.goal||0,names:arr(d.names).length==2?arr(d.names):['Andrey','Tiago'],updatedAt:+d.updatedAt||0};
+}
+try{const l=JSON.parse(localStorage.getItem(LS));if(l)S=norm(l)}catch(e){}
+
+/* ---------- sync ---------- */
+function setSync(c,t){const e=$('#sync');e.className=c;e.querySelector('span').textContent=t}
+async function push(){
+  S.updatedAt=Date.now();
+  try{localStorage.setItem(LS,JSON.stringify(S))}catch(e){}
+  try{const r=await fetch(DB,{method:'PUT',body:JSON.stringify(S)});if(!r.ok)throw 0;setSync('ok','sincronizado')}catch(e){setSync('err','offline')}
+}
+async function pull(first){
+  if(spinning)return;
+  try{
+    const r=await fetch(DB);if(!r.ok)throw 0;
+    const d=await r.json();
+    if(d){const n=norm(d);if(n.updatedAt>S.updatedAt){S=n;try{localStorage.setItem(LS,JSON.stringify(S))}catch(e){};renderAll()}}
+    else if(first){await push()}
+    setSync('ok','sincronizado');
+  }catch(e){setSync('err','offline')}
+}
+
+/* ---------- toast ---------- */
+function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('on');setTimeout(()=>e.classList.remove('on'),1800)}
+
+/* ---------- audio ---------- */
+let AC;
+function tick(f=700,d=.04,v=.05){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();const o=AC.createOscillator(),g=AC.createGain();o.type='square';o.frequency.value=f;g.gain.value=v;o.connect(g);g.connect(AC.destination);o.start();g.gain.exponentialRampToValueAtTime(.0001,AC.currentTime+d);o.stop(AC.currentTime+d)}catch(e){}}
+function fanfare(){[523,659,784,1047].forEach((f,i)=>setTimeout(()=>tick(f,.25,.08),i*110))}
+
+/* ---------- wheel ---------- */
+const cv=$('#wheel'),cx=cv.getContext('2d');
+function sizeCv(){const s=cv.clientWidth,d=window.devicePixelRatio||1;cv.width=s*d;cv.height=s*d;cx.setTransform(d,0,0,d,0,0);drawWheel()}
+const PAL=[['#249edc','#fff'],['#c6edf1','#000'],['#11567f','#fff'],['#76d0f1','#000'],['#ecf1f5','#000'],['#042130','#fff'],['#249edc','#fff'],['#c6edf1','#000']];
+function drawWheel(){
+  const s=cv.clientWidth,c=s/2,R=c-6,n=S.pool.length;
+  cx.clearRect(0,0,s,s);
+  cx.save();cx.translate(c,c);
+  if(!n){cx.fillStyle='#ecf1f5';cx.beginPath();cx.arc(0,0,R,0,7);cx.fill();cx.fillStyle='#666';cx.font='600 15px sans-serif';cx.textAlign='center';cx.fillText('Roleta vazia',0,-4);cx.fillText('Adicione valores ⚙️',0,18);cx.restore();return}
+  const a=2*Math.PI/n;
+  for(let i=0;i<n;i++){
+    const st=rot+i*a;
+    cx.beginPath();cx.moveTo(0,0);cx.arc(0,0,R,st,st+a+.002);cx.closePath();
+    const pc=PAL[(i===n-1&&n>1&&i%PAL.length===0?3:i%PAL.length)];cx.fillStyle=pc[0];cx.fill();
+    if(n<=40){cx.strokeStyle='#ffffffcc';cx.lineWidth=1;cx.stroke()}
+    if(n<=24){cx.save();cx.rotate(st+a/2);cx.fillStyle=pc[1];cx.font=`800 ${n>14?12:15}px Manrope,sans-serif`;cx.textAlign='right';cx.textBaseline='middle';cx.fillText(S.pool[i],R-12,0);cx.restore()}
+  }
+  cx.beginPath();cx.arc(0,0,R,0,7);cx.lineWidth=6;cx.strokeStyle='#11567f';cx.stroke();
+  // luzinhas
+  for(let i=0;i<24;i++){const t=i*Math.PI/12+rot*.3;cx.beginPath();cx.arc(Math.cos(t)*(R+0),Math.sin(t)*R,2.6,0,7);cx.fillStyle=i%2?'#fff':'#76d0f1';cx.fill()}
+  cx.restore();
+}
+function idxAt(r){const n=S.pool.length,a=2*Math.PI/n;let t=(1.5*Math.PI-r)%(2*Math.PI);if(t<0)t+=2*Math.PI;return Math.min(n-1,Math.floor(t/a))}
+
+function randInt(n){const u=new Uint32Array(1);crypto.getRandomValues(u);return u[0]%n}
+
+function spin(){
+  if(spinning||!S.pool.length)return;
+  AC&&AC.state==='suspended'&&AC.resume();tick(400,.02,.01);
+  spinning=true;$('#spinBtn').disabled=true;$('#res').innerHTML='';$('#hubS').textContent='girando...';$('#hub').classList.remove('win');
+  const n=S.pool.length,a=2*Math.PI/n,win=randInt(n),value=S.pool[win];
+  const jitter=(Math.random()-.5)*a*.7;
+  let target=1.5*Math.PI-(win+.5)*a+jitter;
+  let delta=((target-rot)%(2*Math.PI)+2*Math.PI)%(2*Math.PI);
+  // duração aleatória entre 5 e 20 segundos (inteiros, com variação em ms)
+  const dur=(5+randInt(16))*1000+randInt(900);
+  // quanto mais longo o giro, mais voltas (mantém a velocidade inicial parecida)
+  const turns=3+Math.round(dur/1000*.85);
+  const total=delta+turns*2*Math.PI,start=rot,t0=performance.now();
+  let lastI=-1,lastT=0;
+  (function f(now){
+    const p=Math.min(1,(now-t0)/dur),e=1-Math.pow(1-p,4);
+    rot=start+total*e;drawWheel();
+    const i=idxAt(rot);
+    if(i!==lastI){lastI=i;$('#hubV').textContent=S.pool[i];if(now-lastT>45){tick(500+(i%7)*40,.03,.035);lastT=now}}
+    if(p<1)requestAnimationFrame(f);else done(win,value);
+  })(t0);
+}
+function done(i,value){
+  S.pool.splice(i,1);
+  const e={id:Date.now().toString(36)+Math.random().toString(36).slice(2,5),who,value,at:Date.now(),paid:false,paidAt:null};
+  S.log.unshift(e);lastWin=e;
+  $('#hubV').textContent=value;$('#hubS').textContent='R$';$('#hub').classList.add('win');
+  fanfare();navigator.vibrate&&navigator.vibrate([80,40,120]);confetti();
+  spinning=false;$('#spinBtn').disabled=!S.pool.length;
+  push();renderAll(true);
+  $('#res').innerHTML=`🎉 <b>${S.names[who]}</b> tirou <strong>${brl(value)}</strong><br><span style="font-size:12px">Depositar no cofrinho do Mercado Pago e marcar em 💰 Pagamentos</span>`;
+  who=1-who;renderWho();
+}
+
+/* ---------- confetti ---------- */
+const cf=$('#cf'),cc=cf.getContext('2d');
+function confetti(){
+  cf.width=innerWidth;cf.height=innerHeight;
+  const P=[...Array(140)].map(()=>({x:cf.width/2,y:cf.height*.45,vx:(Math.random()-.5)*16,vy:-Math.random()*16-4,s:4+Math.random()*6,r:Math.random()*6,vr:(Math.random()-.5)*.4,c:['#249edc','#76d0f1','#c6edf1','#11567f','#042130','#fff'][Math.floor(Math.random()*6)]}));
+  let f=0;(function l(){cc.clearRect(0,0,cf.width,cf.height);P.forEach(p=>{p.vy+=.4;p.x+=p.vx;p.y+=p.vy;p.r+=p.vr;cc.save();cc.translate(p.x,p.y);cc.rotate(p.r);cc.fillStyle=p.c;cc.fillRect(-p.s/2,-p.s/2,p.s,p.s*.6);cc.restore()});if(++f<120)requestAnimationFrame(l);else cc.clearRect(0,0,cf.width,cf.height)})();
+}
+
+/* ---------- render ---------- */
+function renderWho(){
+  $('#who').innerHTML=S.names.map((n,i)=>`<button class="${i===who?'on':''}" data-w="${i}">${i?'🧑':'🧑'} ${n}</button>`).join('');
+  $$('#who button').forEach(b=>b.onclick=()=>{if(!spinning){who=+b.dataset.w;renderWho()}});
+}
+const money=n=>'R$ '+Number(n).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+const dBR=s=>s?s.split('-').reverse().join('/'):'';
+const mBR=m=>{const[a,b]=m.split('-');return ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'][b-1]+'/'+a};
+function saldo(){return S.log.filter(l=>l.paid).reduce((s,l)=>s+l.value,0)-S.bills.filter(b=>b.paid).reduce((s,b)=>s+b.value,0)}
+function renderBills(){
+  const sal=saldo(),B=[...S.bills].sort((a,b)=>b.due.localeCompare(a.due));
+  const open=B.filter(b=>!b.paid).sort((a,b)=>a.due.localeCompare(b.due)),pb=S.bills.filter(b=>b.paid).reduce((s,b)=>s+b.value,0);
+  $('#fSaldo').textContent=money(sal);$('#fSaldo').style.color=sal<0?'#ffb3b3':'#fff';
+  $('#fInfo').textContent=`${brl(S.log.filter(l=>l.paid).reduce((s,l)=>s+l.value,0))} depositados na roleta − ${money(pb)} em faturas pagas`;
+  const n=open[0];
+  if(n){const days=Math.round((new Date(n.due+'T12:00')-new Date().setHours(12,0,0,0))/864e5),falta=Math.max(0,n.value-Math.max(0,sal)),pct=Math.min(100,Math.max(0,sal)/n.value*100);
+    $('#fNext').innerHTML=`<h3>Próxima fatura · ${mBR(n.month)}</h3><div style="font-size:26px;font-weight:900">${money(n.value)}</div>
+    <div style="font-size:12px;color:${days<0?'var(--red)':days<=5?'var(--gold)':'var(--mut)'};margin:2px 0 8px">Vence ${dBR(n.due)} · ${days<0?`atrasada ${-days} dia(s)`:days===0?'vence hoje':`faltam ${days} dia(s)`}</div>
+    <div class="bar"><div style="background:var(--acc);width:${pct}%"></div></div>
+    <div class="legend"><span>Cofrinho cobre ${Math.round(pct)}%</span><span>${falta?'falta '+money(falta):'cobertura completa ✓'}</span></div>`}
+  else $('#fNext').innerHTML='<div class="empty">Nenhuma fatura em aberto 🎉</div>';
+  $('#bills').innerHTML=B.length?B.map(b=>`<div class="log"><div class="v" style="min-width:96px;font-size:16px">${money(b.value)}</div>
+   <div class="m"><b>${mBR(b.month)}</b><br>vence ${dBR(b.due)}${b.paid?`<br>✅ paga em ${fmtD(b.paidAt)}`:''}</div>
+   <button class="pay ${b.paid?'ok':''}" data-bp="${b.id}">${b.paid?'Paga ✓':'Pagar'}</button>
+   <button class="x" data-bx="${b.id}">🗑</button></div>`).join(''):'<div class="empty">Cadastre a primeira fatura acima</div>';
+  $$('[data-bp]').forEach(x=>x.onclick=()=>{const b=S.bills.find(y=>y.id===x.dataset.bp);
+    if(!b.paid){const s=saldo();if(s<b.value&&!confirm(`O cofrinho tem ${money(s)} e a fatura é ${money(b.value)}. Marcar como paga mesmo assim?`))return;if(s>=b.value&&!confirm(`Pagar ${money(b.value)} com o cofrinho?`))return}
+    b.paid=!b.paid;b.paidAt=b.paid?Date.now():null;push();renderAll()});
+  $$('[data-bx]').forEach(x=>x.onclick=()=>{if(confirm('Excluir esta fatura?')){S.bills=S.bills.filter(y=>y.id!==x.dataset.bx);push();renderAll()}});
+}
+function renderStats(){
+  const tot=S.log.reduce((s,l)=>s+l.value,0),paid=S.log.filter(l=>l.paid).reduce((s,l)=>s+l.value,0),pend=tot-paid;
+  $('#sTot').textContent=brl(tot);$('#sPaid').textContent=brl(paid);$('#sPend').textContent=brl(pend);
+  const base=Math.max(S.goal,tot,1);
+  $('#bPaid').style.width=paid/base*100+'%';$('#bPend').style.width=pend/base*100+'%';
+  const sal=saldo();$('#lGoal').textContent=S.goal?`Meta: ${brl(S.goal)} (${Math.max(0,Math.round(sal/S.goal*100))}% no cofrinho)`:'Defina uma meta em ⚙️';
+  const left=S.pool.reduce((a,b)=>a+b,0);
+  $('#lLeft').textContent=`Na roleta: ${S.pool.length} valores · até ${brl(left)}`;
+}
+function renderLogs(){
+  const L=S.log.filter(l=>filter==='all'||!l.paid);
+  const pendL=S.log.filter(l=>!l.paid),pendT=pendL.reduce((s,l)=>s+l.value,0);
+  $('#pendVal').textContent=brl(pendT);
+  $('#pendInfo').textContent=pendL.length?`${pendL.length} sorteio${pendL.length>1?'s':''} pendente${pendL.length>1?'s':''}: `+pendL.map(l=>l.value).join(' + '):'Tudo em dia! 🎉';
+  $('#payAll').style.display=pendL.length?'':'none';
+  $('#payAll').onclick=()=>{if(confirm(`Marcar ${brl(pendT)} como depositado?`)){const t=Date.now();pendL.forEach(l=>{l.paid=true;l.paidAt=t});push();renderAll()}};
+  const dk=t=>new Date(t).toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'2-digit',year:'numeric'});
+  const groups=[];L.forEach(l=>{const k=dk(l.at);let g=groups.find(x=>x.k===k);if(!g)groups.push(g={k,items:[]});g.items.push(l)});
+  const hdr=g=>{const all=S.log.filter(l=>dk(l.at)===g.k),t=all.reduce((s,l)=>s+l.value,0),p=all.filter(l=>!l.paid).reduce((s,l)=>s+l.value,0);
+    return `<div class="day"><span><b style="font-size:13px">📅 ${g.k}</b><br><span style="color:var(--mut)">${all.length} giro${all.length>1?'s':''} · total ${brl(t)}</span></span><span style="text-align:right;color:${p?'#000':'var(--pri)'};font-weight:800;font-size:14px">${p?'depositar '+brl(p):'em dia ✓'}</span></div>`};
+  const row=l=>`<div class="log"><div class="v">${brl(l.value)}</div>
+   <div class="m"><b>${S.names[l.who]??'?'}</b><br>${fmtD(l.at)}${l.paid?`<br>✅ depositado em ${fmtD(l.paidAt)}`:''}</div>
+   <button class="pay ${l.paid?'ok':''}" data-p="${l.id}">${l.paid?'Pago ✓':'Pendente'}</button>
+   <button class="x" data-x="${l.id}" title="Excluir e devolver à roleta">🗑</button></div>`;
+  $('#logs').innerHTML=groups.length?groups.map(g=>hdr(g)+g.items.map(row).join('')).join(''):'<div class="empty">Nada por aqui ainda 🎈</div>';
+  $$('[data-p]').forEach(b=>b.onclick=()=>{const l=S.log.find(x=>x.id===b.dataset.p);l.paid=!l.paid;l.paidAt=l.paid?Date.now():null;push();renderAll()});
+  $$('[data-x]').forEach(b=>b.onclick=()=>{const i=S.log.findIndex(x=>x.id===b.dataset.x);if(confirm(`Excluir ${brl(S.log[i].value)} e devolver à roleta?`)){S.pool.push(S.log[i].value);shuffle(S.pool);S.log.splice(i,1);push();renderAll()}});
+  $('#perPerson').innerHTML=S.names.map((n,i)=>{const m=S.log.filter(l=>l.who===i),t=m.reduce((s,l)=>s+l.value,0),p=m.filter(l=>!l.paid).reduce((s,l)=>s+l.value,0);
+    return `<div class="row" style="justify-content:space-between"><span>🧑 <b>${n}</b> <small style="color:var(--mut)">${m.length} giros</small></span><span>${brl(t)} · <span style="color:${p?'var(--red)':'var(--grn)'}">${p?'falta '+brl(p):'em dia ✓'}</span></span></div>`}).join('');
+}
+function renderVals(){
+  $('#cnt').textContent=S.pool.length;
+  $('#chips').innerHTML=[...S.pool].sort((a,b)=>a-b).map(v=>`<button class="chip" data-v="${v}">${v}</button>`).join('')||'<div class="empty">vazia</div>';
+  $$('.chip').forEach(c=>c.onclick=()=>{S.pool.splice(S.pool.indexOf(+c.dataset.v),1);push();renderAll()});
+  $('#goal').value=S.goal||'';$('#n0').value=S.names[0];$('#n1').value=S.names[1];
+}
+function renderAll(keepHub){
+  renderWho();renderStats();renderLogs();renderBills();renderVals();
+  if(!spinning){drawWheel();$('#spinBtn').disabled=!S.pool.length;if(!keepHub){$('#hubV').textContent='?';$('#hubS').textContent='gire!'}}
+}
+
+/* ---------- eventos ---------- */
+$('#spinBtn').onclick=spin;
+$$('nav button').forEach(b=>b.onclick=()=>{$$('nav button').forEach(x=>x.classList.toggle('on',x===b));$$('.tab').forEach(t=>t.classList.toggle('on',t.id==='t-'+b.dataset.t));if(b.dataset.t==='roleta')sizeCv()});
+$$('.seg button').forEach(b=>b.onclick=()=>{filter=b.dataset.f;$$('.seg button').forEach(x=>x.classList.toggle('on',x===b));renderLogs()});
+$('#undo').onclick=()=>{const l=S.log[0];if(!l)return toast('Nada para desfazer');if(confirm(`Desfazer ${brl(l.value)} de ${S.names[l.who]}?`)){S.pool.push(l.value);shuffle(S.pool);S.log.shift();push();renderAll()}};
+$('#bAdd').onclick=()=>{const m=$('#bMes').value,v=parseFloat($('#bVal').value),d=$('#bDue').value;if(!m||!(v>0)||!d)return toast('Preencha mês, valor e vencimento');S.bills.push({id:Date.now().toString(36),month:m,value:Math.round(v*100)/100,due:d,paid:false,paidAt:null});$('#bVal').value='';push();renderAll();toast('Fatura adicionada')};
+$('#saveGoal').onclick=()=>{S.goal=Math.max(0,+$('#goal').value||0);push();renderAll();toast('Meta salva')};
+$('#saveNames').onclick=()=>{S.names=[$('#n0').value.trim()||'Pessoa 1',$('#n1').value.trim()||'Pessoa 2'];push();renderAll();toast('Nomes salvos')};
+$('#addOneBtn').onclick=()=>{const v=+$('#addOne').value;if(!v||v<0)return;S.pool.push(v);shuffle(S.pool);$('#addOne').value='';push();renderAll();toast('Valor adicionado')};
+$('#addRange').onclick=()=>{const a=+$('#rFrom').value,b=+$('#rTo').value,s=+$('#rStep').value||1;if(!(b>=a)||a<0||s<=0)return toast('Faixa inválida');const r=range(a,b,s);if(r.length>2000)return toast('Faixa grande demais');S.pool.push(...r);shuffle(S.pool);push();renderAll();toast(`${r.length} valores adicionados`)};
+$('#reset').onclick=()=>{if(confirm('Recarregar valores de 1 a 200? (os já sorteados também voltam, o histórico fica)')){S.pool=shuffle(range(1,200));push();renderAll()}};
+$('#clearPool').onclick=()=>{if(confirm('Esvaziar a roleta?')){S.pool=[];push();renderAll()}};
+$('#exp').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(S,null,1)],{type:'application/json'}));a.download='roleta-caixinha-'+new Date().toISOString().slice(0,10)+'.json';a.click()};
+$('#imp').onclick=()=>$('#file').click();
+$('#file').onchange=e=>{const f=e.target.files[0];if(!f)return;f.text().then(t=>{try{S=norm(JSON.parse(t));push();renderAll();toast('Importado')}catch(x){toast('Arquivo inválido')}})};
+addEventListener('resize',sizeCv);$('#bMes').value=new Date().toISOString().slice(0,7);
+
+/* ---------- init ---------- */
+renderAll();sizeCv();pull(true);setInterval(pull,6000);
+</script>
+</body>
+</html>
