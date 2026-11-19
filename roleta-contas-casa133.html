@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Roleta · Contas da Casa 133</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{--bg:#cfe2fc;--ink:#1a1a1a;--card:#fff;--a:#6d4aff;--t:#ff5c8a}
+body{margin:0;font-family:-apple-system,"Segoe UI",Inter,Roboto,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+header{padding:18px 16px 4px;text-align:center}
+h1{margin:0;font-size:24px;font-weight:800}
+.sub{font-size:13px;opacity:.7;margin-top:2px}
+.wrap{max-width:980px;margin:0 auto;padding:10px 14px 40px;display:grid;gap:14px;grid-template-columns:1fr}
+@media(min-width:860px){.wrap{grid-template-columns:1.15fr 1fr}}
+.card{background:var(--card);border-radius:18px;padding:16px;box-shadow:0 4px 18px rgba(0,0,0,.07)}
+.card h2{margin:0 0 10px;font-size:16px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+select,input[type=text],input[type=number]{font:inherit;padding:9px 10px;border:1px solid #d0d7e2;border-radius:10px;background:#fff}
+button{font:inherit;cursor:pointer;border:0;border-radius:12px;padding:10px 14px;font-weight:700}
+.btn-spin{background:#1a1a1a;color:#fff;width:100%;padding:15px;font-size:17px;margin-top:10px}
+.btn-spin:disabled{opacity:.45;cursor:not-allowed}
+.btn-sec{background:#eef2f8;color:#1a1a1a}
+.btn-danger{background:#ffe3e3;color:#b42318}
+.who{display:flex;gap:8px;margin:8px 0}
+.who button{flex:1;background:#eef2f8;color:#333;border:2px solid transparent}
+.who button.on.andrey{background:var(--a);color:#fff}
+.who button.on.tiago{background:var(--t);color:#fff}
+.stage{position:relative;max-width:520px;margin:0 auto}
+canvas{width:100%;height:auto;display:block}
+.pointer{position:absolute;right:-4px;top:50%;transform:translateY(-50%);width:0;height:0;border-top:14px solid transparent;border-bottom:14px solid transparent;border-right:34px solid #1a1a1a;filter:drop-shadow(0 2px 3px rgba(0,0,0,.3))}
+.score{display:flex;gap:10px}
+.score div{flex:1;border-radius:14px;padding:10px;text-align:center;color:#fff;font-weight:800}
+.score .a{background:var(--a)}.score .t{background:var(--t)}
+.score small{display:block;font-weight:500;opacity:.9}
+.list{list-style:none;margin:0;padding:0;max-height:300px;overflow:auto}
+.list li{display:flex;align-items:center;gap:8px;padding:8px 4px;border-bottom:1px solid #eef1f6;font-size:14px}
+.list li .nm{flex:1}
+.list li.off .nm{text-decoration:line-through;opacity:.45}
+.tag{font-size:11px;font-weight:800;color:#fff;padding:3px 8px;border-radius:99px}
+.tag.andrey{background:var(--a)}.tag.tiago{background:var(--t)}
+.x{background:none;color:#b42318;padding:4px 8px;font-size:16px}
+.muted{opacity:.6;font-size:13px}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;z-index:9;padding:20px}
+.modal.show{display:flex}
+.modal .box{background:#fff;border-radius:22px;padding:26px 22px;text-align:center;max-width:340px;width:100%;animation:pop .25s}
+@keyframes pop{from{transform:scale(.8);opacity:0}to{transform:scale(1);opacity:1}}
+.modal .big{font-size:30px;font-weight:900;margin:6px 0}
+.tabs{display:flex;gap:8px;max-width:980px;margin:8px auto 0;padding:0 14px}
+.tabs button{flex:1;background:#e3ecf9;color:#333;padding:12px}
+.tabs button.on{background:#1a1a1a;color:#fff}
+.hwrap{max-width:980px;margin:0 auto;padding:10px 14px 40px;display:grid;gap:14px}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.col{border-radius:14px;padding:10px;background:#f6f8fc}
+.col h3{margin:0 0 6px;font-size:14px;display:flex;justify-content:space-between;color:#fff;padding:6px 10px;border-radius:10px}
+.col h3.andrey{background:var(--a)}.col h3.tiago{background:var(--t)}
+.col ul{margin:0;padding-left:18px;font-size:14px;line-height:1.7}
+.sync{font-size:11px;text-align:center;opacity:.55;margin-top:6px}
+</style>
+</head>
+<body>
+<header>
+  <h1>🏠 Contas da Casa 133</h1>
+  <div class="sub">Roleta de quem paga o quê no mês</div>
+</header>
+
+<div class="tabs">
+  <button id="tabR" class="on">🎡 Roleta</button>
+  <button id="tabH">📅 Histórico</button>
+</div>
+
+<div class="hwrap" id="vHist" style="display:none"></div>
+
+<div class="wrap" id="vRoleta">
+  <section class="card">
+    <div class="row" style="justify-content:space-between">
+      <label class="row">Ref. a <select id="mes"></select></label>
+      <button class="btn-sec" id="btnReset">↺ Reiniciar mês</button>
+    </div>
+    <div class="muted" style="margin-top:6px">Quem gira agora:</div>
+    <div class="who">
+      <button id="wA" class="andrey">Andrey</button>
+      <button id="wT" class="tiago">Tiago</button>
+    </div>
+    <div class="stage">
+      <canvas id="c" width="900" height="900"></canvas>
+      <div class="pointer"></div>
+    </div>
+    <button class="btn-spin" id="spin">Girar Roleta!</button>
+    <div class="sync" id="sync"></div>
+  </section>
+
+  <div style="display:grid;gap:14px;align-content:start">
+    <section class="card">
+      <h2>Placar do mês</h2>
+      <div class="score">
+        <div class="a"><span id="cA">0</span><small>Andrey · contas</small></div>
+        <div class="t"><span id="cT">0</span><small>Tiago · contas</small></div>
+      </div>
+      <div class="muted" style="margin-top:8px" id="restam"></div>
+    </section>
+
+    <section class="card">
+      <h2>📲 Resultado para WhatsApp</h2>
+      <textarea id="zapTxt" readonly rows="9" style="width:100%;font:inherit;font-size:13px;padding:10px;border:1px solid #d0d7e2;border-radius:10px;resize:vertical"></textarea>
+      <button class="btn-spin" id="zapBtn" style="margin-top:8px;padding:12px;font-size:15px">📋 Copiar para WhatsApp</button>
+    </section>
+
+    <section class="card">
+      <h2>Sorteadas neste mês</h2>
+      <ul class="list" id="hist"></ul>
+    </section>
+
+    <section class="card">
+      <h2>Contas na roleta</h2>
+      <div class="row">
+        <input type="text" id="novo" placeholder="Nova conta (ex: Spotify)" style="flex:1;min-width:150px">
+        <button class="btn-sec" id="add">+ Adicionar</button>
+      </div>
+      <ul class="list" id="itens" style="margin-top:8px"></ul>
+      <div class="muted" style="margin-top:6px">Desmarque para tirar a conta da roleta só neste mês, ou remova de vez com ✕.</div>
+    </section>
+  </div>
+</div>
+
+<div class="modal" id="modal"><div class="box">
+  <div class="muted">A conta sorteada foi</div>
+  <div class="big" id="mConta"></div>
+  <div id="mQuem" style="font-weight:800;font-size:18px"></div>
+  <button class="btn-spin" id="mCopy" style="margin-top:16px;background:#25d366;display:none">📋 Copiar resultado final</button>
+  <button class="btn-spin" id="mOk" style="margin-top:10px">Ok!</button>
+</div></div>
+
+<script>
+const FB = 'https://medicos-andrey-default-rtdb.firebaseio.com/roleta-contas-casa133.json';
+const KEY = 'roleta-contas-133';
+const COLORS = ['#f6c343','#f7e04f','#c9d958','#95c955','#21a094','#3d9be9','#5b67b8','#a847b7','#e63c77','#e9594f','#f2a02a','#f4b942','#7e57c2','#26a69a'];
+const DEFAULTS = ['Gás','Luz','Água','IPTU','Seguro da Casa','GloboPlay','Netflix','Jardinagem','Amazon Prime','Sky Recarga ou TV','Faxina','HBO MAX','Internet','Condomínio'];
+
+let S = load() || {ts:0, items: DEFAULTS.map((n,i)=>({id:'i'+i,name:n,on:true})), months:{}, who:'Andrey', last:{}};
+let mesAtual = new Date().toISOString().slice(0,7);
+let angle = 0, spinning = false;
+
+function load(){ try{return JSON.parse(localStorage.getItem(KEY))}catch(e){return null} }
+function mesDados(){ return S.months[mesAtual] || (S.months[mesAtual] = {draws:[], off:[]}); }
+function ativos(){
+  const m = mesDados(), feitos = m.draws.map(d=>d.id);
+  return S.items.filter(i=>i.on && !m.off.includes(i.id) && !feitos.includes(i.id));
+}
+function save(){
+  S.ts = Date.now();
+  localStorage.setItem(KEY, JSON.stringify(S));
+  fetch(FB,{method:'PUT',body:JSON.stringify(S)}).then(()=>setSync('☁️ sincronizado')).catch(()=>setSync('offline — salvo só neste aparelho'));
+}
+function setSync(t){ document.getElementById('sync').textContent = t; }
+async function pull(){
+  try{
+    const r = await fetch(FB); const d = await r.json();
+    if(d && d.ts > S.ts && !spinning){
+      S = d; if(!S.months) S.months={}; if(!S.items) S.items=[];
+      localStorage.setItem(KEY, JSON.stringify(S)); render();
+    }
+    setSync('☁️ sincronizado');
+  }catch(e){ setSync('offline — salvo só neste aparelho'); }
+}
+
+/* ---------- Roleta ---------- */
+const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+function drawWheel(){
+  const list = ativos(), W = cv.width, R = W/2 - 18, cx = W/2, cy = W/2;
+  ctx.clearRect(0,0,W,W);
+  ctx.save(); ctx.translate(cx,cy);
+  ctx.beginPath(); ctx.arc(0,0,R+16,0,7); ctx.fillStyle='#fff'; ctx.fill();
+  if(!list.length){
+    ctx.beginPath(); ctx.arc(0,0,R,0,7); ctx.fillStyle='#e8edf5'; ctx.fill();
+    ctx.fillStyle='#555'; ctx.font='bold 42px sans-serif'; ctx.textAlign='center';
+    ctx.fillText('Todas as contas',0,-10); ctx.fillText('já foram sorteadas ✔',0,45);
+    ctx.restore(); return;
+  }
+  const n = list.length, step = 2*Math.PI/n;
+  ctx.rotate(angle);
+  list.forEach((it,i)=>{
+    ctx.beginPath(); ctx.moveTo(0,0); ctx.arc(0,0,R,i*step,(i+1)*step); ctx.closePath();
+    ctx.fillStyle = COLORS[S.items.indexOf(it) % COLORS.length]; ctx.fill();
+    ctx.save(); ctx.rotate(i*step+step/2); ctx.textAlign='right'; ctx.fillStyle='#fff';
+    ctx.shadowColor='rgba(0,0,0,.35)'; ctx.shadowBlur=4;
+    const fs = Math.max(22, Math.min(40, 330/Math.max(n,6)*1.6));
+    ctx.font = `bold ${fs}px sans-serif`;
+    let t = it.name; while(ctx.measureText(t).width > R-110 && t.length>4) t = t.slice(0,-2);
+    if(t!==it.name) t+='…';
+    ctx.fillText(t, R-28, fs/3); ctx.restore();
+  });
+  ctx.rotate(-angle);
+  ctx.beginPath(); ctx.arc(0,0,64,0,7); ctx.fillStyle='#fff'; ctx.fill();
+  ctx.font='56px sans-serif'; ctx.textAlign='center'; ctx.fillText('🏠',0,20);
+  ctx.restore();
+}
+
+function spin(){
+  const list = ativos(); if(spinning || !list.length) return;
+  spinning = true; document.getElementById('spin').disabled = true;
+  const n = list.length, step = 2*Math.PI/n;
+  const idx = Math.floor(Math.random()*n);               // sorteio justo
+  // ponteiro fica à direita (ângulo 0): o centro da fatia idx deve parar em 0
+  const alvo = -(idx*step + step/2);
+  const base = angle - (angle % (2*Math.PI));
+  const final = alvo + base + 2*Math.PI*(3 + Math.floor(Math.random()*8));
+  const ini = angle, dur = 2000 + Math.random()*8000, t0 = performance.now();
+  (function f(now){
+    const p = Math.min(1,(now-t0)/dur), e = 1-Math.pow(1-p,4);
+    angle = ini + (final-ini)*e; drawWheel();
+    if(p<1) requestAnimationFrame(f); else { angle = final % (2*Math.PI); fim(list[idx]); }
+  })(t0);
+}
+
+function fim(item){
+  spinning = false; document.getElementById('spin').disabled = false;
+  const quem = S.who;
+  mesDados().draws.push({id:item.id, name:item.name, who:quem, ts:Date.now()});
+  S.who = quem === 'Andrey' ? 'Tiago' : 'Andrey';        // alterna a vez
+  save(); render();
+  document.getElementById('mConta').textContent = item.name;
+  const q = document.getElementById('mQuem');
+  q.textContent = '→ ' + quem + ' paga!'; q.style.color = quem==='Andrey' ? 'var(--a)' : 'var(--t)';
+  const mc = document.getElementById('mCopy');
+  mc.style.display = ativos().length ? 'none' : '';
+  mc.onclick = () => copiar(zapText(mesAtual), mc);
+  document.getElementById('modal').classList.add('show');
+}
+
+/* ---------- UI ---------- */
+function render(){
+  const m = mesDados();
+  // meses
+  const sel = document.getElementById('mes'), meses = new Set(Object.keys(S.months)); meses.add(mesAtual);
+  const nomes = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  sel.innerHTML = [...meses].sort().reverse().map(k=>`<option value="${k}" ${k===mesAtual?'selected':''}>${nomes[+k.slice(5)-1]}/${k.slice(0,4)}</option>`).join('');
+  // quem
+  document.getElementById('wA').className = 'andrey' + (S.who==='Andrey'?' on':'');
+  document.getElementById('wT').className = 'tiago' + (S.who==='Tiago'?' on':'');
+  // placar
+  document.getElementById('cA').textContent = m.draws.filter(d=>d.who==='Andrey').length;
+  document.getElementById('cT').textContent = m.draws.filter(d=>d.who==='Tiago').length;
+  const rest = ativos().length;
+  document.getElementById('restam').textContent = rest ? `${rest} conta(s) ainda na roleta` : 'Mês fechado — todas as contas foram divididas 🎉';
+  document.getElementById('spin').disabled = !rest || spinning;
+  // histórico
+  const h = document.getElementById('hist');
+  h.innerHTML = m.draws.length ? m.draws.slice().reverse().map(d=>
+    `<li><span class="nm">${esc(d.name)}</span><span class="tag ${d.who.toLowerCase()}">${d.who}</span><button class="x" title="Devolver à roleta" onclick="undo('${d.id}')">↩</button></li>`).join('')
+    : '<li class="muted">Nenhuma conta sorteada ainda.</li>';
+  // itens
+  document.getElementById('itens').innerHTML = S.items.map(i=>{
+    const on = i.on && !m.off.includes(i.id);
+    return `<li class="${on?'':'off'}"><input type="checkbox" ${on?'checked':''} onchange="toggle('${i.id}')"><span class="nm">${esc(i.name)}</span><button class="x" onclick="del('${i.id}')">✕</button></li>`;
+  }).join('');
+  drawWheel();
+  document.getElementById('zapTxt').value = zapText(mesAtual);
+  renderHist();
+}
+const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+function zapText(k){
+  const m = S.months[k] || {draws:[],off:[]};
+  const A = m.draws.filter(d=>d.who==='Andrey'), T = m.draws.filter(d=>d.who==='Tiago');
+  const bl = a => a.length ? a.map(x=>'• '+x.name).join('\n') : '• —';
+  let t = `🏠 *Contas da Casa 133 — ${MESES[+k.slice(5)-1]}/${k.slice(0,4)}*\n\n*Andrey* (${A.length})\n${bl(A)}\n\n*Tiago* (${T.length})\n${bl(T)}`;
+  if(k===mesAtual){
+    const falta = ativos().map(i=>i.name);
+    if(falta.length) t += `\n\n_Faltam sortear: ${falta.join(', ')}_`;
+  }
+  return t;
+}
+async function copiar(txt, btn){
+  try{ await navigator.clipboard.writeText(txt); }
+  catch(e){ const ta=document.createElement('textarea'); ta.value=txt; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); }
+  const old = btn.textContent; btn.textContent = '✅ Copiado!';
+  setTimeout(()=>btn.textContent = old, 1800);
+}
+document.getElementById('zapBtn').onclick = e => copiar(zapText(mesAtual), e.currentTarget);
+function copiarMes(k, btn){ copiar(zapText(k), btn); }
+function renderHist(){
+  const nomes = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  const keys = Object.keys(S.months).filter(k=>S.months[k].draws.length).sort().reverse();
+  let totA=0, totT=0;
+  keys.forEach(k=>S.months[k].draws.forEach(d=>d.who==='Andrey'?totA++:totT++));
+  let html = `<section class="card"><h2>Total geral</h2><div class="score">
+    <div class="a"><span>${totA}</span><small>Andrey · contas</small></div>
+    <div class="t"><span>${totT}</span><small>Tiago · contas</small></div></div></section>`;
+  if(!keys.length) html += '<section class="card muted">Nenhum sorteio registrado ainda.</section>';
+  keys.forEach(k=>{
+    const d = S.months[k].draws, A = d.filter(x=>x.who==='Andrey'), T = d.filter(x=>x.who==='Tiago');
+    const li = a => a.length ? a.map(x=>`<li>${esc(x.name)}</li>`).join('') : '<li class="muted">—</li>';
+    html += `<section class="card"><h2 class="row" style="justify-content:space-between"><span>${nomes[+k.slice(5)-1]}/${k.slice(0,4)}</span><button class="btn-sec" style="font-size:13px;padding:7px 10px" onclick="copiarMes('${k}',this)">📋 Copiar</button></h2><div class="cols">
+      <div class="col"><h3 class="andrey"><span>Andrey</span><span>${A.length}</span></h3><ul>${li(A)}</ul></div>
+      <div class="col"><h3 class="tiago"><span>Tiago</span><span>${T.length}</span></h3><ul>${li(T)}</ul></div>
+    </div></section>`;
+  });
+  document.getElementById('vHist').innerHTML = html;
+}
+function aba(h){
+  document.getElementById('vRoleta').style.display = h ? 'none' : '';
+  document.getElementById('vHist').style.display = h ? '' : 'none';
+  document.getElementById('tabR').className = h ? '' : 'on';
+  document.getElementById('tabH').className = h ? 'on' : '';
+}
+document.getElementById('tabR').onclick = () => aba(false);
+document.getElementById('tabH').onclick = () => aba(true);
+const esc = s => s.replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function toggle(id){ const m=mesDados(), k=m.off.indexOf(id); k>=0 ? m.off.splice(k,1) : m.off.push(id); save(); render(); }
+function del(id){ const i=S.items.find(x=>x.id===id); if(confirm(`Remover "${i.name}" da lista de contas?`)){ S.items=S.items.filter(x=>x.id!==id); save(); render(); } }
+function undo(id){ const m=mesDados(); m.draws=m.draws.filter(d=>d.id!==id); save(); render(); }
+function addItem(){
+  const el = document.getElementById('novo'), nome = el.value.trim(); if(!nome) return;
+  S.items.push({id:'i'+Date.now(), name:nome, on:true}); el.value=''; save(); render();
+}
+
+document.getElementById('spin').onclick = spin;
+document.getElementById('add').onclick = addItem;
+document.getElementById('novo').onkeydown = e => { if(e.key==='Enter') addItem(); };
+document.getElementById('wA').onclick = () => { S.who='Andrey'; save(); render(); };
+document.getElementById('wT').onclick = () => { S.who='Tiago'; save(); render(); };
+document.getElementById('mes').onchange = e => { mesAtual = e.target.value; render(); };
+document.getElementById('mOk').onclick = () => document.getElementById('modal').classList.remove('show');
+document.getElementById('btnReset').onclick = () => { if(confirm('Reiniciar sorteios deste mês?')){ S.months[mesAtual]={draws:[],off:[]}; save(); render(); } };
+
+render(); pull(); setInterval(pull, 6000);
+</script>
+</body>
+</html>
