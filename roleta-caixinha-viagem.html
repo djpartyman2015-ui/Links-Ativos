@@ -146,6 +146,11 @@ h3{margin:0 0 12px}
   </div>
   <div class="card" id="fNext"></div>
   <div class="card">
+    <h3>Saldo que já estava no cofrinho</h3>
+    <div style="font-size:13px;color:var(--mut);margin-bottom:10px">Valor guardado antes de usar este app (das roletas manuais). Ele entra no saldo e é abatido conforme você paga as faturas.</div>
+    <div class="row"><input type="number" id="opening" placeholder="Ex: 1500,00" inputmode="decimal" step="0.01"><button class="btn p" id="saveOpening">Salvar</button></div>
+  </div>
+  <div class="card">
     <h3>Nova fatura</h3>
     <div class="row"><input type="month" id="bMes"><input type="number" id="bVal" placeholder="Valor R$" inputmode="decimal"></div>
     <div class="row"><input type="date" id="bDue"><button class="btn p" id="bAdd">Adicionar</button></div>
@@ -200,11 +205,11 @@ function shuffle(a){for(let i=a.length-1;i>0;i--){const u=new Uint32Array(1);cry
 const isSorted=a=>a.every((v,i)=>!i||a[i-1]<=v);
 const arr=x=>!x?[]:Array.isArray(x)?x.filter(v=>v!=null):Object.values(x);
 
-let S={pool:shuffle(range(1,200)),log:[],bills:[],goal:0,names:['Andrey','Tiago'],updatedAt:0};
+let S={pool:shuffle(range(1,200)),log:[],bills:[],opening:0,goal:0,names:['Andrey','Tiago'],updatedAt:0};
 let who=0,spinning=false,rot=0,filter='all',lastWin=null;
 
 function norm(d){
-  return {pool:(p=>p.length>2&&isSorted(p)?shuffle(p):p)(arr(d.pool).map(Number)),log:arr(d.log),bills:arr(d.bills),goal:+d.goal||0,names:arr(d.names).length==2?arr(d.names):['Andrey','Tiago'],updatedAt:+d.updatedAt||0};
+  return {pool:(p=>p.length>2&&isSorted(p)?shuffle(p):p)(arr(d.pool).map(Number)),log:arr(d.log),bills:arr(d.bills),opening:+d.opening||0,goal:+d.goal||0,names:arr(d.names).length==2?arr(d.names):['Andrey','Tiago'],updatedAt:+d.updatedAt||0};
 }
 try{const l=JSON.parse(localStorage.getItem(LS));if(l)S=norm(l)}catch(e){}
 
@@ -310,12 +315,13 @@ function renderWho(){
 const money=n=>'R$ '+Number(n).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
 const dBR=s=>s?s.split('-').reverse().join('/'):'';
 const mBR=m=>{const[a,b]=m.split('-');return ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'][b-1]+'/'+a};
-function saldo(){return S.log.filter(l=>l.paid).reduce((s,l)=>s+l.value,0)-S.bills.filter(b=>b.paid).reduce((s,b)=>s+b.value,0)}
+function saldo(){return (S.opening||0)+S.log.filter(l=>l.paid).reduce((s,l)=>s+l.value,0)-S.bills.filter(b=>b.paid).reduce((s,b)=>s+b.value,0)}
 function renderBills(){
   const sal=saldo(),B=[...S.bills].sort((a,b)=>b.due.localeCompare(a.due));
   const open=B.filter(b=>!b.paid).sort((a,b)=>a.due.localeCompare(b.due)),pb=S.bills.filter(b=>b.paid).reduce((s,b)=>s+b.value,0);
   $('#fSaldo').textContent=money(sal);$('#fSaldo').style.color=sal<0?'#ffb3b3':'#fff';
-  $('#fInfo').textContent=`${brl(S.log.filter(l=>l.paid).reduce((s,l)=>s+l.value,0))} depositados na roleta − ${money(pb)} em faturas pagas`;
+  $('#fInfo').textContent=`${money(S.opening||0)} já no cofrinho + ${brl(S.log.filter(l=>l.paid).reduce((s,l)=>s+l.value,0))} da roleta − ${money(pb)} em faturas pagas`;
+  if(document.activeElement!==$('#opening'))$('#opening').value=S.opening||'';
   const n=open[0];
   if(n){const days=Math.round((new Date(n.due+'T12:00')-new Date().setHours(12,0,0,0))/864e5),falta=Math.max(0,n.value-Math.max(0,sal)),pct=Math.min(100,Math.max(0,sal)/n.value*100);
     $('#fNext').innerHTML=`<h3>Próxima fatura · ${mBR(n.month)}</h3><div style="font-size:26px;font-weight:900">${money(n.value)}</div>
@@ -378,6 +384,7 @@ $('#spinBtn').onclick=spin;
 $$('nav button').forEach(b=>b.onclick=()=>{$$('nav button').forEach(x=>x.classList.toggle('on',x===b));$$('.tab').forEach(t=>t.classList.toggle('on',t.id==='t-'+b.dataset.t));if(b.dataset.t==='roleta')sizeCv()});
 $$('.seg button').forEach(b=>b.onclick=()=>{filter=b.dataset.f;$$('.seg button').forEach(x=>x.classList.toggle('on',x===b));renderLogs()});
 $('#undo').onclick=()=>{const l=S.log[0];if(!l)return toast('Nada para desfazer');if(confirm(`Desfazer ${brl(l.value)} de ${S.names[l.who]}?`)){S.pool.push(l.value);shuffle(S.pool);S.log.shift();push();renderAll()}};
+$('#saveOpening').onclick=()=>{const v=parseFloat(String($('#opening').value).replace(',','.'))||0;S.opening=Math.round(v*100)/100;push();renderAll();toast('Saldo inicial salvo')};
 $('#bAdd').onclick=()=>{const m=$('#bMes').value,v=parseFloat($('#bVal').value),d=$('#bDue').value;if(!m||!(v>0)||!d)return toast('Preencha mês, valor e vencimento');S.bills.push({id:Date.now().toString(36),month:m,value:Math.round(v*100)/100,due:d,paid:false,paidAt:null});$('#bVal').value='';push();renderAll();toast('Fatura adicionada')};
 $('#saveGoal').onclick=()=>{S.goal=Math.max(0,+$('#goal').value||0);push();renderAll();toast('Meta salva')};
 $('#saveNames').onclick=()=>{S.names=[$('#n0').value.trim()||'Pessoa 1',$('#n1').value.trim()||'Pessoa 2'];push();renderAll();toast('Nomes salvos')};
