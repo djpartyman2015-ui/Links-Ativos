@@ -62,6 +62,7 @@
   /* CARDS = pastel tiles */
   .cards-row{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin:16px 0;}
   .cards-row.c3{grid-template-columns:repeat(3,1fr);}
+  .cards-row.c4{grid-template-columns:repeat(4,1fr);}
   .card{background:var(--lilac);border-radius:var(--r16);padding:16px 16px 14px;}
   .cards-row .card:nth-child(5n+1){background:var(--lilac);--tk:var(--lilac-ink);}
   .cards-row .card:nth-child(5n+2){background:var(--mint);--tk:var(--mint-ink);}
@@ -180,7 +181,7 @@
     .hero-right{align-items:flex-start;}
     .streak{text-align:left;}
     .cards-row{grid-template-columns:repeat(2,1fr);}
-    .cards-row.c3{grid-template-columns:repeat(2,1fr);}
+    .cards-row.c3,.cards-row.c4{grid-template-columns:repeat(2,1fr);}
     .lcd-display{font-size:54px;}
     .hist-row{grid-template-columns:70px 1fr 70px 50px;font-size:13px;}
     .cal-cell{padding:4px;border-radius:8px;}
@@ -283,9 +284,10 @@
 
   <!-- CANETAS -->
   <section id="canetas-tab" hidden>
-    <div class="cards-row c3" id="canetaCostCards">
+    <div class="cards-row c4" id="canetaCostCards">
       <div class="card"><div class="k">Investido em canetas</div><div class="v" id="cTotalCost">R$ 0</div><div class="sub" id="cTotalCostSub">total lançado</div></div>
       <div class="card"><div class="k">Custo por dia</div><div class="v" id="cCostPerDay">--</div><div class="sub">desde a 1ª caneta</div></div>
+      <div class="card"><div class="k">Preço por kg perdido</div><div class="v" id="cCostPerKg">--</div><div class="sub" id="cCostPerKgSub"></div></div>
       <div class="card"><div class="k">Custo médio/ciclo</div><div class="v" id="cCostAvg">--</div><div class="sub" id="cCostAvgSub"></div></div>
     </div>
     <div class="panel">
@@ -868,6 +870,13 @@ function renderCanetas(){
     const daysSinceFirst = Math.max(1, daysBetween(firstStart, today));
     document.getElementById('cCostPerDay').textContent = fmtBRL(totalCost/daysSinceFirst);
   } else { document.getElementById('cCostPerDay').textContent = '--'; }
+  {
+    const ents = sortedEntries();
+    const kEl = document.getElementById('cCostPerKg'), kSub = document.getElementById('cCostPerKgSub');
+    const lost = ents.length > 1 ? ents[0].weight - ents[ents.length-1].weight : 0;
+    if(totalCost > 0 && lost > 0){ kEl.textContent = fmtBRL(totalCost/lost); kSub.textContent = `${lost.toFixed(1)} kg perdidos até ${ents[ents.length-1].weight.toFixed(1)} kg`; }
+    else { kEl.textContent = '--'; kSub.textContent = totalCost > 0 ? 'sem perda registrada' : 'lance preços nas canetas'; }
+  }
   if(priced.length){
     document.getElementById('cCostAvg').textContent = fmtBRL(totalCost/priced.length);
     document.getElementById('cCostAvgSub').textContent = 'por ciclo';
