@@ -76,7 +76,7 @@ canvas{width:100%;height:auto;display:block}
 <div class="wrap" id="vRoleta">
   <section class="card">
     <div class="row" style="justify-content:space-between">
-      <label class="row">Ref. a <select id="mes"></select></label>
+      <label class="row">Ref. a <select id="mesM"></select> <select id="mesA"></select></label>
       <button class="btn-sec" id="btnReset">↺ Reiniciar mês</button>
     </div>
     <div class="muted" style="margin-top:6px">Quem gira agora:</div>
@@ -234,9 +234,14 @@ function fim(item){
 function render(){
   const m = mesDados();
   // meses
-  const sel = document.getElementById('mes'), meses = new Set(Object.keys(S.months)); meses.add(mesAtual);
-  const nomes = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-  sel.innerHTML = [...meses].sort().reverse().map(k=>`<option value="${k}" ${k===mesAtual?'selected':''}>${nomes[+k.slice(5)-1]}/${k.slice(0,4)}</option>`).join('');
+  const ym = mesAtual.split('-'), anoHoje = new Date().getFullYear();
+  const anos = new Set([anoHoje-1, anoHoje, anoHoje+1, anoHoje+2, +ym[0]]);
+  Object.keys(S.months).forEach(k=>anos.add(+k.slice(0,4)));
+  document.getElementById('mesM').innerHTML = MESES.map((n,i)=>{
+    const k = ym[0]+'-'+String(i+1).padStart(2,'0'), tem = S.months[k] && S.months[k].draws.length;
+    return `<option value="${i+1}" ${i+1===+ym[1]?'selected':''}>${n}${tem?' •':''}</option>`;
+  }).join('');
+  document.getElementById('mesA').innerHTML = [...anos].sort().map(a=>`<option ${a===+ym[0]?'selected':''}>${a}</option>`).join('');
   // quem
   document.getElementById('wA').className = 'andrey' + (S.who==='Andrey'?' on':'');
   document.getElementById('wT').className = 'tiago' + (S.who==='Tiago'?' on':'');
@@ -321,7 +326,12 @@ document.getElementById('add').onclick = addItem;
 document.getElementById('novo').onkeydown = e => { if(e.key==='Enter') addItem(); };
 document.getElementById('wA').onclick = () => { S.who='Andrey'; save(); render(); };
 document.getElementById('wT').onclick = () => { S.who='Tiago'; save(); render(); };
-document.getElementById('mes').onchange = e => { mesAtual = e.target.value; render(); };
+const trocaMes = () => {
+  mesAtual = document.getElementById('mesA').value + '-' + String(document.getElementById('mesM').value).padStart(2,'0');
+  render();
+};
+document.getElementById('mesM').onchange = trocaMes;
+document.getElementById('mesA').onchange = trocaMes;
 document.getElementById('mOk').onclick = () => document.getElementById('modal').classList.remove('show');
 document.getElementById('btnReset').onclick = () => { if(confirm('Reiniciar sorteios deste mês?')){ S.months[mesAtual]={draws:[],off:[]}; save(); render(); } };
 
